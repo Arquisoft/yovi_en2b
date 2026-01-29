@@ -11,7 +11,7 @@ This project is developed by the following group members as part of the ASW labs
 - **Marcos Losada García** – GitHub: [@losadgm](https://github.com/losadgm)
 - **Rafael Álvarez Iglesias** – GitHub: [@UO294786](https://github.com/UO294786)
 - **Marcos Rodríguez Fernández** – GitHub: [@Cuitoss](https://github.com/Cuitoss)
-- **Sergio Fernández-Miranda Longo** – GitHub: [@username](https://github.com/username)
+- **Sergio Fernández-Miranda Longo** – GitHub: [@clubserg](https://github.com/clubserg)
 
 ## Project Structure
 
