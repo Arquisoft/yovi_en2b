@@ -4,7 +4,14 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Arquisoft_yovi_en2b&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Arquisoft_yovi_en2b)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Arquisoft_yovi_en2b&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Arquisoft_yovi_en2b)
 
-This project is a template with some basic functionality for the ASW labs.
+## Group Members
+
+This project is developed by the following group members as part of the ASW labs at Uniovi:
+
+- **Marcos Losada García** – GitHub: [@losadgm](https://github.com/losadgm)
+- **Rafael Álvarez Iglesias** – GitHub: [@UO294786](https://github.com/UO294786)
+- **Marcos Rodríguez Fernández** – GitHub: [@Cuitoss](https://github.com/Cuitoss)
+- **Sergio Fernández-Miranda Longo** – GitHub: [@username](https://github.com/username)
 
 ## Project Structure
 
