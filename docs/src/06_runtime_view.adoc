@@ -48,16 +48,30 @@ building block instances depicted in this diagram.>_
 
 It is possible to use a sequence diagram:
 
-[plantuml,"Sequence diagram",png]
+[d2, diagram_prototype, svg, pad=10, sketch=true, width=400, height=400]
 ----
-actor Alice
-actor Bob
-database Pod as "Bob's Pod"
-Alice -> Bob: Authentication Request
-Bob --> Alice: Authentication Response
-Alice  --> Pod: Store route
-Alice -> Bob: Another authentication Request
-Alice <-- Bob: another authentication Response
+shape: sequence_diagram
+
+alice: Alice
+alice.shape: c4-person
+
+bob: Bob
+bob.shape: c4-person
+
+bob_pod: "Bob's\nPod"
+bob_pod.shape: cylinder
+
+alice -> bob: Authentication request
+bob -> alice: Authentication response {
+  style.stroke-dash: 2
+}
+alice -> bob_pod: Store route {
+  style.stroke-dash: 2
+}
+alice -> bob: Authentication request
+bob -> alice: Authentication response {
+  style.stroke-dash: 2
+}
 ----
 
 === <Runtime Scenario 2>
