@@ -7,6 +7,12 @@
 use crate::{Coordinates, GameY, YBot};
 use std::cmp;
 
+const INFINITY: i32 = i32::MAX / 2;
+
+const WIN_SCORE: i32 = 100_000;
+
+const LOSE_SCORE: i32 = -WIN_SCORE;
+
 /// A bot that uses the Minimax algorithm with Alpha-Beta pruning to select moves.
 ///
 /// `MinimaxBot` explores the game tree recursively to a configurable depth to find
@@ -52,9 +58,9 @@ impl MinimaxBot {
     pub fn new(depth: u8) -> Self {
         Self { depth }
     }
-
     // Internal helper for the minimax algorithm (to be implemented)
     // fn minimax(&self, game: &GameY, depth: u8, alpha: i32, beta: i32, maximizing_player: bool) -> i32 { ... }
+    
 }
 
 impl YBot for MinimaxBot {

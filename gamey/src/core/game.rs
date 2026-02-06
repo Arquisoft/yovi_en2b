@@ -30,6 +30,9 @@ pub struct GameY {
     sets: Vec<PlayerSet>,
 
     available_cells: Vec<u32>,
+
+    // Dirty flag to track whether the connectivity data needs to be recomputed
+    connectivity_dirty: bool,
 }
 
 /// Represents the state of a single cell on the board.
@@ -54,6 +57,7 @@ impl GameY {
                 next_player: PlayerId::new(0),
             },
             available_cells: (0..total_cells).collect(),
+            connectivity_dirty: true,
         }
     }
 
@@ -147,6 +151,20 @@ impl GameY {
         Ok(())
     }
 
+    /// Undoes the last move.
+    fn undo_move(&mut self) -> Result<()> {
+        let movement = self.history.pop().ok_or(GameYError::NoMoveToUndo)?;
+        match &movement {
+            Movement::Placement { player, coords } => {
+                self.undo_placement(*player, *coords)?;
+            }
+            Movement::Action { player, action } => {
+                self.undo_action(*player, action);
+            }
+        }
+        Ok(())
+    }
+
     /// Orchestrates the placement logic
     fn handle_placement(&mut self, player: PlayerId, coords: Coordinates) -> Result<()> {
         self.validate_placement(player, coords)?;
@@ -158,6 +176,16 @@ impl GameY {
         let won = self.connect_neighbors_and_check_win(coords, player, set_idx);
 
         self.update_status_after_placement(player, won);
+
+        // Mark connectivity data as dirty
+        self.connectivity_dirty = true;
+
+        Ok(())
+    }
+
+    /// Undoes a placement move.
+    fn undo_placement(&mut self, player: PlayerId, coords: Coordinates) -> Result<()> {
+        // TODO: Implement undo_placement
         Ok(())
     }
 
@@ -216,6 +244,11 @@ impl GameY {
                 };
             }
         }
+    }
+
+    /// Undoes a game action.
+    fn undo_action(&mut self, player: PlayerId, action: &GameAction) {
+        // TODO: Implement undo_action
     }
 
     /// Handles validation logic (Game Over checks and Occupancy)
