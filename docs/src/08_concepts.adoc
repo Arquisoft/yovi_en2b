@@ -57,18 +57,98 @@ See https://docs.arc42.org/section-8/[Concepts] in the arc42 documentation.
 ****
 endif::arc42help[]
 
-=== _<Concept 1>_
+=== YEN - JSON Game State (domain contract)
 
-_<explanation>_
+Purpose::
+Represent the state of a Game Y match at a particular point of time. Domain contract between +
+`webapp-backend` <--> `gamey`.
 
+Format::
+The game state is serialized as JSON using YEN notation.
 
+.Example:
+[source,json]
+----
+{
+  "size": 4,
+  "turn": "R",
+  "players": [ "B", "R" ],
+  "layout": "B/.B/RB./B..R"
+}
+----
 
-=== _<Concept 2>_
+Minimal invariants::
+* _size_: integer > 0.
+* _turn_: must be a player ID from the players list.
+* _players_: an array holding player IDs, currently "B" and "R".
+* _layout_: string representation of the board, '/' is the separator and '.' represents an empty cell.
+* The system  responds with a 4xx error for invalid states (see 8.2 / 8.2.1).
 
-_<explanation>_
+Compatibility::
+* We only publish one version of the API as part of M1, and we're not too concerned about backward compatibility.
+* Any breaking change must be reflected in the documentation and contract tests.
+
+=== REST conventions
+
+Scope::
+- Applies to:
+  * `webapp-backend` -> `frontend`
+  * `webapp-backend` -> `users`
+  * `webapp-backend` -> `gamey`
+
+Conventions::
+- JSON as the default payload format.
+- HTTP status codes:
+  * 2xx success, 4xx client/request/validation/auth error, 5xx internal/server error.
+- Timeouts and retries:
+  * Calls to `gamey`/`users` must use finite timeouts.
+  * Do not automatically retry non-idempotent operations (if any exist).
+- Recommended headers
+  * Content-Type: application/json
+  * Accept: application/json
+
+=== Authentication and authorization
+
+TBD
 
 ...
 
-=== _<Concept n>_
+=== Gamey stateless + no persistence in M1
 
-_<explanation>_
+Principles::
+- `gamey` is stateless: each request contains all information needed to compute the response.
+- In M1 we do not persist game state.
+
+Consequences::
+- State travels in request/response (JSON with YEN notation).
+- Operations should be deterministic for the same input if a deterministic algorithm is used.
+
+=== Backend for Frontend (BFF)
+
+Principles::
+- The frontend only consumes `webapp-backend`.
+- `users` and `gamey` are not accessible from the browser (no direct routing and no CORS exposure).
+
+Motivation::
+- Simplifies the frontend and centralizes auth and service composition in one place.
+
+=== Development concepts
+
+Rules::
+- Trunk-based development with short-lived branches.
+- Changes reach trunk (master) only via Pull Request.
+- Mandatory checks before merge: at least 1 human approval + green CI.
+- Pull Requests are merged using squash merge to keep a linear history.
+- Merge without feature flags to prioritize simplicity.
+
+=== User Experience (UX)
+TBD
+
+...
+
+=== Configuration and secrets
+
+Rules::
+- Environment-specific configuration is injected from the outside (e.g., environment variables in compose/CI).
+- Secrets (keys, tokens, passwords) are never committed to the repo and never baked into images; local dev uses a non-committed `.env`.
+- Do not log secret, mask if needed.
