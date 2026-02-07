@@ -1,10 +1,18 @@
 // asciidoc settings for EN (English)
 // ==================================
-:toc-title: table of contents
+:toc-title: Table of contents
 
-// enable table-of-contents
-:toc:
+// table-of-contents
+:toc: left
+:toclevels: 2
+:sectnums:
+
+// style sheets
+:stylesdir: ./styles
+:stylesheet: github-dark-default.css
 
 // where are images located?
 :imagesdir: ./images
 :arc42help:
+
+

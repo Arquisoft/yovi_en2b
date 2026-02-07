@@ -48,8 +48,16 @@ building block instances depicted in this diagram.>_
 
 It is possible to use a sequence diagram:
 
-[d2, diagram_prototype, svg, pad=10, sketch=true, width=400, height=400]
+[d2, diagram_prototype, svg, theme=200, sketch=true, pad=10, width=400, height=400]
 ----
+vars: {
+  d2-config: {
+    theme-overrides: {
+      n7: "#0D1117"
+    }
+  }
+}
+
 shape: sequence_diagram
 
 alice: Alice
