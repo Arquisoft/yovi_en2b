@@ -2766,9 +2766,14 @@ print {
 </li>
 <li><a href="#section-concepts">8. Cross-cutting Concepts</a>
 <ul class="sectlevel2">
-<li><a href="#_concept_1">8.1. <em>&lt;Concept 1&gt;</em></a></li>
-<li><a href="#_concept_2">8.2. <em>&lt;Concept 2&gt;</em></a></li>
-<li><a href="#_concept_n">8.3. <em>&lt;Concept n&gt;</em></a></li>
+<li><a href="#_yen_json_game_state_domain_contract">8.1. YEN - JSON Game State (domain contract)</a></li>
+<li><a href="#_rest_conventions">8.2. REST conventions</a></li>
+<li><a href="#_authentication_and_authorization">8.3. Authentication and authorization</a></li>
+<li><a href="#_gamey_stateless_no_persistence_in_m1">8.4. Gamey stateless + no persistence in M1</a></li>
+<li><a href="#_backend_for_frontend_bff">8.5. Backend for Frontend (BFF)</a></li>
+<li><a href="#_development_concepts">8.6. Development concepts</a></li>
+<li><a href="#_user_experience_ux">8.7. User Experience (UX)</a></li>
+<li><a href="#_configuration_and_secrets">8.8. Configuration and secrets</a></li>
 </ul>
 </li>
 <li><a href="#section-design-decisions">9. Architecture Decisions</a></li>
@@ -3839,24 +3844,278 @@ on this list.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_concept_1">8.1. <em>&lt;Concept 1&gt;</em></h3>
-<div class="paragraph">
-<p><em>&lt;explanation&gt;</em></p>
+<h3 id="_yen_json_game_state_domain_contract">8.1. YEN - JSON Game State (domain contract)</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Purpose</dt>
+<dd>
+<p>Represent the state of a Game Y match at a particular point of time. Domain contract between<br>
+<code>webapp-backend</code> &#8592;&#8594; <code>gamey</code>.</p>
+</dd>
+<dt class="hdlist1">Format</dt>
+<dd>
+<p>The game state is serialized as JSON using YEN notation.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "size": 4,
+  "turn": "R",
+  "players": [ "B", "R" ],
+  "layout": "B/.B/RB./B..R"
+}</code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Minimal invariants</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p><em>size</em>: integer &gt; 0.</p>
+</li>
+<li>
+<p><em>turn</em>: must be a player ID from the players list.</p>
+</li>
+<li>
+<p><em>players</em>: an array holding player IDs, currently "B" and "R".</p>
+</li>
+<li>
+<p><em>layout</em>: string representation of the board, '/' is the separator and '.' represents an empty cell.</p>
+</li>
+<li>
+<p>The system  responds with a 4xx error for invalid states (see 8.2 / 8.2.1).</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">Compatibility</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>We only publish one version of the API as part of M1, and we&#8217;re not too concerned about backward compatibility.</p>
+</li>
+<li>
+<p>Any breaking change must be reflected in the documentation and contract tests.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_concept_2">8.2. <em>&lt;Concept 2&gt;</em></h3>
+<h3 id="_rest_conventions">8.2. REST conventions</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Scope</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>Applies to:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>webapp-backend</code> &#8594; <code>frontend</code></p>
+</li>
+<li>
+<p><code>webapp-backend</code> &#8594; <code>users</code></p>
+</li>
+<li>
+<p><code>webapp-backend</code> &#8594; <code>gamey</code></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">Conventions</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>JSON as the default payload format.</p>
+</li>
+<li>
+<p>HTTP status codes:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>2xx success, 4xx client/request/validation/auth error, 5xx internal/server error.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Timeouts and retries:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Calls to <code>gamey</code>/<code>users</code> must use finite timeouts.</p>
+</li>
+<li>
+<p>Do not automatically retry non-idempotent operations (if any exist).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Recommended headers</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Content-Type: application/json</p>
+</li>
+<li>
+<p>Accept: application/json</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_authentication_and_authorization">8.3. Authentication and authorization</h3>
 <div class="paragraph">
-<p><em>&lt;explanation&gt;</em></p>
+<p>TBD</p>
 </div>
 <div class="paragraph">
 <p>&#8230;&#8203;</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_concept_n">8.3. <em>&lt;Concept n&gt;</em></h3>
+<h3 id="_gamey_stateless_no_persistence_in_m1">8.4. Gamey stateless + no persistence in M1</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Principles</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p><code>gamey</code> is stateless: each request contains all information needed to compute the response.</p>
+</li>
+<li>
+<p>In M1 we do not persist game state.</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">Consequences</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>State travels in request/response (JSON with YEN notation).</p>
+</li>
+<li>
+<p>Operations should be deterministic for the same input if a deterministic algorithm is used.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_backend_for_frontend_bff">8.5. Backend for Frontend (BFF)</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Principles</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>The frontend only consumes <code>webapp-backend</code>.</p>
+</li>
+<li>
+<p><code>users</code> and <code>gamey</code> are not accessible from the browser (no direct routing and no CORS exposure).</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">Motivation</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>Simplifies the frontend and centralizes auth and service composition in one place.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_development_concepts">8.6. Development concepts</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Rules</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>Trunk-based development with short-lived branches.</p>
+</li>
+<li>
+<p>Changes reach trunk (master) only via Pull Request.</p>
+</li>
+<li>
+<p>Mandatory checks before merge: at least 1 human approval + green CI.</p>
+</li>
+<li>
+<p>Pull Requests are merged using squash merge to keep a linear history.</p>
+</li>
+<li>
+<p>Merge without feature flags to prioritize simplicity.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_user_experience_ux">8.7. User Experience (UX)</h3>
 <div class="paragraph">
-<p><em>&lt;explanation&gt;</em></p>
+<p>TBD</p>
+</div>
+<div class="paragraph">
+<p>&#8230;&#8203;</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuration_and_secrets">8.8. Configuration and secrets</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Rules</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>Environment-specific configuration is injected from the outside (e.g., environment variables in compose/CI).</p>
+</li>
+<li>
+<p>Secrets (keys, tokens, passwords) are never committed to the repo and never baked into images; local dev uses a non-committed <code>.env</code>.</p>
+</li>
+<li>
+<p>Do not log secret, mask if needed.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
 </div>
 <div style="page-break-after: always;"></div>
 </div>
@@ -4109,7 +4368,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-02-07 13:24:45 +0100
+Last updated 2026-02-07 17:27:03 +0100
 </div>
 </div>
 </body>
