@@ -230,3 +230,25 @@ Consequences::
 - Adds an extra component to configure and maintain (but still lightweight).
 
 IMPORTANT: Status: PROPOSED 
+
+=== ADR-013: Fixed board geometry and topology
+
+Context::
+- Game Y uses a triangular board with hexagonal topology.
+- Need to decide if board size can change during gameplay or support alternative geometries.
+
+Decision::
+- Board size is fixed at construction (`GameY::new(board_size)`) and cannot change during gameplay.
+- All cells follow regular hexagonal topology (internal cells have 6 neighbors, edges have 4, corners have 2).
+- Board always has exactly 3 sides (A, B, C); victory requires connecting all of them.
+
+Consequences::
+- Enables memory pre-allocation: `Vec` with fixed capacity, no reallocations during game.
+- O(1) guaranteed cell access via direct indexing.
+- Cache-friendly: contiguous memory layout improves performance.
+- Simplifies Union-Find: can use cell index directly as set identifier.
+- Neighbor relationships can be pre-computed once in constructor.
+- Does not support board resizing, alternative topologies (square grids), or variants with more/fewer sides.
+- Any size change requires creating a new `GameY` instance.
+
+IMPORTANT: Status: ACCEPTED
