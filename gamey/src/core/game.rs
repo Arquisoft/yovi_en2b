@@ -1,5 +1,5 @@
 use crate::core::SetIdx;
-use crate::core::player_set::PlayerSet;
+use crate::core::player_set::GroupSet;
 use crate::{Coordinates, GameAction, GameYError, Movement, PlayerId, RenderOptions, YEN};
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -20,16 +20,27 @@ pub struct GameY {
 
     // Mapping from coordinates to identifiers of players who placed stones there.
     board_map: HashMap<Coordinates, (SetIdx, PlayerId)>,
+    //? Refactoriazar board_map por:
+    //? "cell_sets: Vec<Option<(SetIdx, PlayerId)>>": "celda -> (grupo, owner)"
 
-    status: GameStatus,
+    // Union-Find: connected groups tracking which sides they touch
+    sets: Vec<GroupSet>, //? grupo -> (parent + lados que ese grupo toca)
+
+    //# cell_sets y sets no comparten espacio de indices pero podrían compartirlo
+
+    available_cells: Vec<u32>,
+    //? Refactorizar usando un FixedBitSet
+
+    // Pre-computed caches for fast lookups
+    //idx_to_coords: Vec<Coordinates>,
+    //neighbors_cache: Vec<SmallVec<[usize; 6]>>,
 
     // History of moves made in the game.
     history: Vec<Movement>,
+    //? Mantener history (por compatibiliadad) 
+    //? pero crear un "undo_stack: Vec<UndoInfo>" para optimizar backtraking 
 
-    // Union-Find data structure to track connected components for each player
-    sets: Vec<PlayerSet>,
-
-    available_cells: Vec<u32>,
+    status: GameStatus,
 
     // Dirty flag to track whether the connectivity data needs to be recomputed
     connectivity_dirty: bool,
@@ -269,11 +280,15 @@ impl GameY {
     /// Updates internal data structures (Available cells, Sets, Map)
     /// Returns the index of the newly created set.
     fn register_piece(&mut self, player: PlayerId, coords: Coordinates) -> usize {
+
+        //? Esto es overhead innecesario, precalcular coordenadas en el constructor
         let cell_idx = coords.to_index(self.board_size);
+
+        //? Se puede optimizar usando un FixedBitSet (o híbrido si te vas al extremo) 
         self.available_cells.retain(|&x| x != cell_idx);
 
         let set_idx = self.sets.len();
-        let new_set = PlayerSet {
+        let new_set = GroupSet {
             parent: set_idx,
             touches_side_a: coords.touches_side_a(),
             touches_side_b: coords.touches_side_b(),
