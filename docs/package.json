@@ -2,7 +2,7 @@
   "name": "docs",
   "version": "1.0.0",
   "scripts": {
-    "build": "shx rm -rf build && asciidoctor -D build -a imagesdir=./images -r asciidoctor-diagram index.adoc && shx cp -R images build",
+    "build": "shx rm -rf build && asciidoctor -D build -a imagesdir=./images -a icons=font -a iconfont-cdn=https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css -r asciidoctor-diagram index.adoc && shx cp -R images build",
     "deploy": "gh-pages -d build"
   },
   "dependencies": {

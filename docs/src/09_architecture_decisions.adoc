@@ -2,7 +2,6 @@ ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-design-decisions]]
 == Architecture Decisions
-:icons: font
 
 ifdef::arc42help[]
 [role="arc42help"]
@@ -163,22 +162,19 @@ Consequences::
 
 IMPORTANT: Status: PROPOSED 
 
-=== ADR-009: Timeouts and retries for BFF -> gamey
+=== ADR-009: BFF -> Game Service Timeouts
 
 Context::
-- The choose endpoint is idempotent, so it can be retried safely. [web:162]
-- The bot algorithm may be slow, but long waits hurt gameplay.
+- Bot move computation and network calls can be slow or fail.
+- The BFF must remain responsive.
 
 Decision::
-- For POST /api/v1/ybot/choose/{bot_id}:
-  - timeout: 10 seconds
-  - retry: 1 retry (policy may change)
-- For GET /Status:
-  - polled every 2 seconds while waiting for choose (implementation detail may change)
+- Apply timeouts to BFF -> game service requests.
+- Allow strictly bounded retries only for safe, idempotent operations.
 
 Consequences::
-- Prevents "hanging" requests and keeps the game responsive.
-- Retries increase load and latency; keep them strictly bounded. [web:183]
+- Prevents hanging requests and improves UX.
+- Retries can increase load during outages; keep limits conservative and configurable.
 
 IMPORTANT: Status: PROPOSED 
 
