@@ -113,16 +113,6 @@ TBD
 
 ...
 
-=== Gamey stateless + no persistence in M1
-
-Principles::
-- `gamey` is stateless: each request contains all information needed to compute the response.
-- In M1 we do not persist game state.
-
-Consequences::
-- State travels in request/response (JSON with YEN notation).
-- Operations should be deterministic for the same input if a deterministic algorithm is used.
-
 === Backend for Frontend (BFF)
 
 Principles::
