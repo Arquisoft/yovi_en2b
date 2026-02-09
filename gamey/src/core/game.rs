@@ -26,7 +26,7 @@ pub struct GameY {
     // Union-Find: connected groups tracking which sides they touch
     sets: Vec<GroupSet>, //? grupo -> (parent + lados que ese grupo toca)
 
-    //# cell_sets y sets no comparten espacio de indices pero podrían compartirlo
+    //# board_map (o cell_sets) y sets no comparten espacio de indices pero podrían compartirlo
 
     available_cells: Vec<u32>,
     //? Refactorizar usando un FixedBitSet
@@ -188,15 +188,20 @@ impl GameY {
 
         self.update_status_after_placement(player, won);
 
-        // Mark connectivity data as dirty
-        self.connectivity_dirty = true;
-
         Ok(())
     }
 
     /// Undoes a placement move.
     fn undo_placement(&mut self, player: PlayerId, coords: Coordinates) -> Result<()> {
         // TODO: Implement undo_placement
+
+        // Unregister the piece (add it to available_cells and remove from board_map)
+
+        // Rollback state of the game
+
+        // Mark connectivity data as dirty
+        self.connectivity_dirty = true;
+
         Ok(())
     }
 
