@@ -21,13 +21,13 @@ The project that was proposed was implementing the game "gamey", all while manta
 
 workflow simulating real life situations, covering all the aspects that could happen, these include:
 
-** ·** Backend development
+**  Backend development
 
-** ·** Frontend development
+**  Frontend development
 
-** ·** Management of new API's and overcome difficulties with new software
+**  Management of new API's and overcome difficulties with new software
 
-** ·** Quality control
+**  Quality control
 
 If all of these are followed correctly the resulting project should go according to the theory.
 
