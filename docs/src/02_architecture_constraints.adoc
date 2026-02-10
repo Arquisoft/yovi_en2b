@@ -3,12 +3,43 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-architecture-constraints]]
 == Architecture Constraints
 
+=== Technical Constraints
+
+[options="header",cols="1,2"]
+|===
+|Constraint |Background and/or Motivation
+| **Web-based Access** | The game must be accessible via a standard web browser (Chrome, Firefox, etc.) without requiring local installation.
+| **Backend/Frontend Separation** | To simulate professional workflows, the logic (API) and the presentation (UI) must be decoupled.
+| **Bot Implementation** | The system must include an algorithmic bot with at least three levels of difficulty (Easy, Medium, Hard).
+| **Persistence** | A database or persistent storage must be used to save player profiles and game history.
+|===
+
+=== Organizational Constraints
+
+[options="header",cols="1,2"]
+|===
+|Constraint |Background and/or Motivation
+| **Team Structure** | Work is divided among students acting as a full-stack development team, requiring clear communication and task management.
+| **Deadline** | The project must be completed and documented within the academic semester timeframe.
+| **Software and API decisions** | We will be forced to used new software like docker, typescript, and rust, in which we are novice.
+|===
+
+=== Conventions
+
+[options="header",cols="1,2"]
+|===
+|Constraint |Background and/or Motivation
+| **arc42 Documentation** | The software architecture must be documented using the arc42 template.
+| **Version Control** | Use of Git (e.g., GitHub or GitLab) is mandatory to track progress and manage collaborative code changes.
+| **YEN notation** | Use of the YEN notation in JSON messages.
+|===
 
 ifdef::arc42help[]
 [role="arc42help"]
 ****
 .Contents
-Any requirement that constraints software architects in their freedom of design and implementation decisions or decision about the development process. These constraints sometimes go beyond individual systems and are valid for whole organizations and companies.
+Any requirement that constraints software architects in their freedom of design and implementation decisions or decision about the development process. 
+These constraints sometimes go beyond individual systems and are valid for whole organizations and companies.
 
 .Motivation
 Architects should know exactly where they are free in their design decisions and where they must adhere to constraints.
