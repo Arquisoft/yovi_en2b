@@ -2911,8 +2911,42 @@ These include</p>
 </div>
 </div>
 </div>
+<div class="paragraph">
+<p>The project that was proposed was implementing the game "gamey", all while mantaining a professional</p>
+</div>
+<div class="paragraph">
+<p>workflow simulating real life situations, covering all the aspects that could happen, these include:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Backend development</p>
+</li>
+<li>
+<p>Frontend development</p>
+</li>
+<li>
+<p>Management of new API&#8217;s and overcome difficulties with new software</p>
+</li>
+<li>
+<p>Quality control</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If all of these are followed correctly the resulting project should go according to the theory.</p>
+</div>
 <div class="sect2">
 <h3 id="_requirements_overview">1.1. Requirements Overview</h3>
+<div class="paragraph">
+<p>The game should be accessed in a web server, in which the player will be able to log in and save its results.</p>
+</div>
+<div class="paragraph">
+<p>As for the game, a bot will be implemented with an algorithm according to the difficulty selected by the player,</p>
+</div>
+<div class="paragraph">
+<p>so it should go from easy to hard.</p>
+</div>
 <div class="sidebarblock arc42help">
 <div class="content">
 <div class="paragraph">
@@ -2943,6 +2977,47 @@ If requirements documents exist this overview should refer to these documents.</
 </div>
 <div class="sect2">
 <h3 id="_quality_goals">1.2. Quality Goals</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 33.3333%;">
+<col style="width: 50.0001%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Priority</th>
+<th class="tableblock halign-left valign-top">Quality Goal</th>
+<th class="tableblock halign-left valign-top">Scenario</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usability</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Players should be able to register, log in, and start a game against the bot in under 30 seconds without needing a manual.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Performance</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The bot&#8217;s move calculation (latency) must be under 500ms, even on the "Hard" difficulty setting, to maintain game flow.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Maintainability</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">New features or bot algorithms can be integrated within one work day without breaking the existing frontend or API contracts.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Reliability</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system must ensure 99% data integrity, specifically that game results are never lost during a database save operation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Security</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Only authenticated users can submit scores to their own profiles; the API must prevent "score spoofing" from external tools.</p></td>
+</tr>
+</tbody>
+</table>
 <div class="sidebarblock arc42help">
 <div class="content">
 <div class="paragraph">
@@ -3026,14 +3101,24 @@ These stakeholders determine the extent and the level of detail of your work and
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Role-1&gt;</em></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Contact-1&gt;</em></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Expectation-1&gt;</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Project Supervisor (Teacher)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Teaching Staff</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Expects a professional development workflow, clean and documented code, and fulfillment of all functional requirements (the bot and web server).</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Role-2&gt;</em></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Contact-2&gt;</em></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Expectation-2&gt;</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Development Team (Students)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Student Group</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Expect to learn new technologies (API management, Frontend/Backend), gain experience in professional workflows, and achieve a high grade.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>End Users (Players)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Web Access</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Expect a functional and entertaining game, a challenging bot difficulty, and the ability to save their progress reliably.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Quality Assurance (QA)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Internal Team</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Expects the code to be testable and the game to be free of critical bugs before deployment.</p></td>
 </tr>
 </tbody>
 </table>
@@ -5127,7 +5212,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-02-10 10:15:29 UTC
+Last updated 2026-02-10 11:11:30 UTC
 </div>
 </div>
 </body>
