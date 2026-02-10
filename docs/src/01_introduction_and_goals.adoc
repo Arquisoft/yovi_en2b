@@ -17,7 +17,27 @@ These include
 ****
 endif::arc42help[]
 
+The project that was proposed was implementing the game "gamey", all while mantaining a professional
+
+workflow simulating real life situations, covering all the aspects that could happen, these include:
+
+**  Backend development
+
+**  Frontend development
+
+**  Management of new API's and overcome difficulties with new software
+
+**  Quality control
+
+If all of these are followed correctly the resulting project should go according to the theory.
+
 === Requirements Overview
+
+The game should be accessed in a web server, in which the player will be able to log in and save its results.
+
+As for the game, a bot will be implemented with an algorithm according to the difficulty selected by the player,
+
+so it should go from easy to hard.
 
 ifdef::arc42help[]
 [role="arc42help"]
@@ -46,6 +66,16 @@ See https://docs.arc42.org/section-1/[Introduction and Goals] in the arc42 docum
 endif::arc42help[]
 
 === Quality Goals
+
+[options="header",cols="1,2,3"]
+|===
+|Priority |Quality Goal |Scenario
+| 1 | **Usability** | Players should be able to register, log in, and start a game against the bot in under 30 seconds without needing a manual.
+| 2 | **Performance** | The bot's move calculation (latency) must be under 500ms, even on the "Hard" difficulty setting, to maintain game flow.
+| 3 | **Maintainability** | New features or bot algorithms can be integrated within one work day without breaking the existing frontend or API contracts.
+| 4 | **Reliability** | The system must ensure 99% data integrity, specifically that game results are never lost during a database save operation.
+| 5 | **Security** | Only authenticated users can submit scores to their own profiles; the API must prevent "score spoofing" from external tools.
+|===
 
 ifdef::arc42help[]
 [role="arc42help"]
@@ -96,6 +126,8 @@ endif::arc42help[]
 [options="header",cols="1,2,2"]
 |===
 |Role/Name|Contact|Expectations
-| _<Role-1>_ | _<Contact-1>_ | _<Expectation-1>_
-| _<Role-2>_ | _<Contact-2>_ | _<Expectation-2>_
+| **Project Supervisor (Teacher)** | Teaching Staff | Expects a professional development workflow, clean and documented code, and fulfillment of all functional requirements (the bot and web server).
+| **Development Team (Students)** | Student Group | Expect to learn new technologies (API management, Frontend/Backend), gain experience in professional workflows, and achieve a high grade.
+| **End Users (Players)** | Web Access | Expect a functional and entertaining game, a challenging bot difficulty, and the ability to save their progress reliably.
+| **Quality Assurance (QA)** | Internal Team | Expects the code to be testable and the game to be free of critical bugs before deployment.
 |===
