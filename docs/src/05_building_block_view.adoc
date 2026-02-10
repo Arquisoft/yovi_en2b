@@ -4,6 +4,9 @@ ifndef::imagesdir[:imagesdir: ../images]
 
 
 == Building Block View
+TODO -> Diagram
+
+=== Motivation
 
 ifdef::arc42help[]
 [role="arc42help"]

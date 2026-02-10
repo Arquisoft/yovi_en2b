@@ -3,6 +3,32 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-solution-strategy]]
 == Solution Strategy
 
+The architecture of the YOVI system is based on a modular approach that separates the user interface from the core game logic. This strategy supports mantainability, extensibility and interoperability, which are key quality goals of the system. The web application acts as the client-facing component, handling user interaction, presentation logic, and API exposure, while the game logic is encapsulated in a separate backend module.
+This separation allows the core game logic to remain independent from the user interface
+and facilitates future extensions such as additional clients or alternative frontends.
+
+=== Technology decisions
+
+The web application is implemented in TypeScript to facilitate the use of frameworks and ease the development of interactive user interfaces.
+
+The game logic module is implemented in Rust due to its performance characteristics, memory safety and suitability for implementing complex algorithm.
+
+Communication between the two subsystems is performed using JSON and following the YEN notation, this ensures that data is exchanged correctly.
+
+=== Quality Goal Realization
+
+Correctness and reliability are achieved by having all rule enforcement and game logic within the Rust game module.
+
+Usability is achieved thanks to having an intuitive and clear frontend that is easy to use for players.
+
+Performance is ensured by using efficient algorithms and a really efficient compiled language.
+
+Maintainability is achieved thanks to the modular design of the system and the clear separation of subsystems.
+
+=== Organizational decisions
+
+The system is developed by a four-member team with clear responsability separation. Version control and issue tracking are used to support collaborative development and ensure code quality.
+
 
 ifdef::arc42help[]
 [role="arc42help"]
