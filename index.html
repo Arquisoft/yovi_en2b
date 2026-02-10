@@ -2736,7 +2736,13 @@ print {
 <li><a href="#_stakeholders">1.3. Stakeholders</a></li>
 </ul>
 </li>
-<li><a href="#section-architecture-constraints">2. Architecture Constraints</a></li>
+<li><a href="#section-architecture-constraints">2. Architecture Constraints</a>
+<ul class="sectlevel2">
+<li><a href="#_technical_constraints">2.1. Technical Constraints</a></li>
+<li><a href="#_organizational_constraints">2.2. Organizational Constraints</a></li>
+<li><a href="#_conventions">2.3. Conventions</a></li>
+</ul>
+</li>
 <li><a href="#section-context-and-scope">3. Context and Scope</a>
 <ul class="sectlevel2">
 <li><a href="#_business_context">3.1. Business Context</a></li>
@@ -3129,11 +3135,102 @@ These stakeholders determine the extent and the level of detail of your work and
 <div class="sect1">
 <h2 id="section-architecture-constraints">2. Architecture Constraints</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_technical_constraints">2.1. Technical Constraints</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Constraint</th>
+<th class="tableblock halign-left valign-top">Background and/or Motivation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Web-based Access</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The game must be accessible via a standard web browser (Chrome, Firefox, etc.) without requiring local installation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Backend/Frontend Separation</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">To simulate professional workflows, the logic (API) and the presentation (UI) must be decoupled.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Bot Implementation</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system must include an algorithmic bot with at least three levels of difficulty (Easy, Medium, Hard).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Persistence</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A database or persistent storage must be used to save player profiles and game history.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_organizational_constraints">2.2. Organizational Constraints</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Constraint</th>
+<th class="tableblock halign-left valign-top">Background and/or Motivation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Team Structure</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Work is divided among students acting as a full-stack development team, requiring clear communication and task management.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Deadline</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The project must be completed and documented within the academic semester timeframe.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Software and API decisions</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">We will be forced to used new software like docker, typescript, and rust, in which we are novice.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_conventions">2.3. Conventions</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Constraint</th>
+<th class="tableblock halign-left valign-top">Background and/or Motivation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>arc42 Documentation</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The software architecture must be documented using the arc42 template.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Version Control</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use of Git (e.g., GitHub or GitLab) is mandatory to track progress and manage collaborative code changes.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>YEN notation</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use of the YEN notation in JSON messages.</p></td>
+</tr>
+</tbody>
+</table>
 <div class="sidebarblock arc42help">
 <div class="content">
 <div class="paragraph">
 <div class="title">Contents</div>
-<p>Any requirement that constraints software architects in their freedom of design and implementation decisions or decision about the development process. These constraints sometimes go beyond individual systems and are valid for whole organizations and companies.</p>
+<p>Any requirement that constraints software architects in their freedom of design and implementation decisions or decision about the development process.
+These constraints sometimes go beyond individual systems and are valid for whole organizations and companies.</p>
 </div>
 <div class="paragraph">
 <div class="title">Motivation</div>
@@ -3154,6 +3251,7 @@ conventions (e.g. programming or versioning guidelines, documentation or naming 
 </div>
 </div>
 <div style="page-break-after: always;"></div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -5212,7 +5310,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-02-10 11:11:30 UTC
+Last updated 2026-02-10 11:43:27 UTC
 </div>
 </div>
 </body>
