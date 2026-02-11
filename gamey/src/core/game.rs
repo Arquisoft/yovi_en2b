@@ -1,5 +1,5 @@
 use crate::core::SetIdx;
-use crate::core::player_set::GroupSet;
+use crate::core::player_set::PlayerSet;
 use crate::{Coordinates, GameAction, GameYError, Movement, PlayerId, RenderOptions, YEN};
 use std::collections::HashMap;
 use std::fmt::Write;
@@ -20,30 +20,16 @@ pub struct GameY {
 
     // Mapping from coordinates to identifiers of players who placed stones there.
     board_map: HashMap<Coordinates, (SetIdx, PlayerId)>,
-    //? Refactoriazar board_map por:
-    //? "cell_sets: Vec<Option<(SetIdx, PlayerId)>>": "celda -> (grupo, owner)"
-
-    // Union-Find: connected groups tracking which sides they touch
-    sets: Vec<GroupSet>, //? grupo -> (parent + lados que ese grupo toca)
-
-    //# board_map (o cell_sets) y sets no comparten espacio de indices pero podrían compartirlo
-
-    available_cells: Vec<u32>,
-    //? Refactorizar usando un FixedBitSet
-
-    // Pre-computed caches for fast lookups
-    //idx_to_coords: Vec<Coordinates>,
-    //neighbors_cache: Vec<SmallVec<[usize; 6]>>,
-
-    // History of moves made in the game.
-    history: Vec<Movement>,
-    //? Mantener history (por compatibiliadad) 
-    //? pero crear un "undo_stack: Vec<UndoInfo>" para optimizar backtraking 
 
     status: GameStatus,
 
-    // Dirty flag to track whether the connectivity data needs to be recomputed
-    connectivity_dirty: bool,
+    // History of moves made in the game.
+    history: Vec<Movement>,
+
+    // Union-Find data structure to track connected components for each player
+    sets: Vec<PlayerSet>,
+
+    available_cells: Vec<u32>,
 }
 
 /// Represents the state of a single cell on the board.
@@ -68,13 +54,16 @@ impl GameY {
                 next_player: PlayerId::new(0),
             },
             available_cells: (0..total_cells).collect(),
-            connectivity_dirty: true,
         }
     }
 
     /// Returns the current game status.
     pub fn status(&self) -> &GameStatus {
         &self.status
+    }
+
+    pub fn board_map(&self) -> &HashMap<Coordinates, (SetIdx, PlayerId)> {
+        &self.board_map
     }
 
     /// Returns true if the game has ended (has a winner).
@@ -162,20 +151,6 @@ impl GameY {
         Ok(())
     }
 
-    /// Undoes the last move.
-    fn undo_move(&mut self) -> Result<()> {
-        let movement = self.history.pop().ok_or(GameYError::NoMoveToUndo)?;
-        match &movement {
-            Movement::Placement { player, coords } => {
-                self.undo_placement(*player, *coords)?;
-            }
-            Movement::Action { player, action } => {
-                self.undo_action(*player, action);
-            }
-        }
-        Ok(())
-    }
-
     /// Orchestrates the placement logic
     fn handle_placement(&mut self, player: PlayerId, coords: Coordinates) -> Result<()> {
         self.validate_placement(player, coords)?;
@@ -187,21 +162,6 @@ impl GameY {
         let won = self.connect_neighbors_and_check_win(coords, player, set_idx);
 
         self.update_status_after_placement(player, won);
-
-        Ok(())
-    }
-
-    /// Undoes a placement move.
-    fn undo_placement(&mut self, player: PlayerId, coords: Coordinates) -> Result<()> {
-        // TODO: Implement undo_placement
-
-        // Unregister the piece (add it to available_cells and remove from board_map)
-
-        // Rollback state of the game
-
-        // Mark connectivity data as dirty
-        self.connectivity_dirty = true;
-
         Ok(())
     }
 
@@ -262,11 +222,6 @@ impl GameY {
         }
     }
 
-    /// Undoes a game action.
-    fn undo_action(&mut self, player: PlayerId, action: &GameAction) {
-        // TODO: Implement undo_action
-    }
-
     /// Handles validation logic (Game Over checks and Occupancy)
     fn validate_placement(&self, player: PlayerId, coords: Coordinates) -> Result<()> {
         if self.check_game_over() {
@@ -285,15 +240,11 @@ impl GameY {
     /// Updates internal data structures (Available cells, Sets, Map)
     /// Returns the index of the newly created set.
     fn register_piece(&mut self, player: PlayerId, coords: Coordinates) -> usize {
-
-        //? Esto es overhead innecesario, precalcular coordenadas en el constructor
         let cell_idx = coords.to_index(self.board_size);
-
-        //? Se puede optimizar usando un FixedBitSet (o híbrido si te vas al extremo) 
         self.available_cells.retain(|&x| x != cell_idx);
 
         let set_idx = self.sets.len();
-        let new_set = GroupSet {
+        let new_set = PlayerSet {
             parent: set_idx,
             touches_side_a: coords.touches_side_a(),
             touches_side_b: coords.touches_side_b(),
@@ -330,6 +281,10 @@ impl GameY {
             neighbors.push(Coordinates::new(x, y + 1, z - 1));
         }
         neighbors
+    }
+
+    pub fn cell_owner(&self, coords: &Coordinates) -> Option<PlayerId> {
+        self.board_map.get(coords).map(|(_, player)| *player)
     }
 
     /// Renders the current state of the board as a text string.
@@ -580,7 +535,7 @@ impl From<&GameY> for YEN {
     }
 }
 
-fn other_player(player: PlayerId) -> PlayerId {
+pub fn other_player(player: PlayerId) -> PlayerId {
     // Assuming two players with IDs 0 and 1
     if player.id() == 0 {
         PlayerId::new(1)
