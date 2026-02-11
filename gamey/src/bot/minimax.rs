@@ -1,16 +1,14 @@
-use crate::{Coordinates, GameStatus, GameY, Movement, PlayerId, YBot, game};
+use crate::{Coordinates, GameY, Movement, PlayerId, YBot, heuristics::manhattan};
 use std::{
     cmp,
     time::{Duration, Instant},
 };
 
+pub const WIN_SCORE: i32 = 100_000;
+
+pub const LOSE_SCORE: i32 = -WIN_SCORE;
+
 const INFINITY: i32 = i32::MAX / 2;
-
-const WIN_SCORE: i32 = 100_000;
-
-const LOSE_SCORE: i32 = -WIN_SCORE;
-
-const MAX_DISTANCE: i32 = 1000;
 
 pub struct MinimaxBot {
     max_time_ms: u64,
@@ -30,17 +28,13 @@ impl YBot for MinimaxBot {
     fn choose_move(&self, board: &GameY) -> Option<Coordinates> {
         let bot_player = board.next_player()?; // Early exit si terminó el juego
 
-        let (best_move, _) = iterative_deepening_search(board, self.max_time_ms, bot_player);
+        let best_move = iterative_deepening_search(board, self.max_time_ms, bot_player);
         let coordinates = Coordinates::from_index(best_move, board.board_size());
         Some(coordinates)
     }
 }
 
-pub fn iterative_deepening_search(
-    game: &GameY,
-    max_time_ms: u64,
-    bot_player: PlayerId,
-) -> (u32, u8) {
+pub fn iterative_deepening_search(game: &GameY, max_time_ms: u64, bot_player: PlayerId) -> u32 {
     let start_time = Instant::now();
     let time_limit = Duration::from_millis(max_time_ms);
 
@@ -81,13 +75,13 @@ pub fn iterative_deepening_search(
         }
     }
 
-    let elapsed = start_time.elapsed();
     println!(
         "Search completed: depth reached = {}, time = {:?}",
-        depth_reached, elapsed
+        depth_reached,
+        start_time.elapsed()
     );
 
-    (best_move, depth_reached)
+    best_move
 }
 
 fn search_best_move(game: &GameY, depth: u8, bot_player: PlayerId) -> (u32, i32) {
@@ -204,44 +198,7 @@ fn simulate_move(game: &GameY, move_idx: u32) -> GameY {
 }
 
 fn evaluate_board(game: &GameY, bot_player: PlayerId) -> i32 {
-    manhattan_board_eval(game, bot_player) // Very simple evaluation
-}
-
-pub fn manhattan_board_eval(game: &GameY, bot_player: PlayerId) -> i32 {
-    if let &GameStatus::Finished { winner } = game.status() {
-        if winner == bot_player {
-            return WIN_SCORE;
-        } else {
-            return LOSE_SCORE;
-        }
-    }
-
-    let opponent = game::other_player(bot_player);
-
-    let my_distances = calculate_geometric_distances_to_edges(&game, bot_player);
-    let opp_distances = calculate_geometric_distances_to_edges(&game, opponent);
-
-    let my_total = my_distances.iter().sum::<i32>();
-    let opp_total = opp_distances.iter().sum::<i32>();
-
-    opp_total - my_total
-}
-
-/// Calcula las distancias geométricas mínimas desde las piezas de un jugador a los 3 bordes
-fn calculate_geometric_distances_to_edges(game: &GameY, player: PlayerId) -> [i32; 3] {
-    let mut min_dist_side_a = MAX_DISTANCE;
-    let mut min_dist_side_b = MAX_DISTANCE;
-    let mut min_dist_side_c = MAX_DISTANCE;
-
-    for (coords, (_, cell_player)) in game.board_map().iter() {
-        if *cell_player == player {
-            min_dist_side_a = min_dist_side_a.min(coords.x() as i32);
-            min_dist_side_b = min_dist_side_b.min(coords.y() as i32);
-            min_dist_side_c = min_dist_side_c.min(coords.z() as i32);
-        }
-    }
-
-    [min_dist_side_a, min_dist_side_b, min_dist_side_c]
+    manhattan::evaluate_board(game, bot_player) // Very simple evaluation
 }
 
 #[cfg(test)]
@@ -299,134 +256,6 @@ mod tests {
         assert!(
             chosen_move.is_none(),
             "Bot should return None when game is over"
-        );
-    }
-
-    // ============================================================================
-    // Tests de la función de evaluación
-    // ============================================================================
-
-    #[test]
-    fn test_evaluate_empty_board_is_zero() {
-        let game = GameY::new(5);
-        let score = manhattan_board_eval(&game, PlayerId::new(0));
-
-        // En tablero vacío, ambos jugadores tienen distancia MAX_DISTANCE a todos los lados
-        assert_eq!(score, 0, "Empty board should evaluate to 0");
-    }
-
-    #[test]
-    fn test_evaluate_winning_position_returns_win_score() {
-        let mut game = GameY::new(2);
-        // Player 0 gana conectando los 3 lados
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(1, 0, 0),
-        })
-        .unwrap();
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(1),
-            coords: Coordinates::new(0, 1, 0),
-        })
-        .unwrap();
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(0, 0, 1),
-        })
-        .unwrap();
-
-        let score = manhattan_board_eval(&game, PlayerId::new(0));
-        assert_eq!(score, WIN_SCORE, "Winning position should return WIN_SCORE");
-
-        let score_opponent = manhattan_board_eval(&game, PlayerId::new(1));
-        assert_eq!(
-            score_opponent, LOSE_SCORE,
-            "Losing position should return LOSE_SCORE"
-        );
-    }
-
-    #[test]
-    fn test_evaluate_closer_to_edges_is_better() {
-        let mut game = GameY::new(7);
-
-        // Player 0: Múltiples piezas cerca de bordes
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(0, 0, 6), // [0, 0, 6]
-        })
-        .unwrap();
-
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(1),
-            coords: Coordinates::new(3, 3, 0), // [3, 3, 0]
-        })
-        .unwrap();
-
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(6, 0, 0), // [6, 0, 0]
-        })
-        .unwrap();
-
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(1),
-            coords: Coordinates::new(3, 2, 1), // [3, 2, 1]
-        })
-        .unwrap();
-
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(0, 6, 0), // [0, 6, 0]
-        })
-        .unwrap();
-
-        // Ahora P0 tiene mínimos [0, 0, 0] → suma = 0 (toca los 3 lados!)
-        // P1 tiene mínimos [3, 2, 0] → suma = 5
-
-        let score_p0 = manhattan_board_eval(&game, PlayerId::new(0));
-        let score_p1 = manhattan_board_eval(&game, PlayerId::new(1));
-
-        println!("Score P0: {score_p0}");
-        println!("Score P1: {score_p1}");
-
-        assert!(
-            score_p0 > 0,
-            "Player 0 touching all edges should have positive score"
-        );
-        assert!(
-            score_p1 < 0,
-            "Player 1 far from edges should have negative score"
-        );
-    }
-
-    #[test]
-    fn test_distances_calculation_corner_cell() {
-        let mut game = GameY::new(5);
-
-        // Coloca pieza en esquina (0, 0, 4) que toca side_a (x=0) y side_b (y=0)
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(0, 0, 4),
-        })
-        .unwrap();
-
-        let distances = calculate_geometric_distances_to_edges(&game, PlayerId::new(0));
-
-        assert_eq!(distances[0], 0, "Distance to side_a should be 0 (x=0)");
-        assert_eq!(distances[1], 0, "Distance to side_b should be 0 (y=0)");
-        assert_eq!(distances[2], 4, "Distance to side_c should be 4 (z=4)");
-    }
-
-    #[test]
-    fn test_distances_calculation_no_pieces() {
-        let game = GameY::new(5);
-
-        let distances = calculate_geometric_distances_to_edges(&game, PlayerId::new(0));
-
-        assert_eq!(
-            distances,
-            [MAX_DISTANCE, MAX_DISTANCE, MAX_DISTANCE],
-            "Player with no pieces should have MAX_DISTANCE to all sides"
         );
     }
 
