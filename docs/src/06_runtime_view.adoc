@@ -39,51 +39,85 @@ See https://docs.arc42.org/section-6/[Runtime View] in the arc42 documentation.
 ****
 endif::arc42help[]
 
-=== <Runtime Scenario 1>
+The runtime view describes the behaviour and interactions of the system's building blocks through selected scenarios. It captures how the TypeScript Web Application and the Rust Module cooperate to fulfill the requirements.
+
+=== User Registration and History Consultation
+
+This scenario references the high-level requirement: _Users will be able to register and consult participation history._ 
+It describes how a user interacts with the system to manage their profile and view their match history.
+
+* _<insert sequence diagram of the scenario described>_
+
+*1.* User provides registration details through the Web Frontend.
+
+*2.* Web Application (TypeScript) receives the request and persists the user information in the [TODO: Database Name/Type].
+
+*3.* When the User requests their history, the Web Application queries the [TODO: Database Name/Type].
+
+*4.* The Web Application calculates metrics (games played, win/loss ratio) and returns them to the Web Frontend.
 
 
-* _<insert runtime diagram or textual description of the scenario>_
-* _<insert description of the notable aspects of the interactions between the
-building block instances depicted in this diagram.>_
+=== Human vs Computer Match 
+This scenario references the high-level requirement: _Classic version of Game Y, player-vs-machine mode._ 
+It covers the logic when a human player makes a move on the board.
 
-It is possible to use a sequence diagram:
+* _<insert sequence diagram of the scenario described>_
 
-[d2, diagram_prototype, svg, theme=200, sketch=true, pad=10, width=400, height=400]
-----
-vars: {
-  d2-config: {
-    theme-overrides: {
-      n7: "#0D1117"
-    }
-  }
-}
+*1.* User selects a position on the board via the Web Frontend.
 
-shape: sequence_diagram
+*2.* Web Application (TypeScript) sends a JSON message in YEN notation to the Rust Module to verify the move.
 
-alice: Alice
-alice.shape: c4-person
+*3.* Rust Module verifies if the match has been won or if the move is valid.
 
-bob: Bob
-bob.shape: c4-person
+*4.* Rust Module returns the result (Move valid/Match won/Match continues) to the Web Application.
 
-bob_pod: "Bob's\nPod"
-bob_pod.shape: cylinder
+*5.* Web Application updates the game state in the [TODO: Database Name/Type] and reflects the new state in the Web Frontend.
 
-alice -> bob: Authentication request
-bob -> alice: Authentication response {
-  style.stroke-dash: 2
-}
-alice -> bob_pod: Store route {
-  style.stroke-dash: 2
-}
-alice -> bob: Authentication request
-bob -> alice: Authentication response {
-  style.stroke-dash: 2
-}
-----
 
-=== <Runtime Scenario 2>
+=== Computer Strategy Execution 
+This scenario references the high-level requirement: _The game against the computer must implement more than one strategy._ 
+It describes how the system suggests of executes a move for the computer.
 
-=== ...
+* _<insert sequence diagram of the scenario described>_
 
-=== <Runtime Scenario n>
+*1.* Web Application (TypeScript) triggers a request for a computer move based on the user-selected difficulty/strategy.
+
+*2.* The request is sent to the Rust Module containing the current board state in YEN notation.
+
+*3.* Rust Module invokes the selected strategy algorithm to calculate the next move.
+
+*4.* Rust Module suggests the next move via its Web Service Interface.
+
+*5.* Web Application receives the move, updates the board, and notifies the User.
+
+
+=== External Bot Interaction
+This scenario references the high-level requirement: _API will enable a bot to play... a 'play' method will be exposed._ 
+It describes the interaction of an external bot with the YOVI system.
+
+* _<insert sequence diagram of the scenario described>_
+
+*1.* External Bot calls the 'play' method on the External API (Web Application).
+
+*2.* The request includes a 'position' parameter and the board state in YEN notation.
+
+*3.* Web Application forwards the state to the Rust Module for validation and win-condition checking.
+
+*4.* Rust Module returns the updated state/result to the Web Application.
+
+*5.* Web Application returns the next move to the External Bot using YEN notation.
+
+
+=== Persistence and State Management
+This scenario references the high-level requirement: _WebApp accessing the database._ 
+It describes the basic data flow required for the first project milestone.
+
+* _<insert sequence diagram of the scenario described>_
+
+*1.* The Web Application receives a game-related action.
+
+*2.* The Web Application establishes a connection to the [TODO: Database Technology].
+
+*3.* The Web Application performs a CRUD operation (Create/Read/Update/Delete) to ensure game data is not lost between sessions.
+
+*4.* The [TODO: Database Technology] confirms the transaction, allowing the WebApp to proceed with the runtime logic.
