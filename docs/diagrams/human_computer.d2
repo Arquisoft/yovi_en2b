@@ -1,0 +1,27 @@
+shape: sequence_diagram
+
+# Participants
+User: Human Player
+Frontend: Web Frontend (TypeScript)
+Backend: Web Application (TS)
+Engine: Rust Module (Engine)
+DB: Database
+
+# Scenario: Human Player makes a move
+User -> Frontend: Selects cell on board
+Frontend -> Backend: Send move request (position)
+Backend -> DB: Retrieve current match state
+DB -> Backend: Return match data
+
+# Internal Validation & Engine Call
+# TODO: replace this for the actual call
+Backend -> Engine: POST /verify (Move + State in YEN notation)
+Engine -> Engine: Check move validity
+Engine -> Engine: Verify win/loss status
+Engine -> Backend: Return verification result (JSON)
+
+# Finalizing the Turn
+Backend -> DB: Persist updated match state
+DB -> Backend: Confirmation
+Backend -> Frontend: Updated board state (YEN notation)
+Frontend -> User: Render new board & show status

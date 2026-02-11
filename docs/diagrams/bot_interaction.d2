@@ -1,0 +1,21 @@
+shape: sequence_diagram
+
+# Participants
+Bot: External Bot (Client)
+API: External API (Web App TS)
+Engine: Rust Module (Engine)
+
+# Scenario: External Bot plays against the system
+# TODO: replace with the actual call
+Bot -> API: POST /play
+note: "Request and state must be in YEN notation"
+
+# Validation via Rust Engine
+# TODO: replace with the actual call
+API -> Engine: POST /verify (New State)
+Engine -> Engine: Check validity & win conditions
+Engine -> API: Return validation result (JSON)
+
+# Response to Bot
+API -> Bot: Return next move/result (YEN notation)
+note: "API must be fully documented (Lab 1 requirement)"

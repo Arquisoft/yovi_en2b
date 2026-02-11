@@ -1,0 +1,22 @@
+shape: sequence_diagram
+
+# Participants
+Backend: Web Application (TS)
+Engine: Rust Module (Engine)
+DB: Database
+
+# Scenario: Computer calculates its turn
+Backend -> DB: Fetch current board state
+DB -> Backend: Return match data
+
+# Strategy Request
+# TODO: replace this for the actual call
+Backend -> Engine: POST /suggest-move (State + Strategy ID)
+note: "YEN notation used for board state"
+Engine -> Engine: Execute selected strategy logic
+Engine -> Backend: Return suggested position (YEN notation)
+
+# Finalizing the Computer's Turn
+Backend -> DB: Persist move & update match state
+DB -> Backend: Success confirmation
+Backend -> Backend #TODO: Check if match won
