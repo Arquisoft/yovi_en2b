@@ -1,100 +1,44 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-deployment-view]]
-
-
 == Deployment View
 
-ifdef::arc42help[]
-[role="arc42help"]
-****
-.Content
-The deployment view describes:
+The deployment view describes the physical environment in which the YOVI system is executed and the automation processes that manage its lifecycle.
 
- 1. technical infrastructure used to execute your system, with infrastructure elements like geographical locations, environments, computers, processors, channels and net topologies as well as other infrastructure elements and
+=== 7.1 Infrastructure Level 1: Cloud Environment
+The system is deployed on the Microsoft Azure cloud platform, utilizing the "Azure for Students" subscription.
 
-2. mapping of (software) building blocks to that infrastructure elements.
+* **Location:** France Central.
+* **Operating System:** Linux Ubuntu.
+* **Hardware Profile:** Standard B2ats v2 (2 vCPUs, 1 GiB memory).
 
-Often systems are executed in different environments, e.g. development environment, test environment, production environment. In such cases you should document all relevant environments.
+image::../images/infrastructure_deployment.svg[Infrastructure Mapping, width=800, align="center"]
 
-Especially document a deployment view if your software is executed as distributed system with more than one computer, processor, server or container or when you design and construct your own hardware processors and chips.
+=== 7.2 Infrastructure Level 2: Execution Environment (Docker)
+The system follows a "Cattle" not "Pets" approach, using containerization to ensure consistency between development and production.
 
-From a software perspective it is sufficient to capture only those elements of an infrastructure that are needed to show a deployment of your building blocks. Hardware architects can go beyond that and describe an infrastructure to any level of detail they need to capture.
+[cols="1,1,2"]
+|===
+| Container | Technology | Responsibility
+| **Web Application** | TypeScript / Node.js | Handles the UI, User sessions, and API requests.
+| **Game Engine** | Rust | Performs game logic validation and strategy suggestions.
+| **Database** | [TODO: Technology] | Persistent storage for users and match history.
+| **Monitoring** | Prometheus / Grafana | Observability of system health (Ports 9090/9091).
+|===
 
-.Motivation
-Software does not run without hardware.
-This underlying infrastructure can and will influence a system and/or some
-cross-cutting concepts. Therefore, there is a need to know the infrastructure.
+=== 7.3 Network and Connectivity
+The Virtual Machine is configured with a Public IP and specific inbound port rules as required by the project specifications:
 
-.Form
+* **Port 80/443:** Public access to the Web Application.
+* **Port 3000/4000:** Internal service communication.
+* **Port 22:** Restricted SSH access for automated deployment.
+* **Ports 9090/9091:** Monitoring and metrics data.
 
-Maybe a highest level deployment diagram is already contained in section 3.2. as
-technical context with your own infrastructure as ONE black box. In this section one can
-zoom into this black box using additional deployment diagrams:
+=== 7.4 Deployment Pipeline (CI/CD)
+The system utilizes GitHub Actions for Continuous Deployment (CD). The process is triggered automatically when a new release is created or a version tag is pushed.
 
-* UML offers deployment diagrams to express that view. Use it, probably with nested diagrams,
-when your infrastructure is more complex.
-* When your (hardware) stakeholders prefer other kinds of diagrams rather than a deployment diagram, let them use any kind that is able to show nodes and channels of the infrastructure.
+image::../images/deployment_pipeline.svg[CI/CD Pipeline, width=800, align="center"]
 
-
-.Further Information
-
-See https://docs.arc42.org/section-7/[Deployment View] in the arc42 documentation.
-
-****
-endif::arc42help[]
-
-=== Infrastructure Level 1
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Describe (usually in a combination of diagrams, tables, and text):
-
-* distribution of a system to multiple locations, environments, computers, processors, .., as well as physical connections between them
-* important justifications or motivations for this deployment structure
-* quality and/or performance features of this infrastructure
-* mapping of software artifacts to elements of this infrastructure
-
-For multiple environments or alternative deployments please copy and adapt this section of arc42 for all relevant environments.
-****
-endif::arc42help[]
-
-_**<Overview Diagram>**_
-
-Motivation::
-
-_<explanation in text form>_
-
-Quality and/or Performance Features::
-
-_<explanation in text form>_
-
-Mapping of Building Blocks to Infrastructure::
-_<description of the mapping>_
-
-
-=== Infrastructure Level 2
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Here you can include the internal structure of (some) infrastructure elements from level 1.
-
-Please copy the structure from level 1 for each selected element.
-****
-endif::arc42help[]
-
-==== _<Infrastructure Element 1>_
-
-_<diagram + explanation>_
-
-==== _<Infrastructure Element 2>_
-
-_<diagram + explanation>_
-
-...
-
-==== _<Infrastructure Element n>_
-
-_<diagram + explanation>_
+1. **Automation:** Configuration is stored as YAML files in `.github/workflows`.
+2. **Artifact Management:** Docker images are built and stored in the GitHub Container Registry (GHCR).
+3. **Secrets Management:** Sensitive data (IP addresses, SSH keys, DB passwords) are stored as GitHub Actions Secrets and injected into the environment at runtime.

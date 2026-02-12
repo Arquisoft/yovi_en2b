@@ -1,0 +1,28 @@
+direction: right
+Azure: Azure Cloud {
+  Location: France Central
+  VM: Virtual Machine (Ubuntu Linux) {
+    shape: package
+    Docker: Docker Engine {
+      WebApp: Web Application Container {
+        Language: TypeScript
+        Port: "3000"
+      }
+      Engine: Rust Engine Container {
+        Language: Rust
+        Port: "4000"
+      }
+      DB: [TODO: Database Technology] Container {
+        Port: "[TODO: Port]"
+      }
+      Monitoring: Prometheus/Grafana {
+        Ports: "9090, 9091"
+      }
+    }
+  }
+}
+
+User: User (Browser)
+User -> Azure.VM.Docker.WebApp: HTTP (Port 80/4000)
+Azure.VM.Docker.WebApp -> Azure.VM.Docker.Engine: HTTP/JSON (YEN)
+Azure.VM.Docker.WebApp -> Azure.VM.Docker.DB: SQL/NoSQL
