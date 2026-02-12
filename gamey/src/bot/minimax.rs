@@ -1,4 +1,7 @@
-use crate::{Coordinates, GameY, Movement, PlayerId, YBot, heuristics::manhattan};
+use crate::{
+    Coordinates, GameStatus, GameY, Movement, PlayerId, YBot, game, heuristics::manhattan_center,
+    player,
+};
 use std::{
     cmp,
     time::{Duration, Instant},
@@ -28,10 +31,42 @@ impl YBot for MinimaxBot {
     fn choose_move(&self, board: &GameY) -> Option<Coordinates> {
         let bot_player = board.next_player()?; // Early exit si terminó el juego
 
+        if let Some(coordinates) = greedy_search(board, bot_player) {
+            return Some(coordinates);
+        };
+
         let best_move = iterative_deepening_search(board, self.max_time_ms, bot_player);
+
         let coordinates = Coordinates::from_index(best_move, board.board_size());
         Some(coordinates)
     }
+}
+
+pub fn greedy_search(game: &GameY, bot_player: PlayerId) -> Option<Coordinates> {
+    let moves = game.available_cells();
+    if moves.is_empty() {
+        panic!("No available moves");
+    }
+
+    let opponent = game::other_player(bot_player);
+
+    for &move_idx in moves {
+        let next_game = simulate_move(game, move_idx);
+        if let &GameStatus::Finished { winner } = next_game.status()
+            && winner == bot_player
+        {
+            println!(">>> INSTANT WIN FOUND at {}", move_idx);
+            return Some(Coordinates::from_index(move_idx, next_game.board_size()));
+        }
+        let next_game = simulate_player_move(game, move_idx, opponent);
+        if let &GameStatus::Finished { winner } = next_game.status()
+            && winner == opponent
+        {
+            println!(">>> BLOCKING IMMEDIATE THREAT at {}", move_idx);
+            return Some(Coordinates::from_index(move_idx, next_game.board_size()));
+        }
+    }
+    None
 }
 
 pub fn iterative_deepening_search(game: &GameY, max_time_ms: u64, bot_player: PlayerId) -> u32 {
@@ -197,8 +232,21 @@ fn simulate_move(game: &GameY, move_idx: u32) -> GameY {
     game_clone
 }
 
+fn simulate_player_move(game: &GameY, move_idx: u32, player: PlayerId) -> GameY {
+    let mut game_clone = game.clone();
+
+    game_clone
+        .add_move(Movement::Placement {
+            player: player,
+            coords: Coordinates::from_index(move_idx, game_clone.board_size()),
+        })
+        .expect("UNEXPECTED ERR");
+
+    game_clone
+}
+
 fn evaluate_board(game: &GameY, bot_player: PlayerId) -> i32 {
-    manhattan::evaluate_board(game, bot_player) // Very simple evaluation
+    manhattan_center::evaluate_board(game, bot_player) // Very simple center control rewarding evaluation
 }
 
 #[cfg(test)]

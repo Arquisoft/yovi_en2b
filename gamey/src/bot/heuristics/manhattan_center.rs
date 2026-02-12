@@ -11,11 +11,9 @@ pub fn evaluate_board(game: &GameY, bot_player: PlayerId) -> i32 {
 
     let opponent = game::other_player(bot_player);
 
-    // En lugar de ir a los bordes, peleamos por el centro
     let my_center = center_control_score(game, bot_player);
     let opp_center = center_control_score(game, opponent);
 
-    // Usa la resta CORRECTA, pero con la métrica CORRECTA
     my_center - opp_center
 }
 
