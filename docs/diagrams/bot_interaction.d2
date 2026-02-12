@@ -1,21 +1,31 @@
-shape: sequence_diagram
+Bot API: {
+        style: {
+        font-size: 40
+        bold: true
+    }    
+    shape: sequence_diagram
 
-# Participants
-Bot: External Bot (Client)
-API: External API (Web App TS)
-Engine: Rust Module (Engine)
+    # Participants
+    Bot: External Bot
+    Backend: Web Application (TS)
+    Engine: Game Engine
 
-# Scenario: External Bot plays against the system
-# TODO: replace with the actual call
-Bot -> API: POST /play
-note: "Request and state must be in YEN notation"
+    # Scenario: Computer calculates its turn
+    Bot."YEN notation used for board state"
 
-# Validation via Rust Engine
-# TODO: replace with the actual call
-API -> Engine: POST /verify (New State)
-Engine -> Engine: Check validity & win conditions
-Engine -> API: Return validation result (JSON)
+    Bot -> Backend: play(boardState)
 
-# Response to Bot
-API -> Bot: Return next move/result (YEN notation)
-note: "API must be fully documented (Lab 1 requirement)"
+    Backend -> Engine: Request next move
+    Engine -> Engine: Calculate the next move
+    Engine -> Backend: Return the next move {
+            style: {
+                stroke-dash: 3
+            }
+        }
+
+    Backend -> Bot: Next move {
+            style: {
+                stroke-dash: 3
+            }
+        }
+}

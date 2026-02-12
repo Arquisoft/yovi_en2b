@@ -41,34 +41,19 @@ endif::arc42help[]
 
 The runtime view describes the behaviour and interactions of the system's building blocks through selected scenarios. It captures how the TypeScript Web Application and the Rust Module cooperate to fulfill the requirements.
 
-=== User Registration and History Consultation
-
-This scenario references the high-level requirement: _Users will be able to register and consult participation history._ 
-It describes how a user interacts with the system to manage their profile and view their match history.
-
-image::../images/registration_history.svg[alt="Registration Sequence", width=600, align="center"]
-
-*1.* User provides registration details through the Web Frontend.
-
-*2.* Web Application (TypeScript) receives the request and persists the user information in the [TODO: Database Name/Type].
-
-*3.* When the User requests their history, the Web Application queries the [TODO: Database Name/Type].
-
-*4.* The Web Application calculates metrics (games played, win/loss ratio) and returns them to the Web Frontend.
-
 
 === Human vs Computer Match 
 This scenario references the high-level requirement: _Classic version of Game Y, player-vs-machine mode._ 
 It covers the logic when a human player makes a move on the board.
 
-==== Quality Context (Stimulus-Response)
+==== Quality Context
 [cols="1,3"]
 |===
 | **Source** | Human Player
 | **Stimulus** | Selects a position on the board via the Web Frontend
 | **Artifact** | System (Web App + Rust Module)
 | **Environment** | Normal operation
-| **Response** | The move is validated, the state is persisted, and the board is updated
+| **Response** | The move is validated, if the game ends the result is persisted, and the board is updated
 | **Response Measure** | The UI reflects the new state in less than [TODO: X seconds]
 |===
 
@@ -79,11 +64,44 @@ image::../images/human_computer.svg[alt="Registration Sequence", width=600, alig
 
 *2.* Web Application (TypeScript) sends a JSON message in YEN notation to the Rust Module to verify the move.
 
-*3.* Rust Module verifies if the match has been won or if the move is valid.
+*3.* Rust Module verifies if the move is valid and if the match has ended.
 
 *4.* Rust Module returns the result (Move valid/Match won/Match continues) to the Web Application.
 
-*5.* Web Application updates the game state in the [TODO: Database Name/Type] and reflects the new state in the Web Frontend.
+*5.* If the game ended the Web Application updates the game state in the [TODO: Database Name/Type] and reflects the new state in the Web Frontend anyways.
+
+
+=== User Registration and History Consultation
+
+This scenario references the high-level requirement: _Users will be able to register and consult participation history._ 
+It describes how a user interacts with the system to manage their profile and view their match history.
+
+==== Quality Context
+[cols="1,3"]
+|===
+| **Source** | Human Player
+| **Stimulus** | Provides registration details via the Web Frontend
+| **Artifact** | System (Web App + Rust Module)
+| **Environment** | Normal operation
+| **Response** | Redirects the user to the game app and allows to view the match history
+| **Response Measure** | The UI reflects the new state in less than [TODO: X seconds]
+|===
+
+==== Interaction sequence
+
+[cols="a,a", frame=none, grid=none]
+|===
+| image::../images/registration.svg[title="User registration", width=100%]
+| image::../images/history.svg[title="History consultation", width=100%]
+|===
+
+*1.* User provides registration details through the Web Frontend.
+
+*2.* Web Application (TypeScript) receives the request and validates the information with the data on the [TODO: Database Name/Type].
+
+*3.* When the registered User requests their history, the Web Application queries the [TODO: Database Name/Type] for the raw data.
+
+*4.* The Web Application then calculates the history metrics and returns them to the Web Frontend for rendering.
 
 
 === Computer Strategy Execution 
@@ -100,7 +118,7 @@ image::../images/computer_strat.svg[alt="Registration Sequence", width=600, alig
 
 *4.* Rust Module suggests the next move via its Web Service Interface.
 
-*5.* Web Application receives the move, updates the board, and notifies the User.
+*5.* Web Application receives the move and performs the action.
 
 
 === External Bot Interaction
@@ -111,25 +129,11 @@ image::../images/bot_interaction.svg[alt="Registration Sequence", width=600, ali
 
 *1.* External Bot calls the 'play' method on the External API (Web Application).
 
-*2.* The request includes a 'position' parameter and the board state in YEN notation.
+*2.* The request includes a 'boardState' parameter, the board state in YEN notation.
 
-*3.* Web Application forwards the state to the Rust Module for validation and win-condition checking.
+*3.* Web Application forwards the state to the Rust Module for the best's move calculation.
 
 *4.* Rust Module returns the updated state/result to the Web Application.
 
 *5.* Web Application returns the next move to the External Bot using YEN notation.
 
-
-=== Persistence and State Management
-This scenario references the high-level requirement: _WebApp accessing the database._ 
-It describes the basic data flow required for the first project milestone.
-
-image::../images/db_logic.svg[alt="Registration Sequence", width=600, align="center"]
-
-*1.* The Web Application receives a game-related action.
-
-*2.* The Web Application establishes a connection to the [TODO: Database Technology].
-
-*3.* The Web Application performs a CRUD operation (Create/Read/Update/Delete) to ensure game data is not lost between sessions.
-
-*4.* The [TODO: Database Technology] confirms the transaction, allowing the WebApp to proceed with the runtime logic.

@@ -1,27 +1,49 @@
-shape: sequence_diagram
+History consultation: {
+        style: {
+        font-size: 40
+        bold: true
+    }   
+    shape: sequence_diagram
 
-# Participants
-User: Human Player
-Frontend: Web Frontend (TypeScript)
-Backend: Web Application (TS)
-Engine: Rust Module (Engine)
-DB: Database
+    # Participants
+    User: Human Player
+    Frontend: Web Frontend (TS)
+    Backend: Web Application (TS)
+    Engine: Game Engine
+    DB: Database
 
-# Scenario: Human Player makes a move
-User -> Frontend: Selects cell on board
-Frontend -> Backend: Send move request (position)
-Backend -> DB: Retrieve current match state
-DB -> Backend: Return match data
+    # 1. Start Turn
+    User -> Frontend: Selects cell
+    Frontend -> Backend: Perform the move
 
-# Internal Validation & Engine Call
-# TODO: replace this for the actual call
-Backend -> Engine: POST /verify (Move + State in YEN notation)
-Engine -> Engine: Check move validity
-Engine -> Engine: Verify win/loss status
-Engine -> Backend: Return verification result (JSON)
+    # 2. Check the move
+    Backend -> Engine: Verify the move
+    Engine -> Backend: Return validation/win status {
+        style: {
+            stroke-dash: 3
+        }
+    }
 
-# Finalizing the Turn
-Backend -> DB: Persist updated match state
-DB -> Backend: Confirmation
-Backend -> Frontend: Updated board state (YEN notation)
-Frontend -> User: Render new board & show status
+    # 3. Check if the game is over
+    If match has ended {
+        # This only happens if Rust says "Match Won"
+        Backend -> DB: Save match results
+        DB -> Backend: Confirmation status {
+        style: {
+            stroke-dash: 3
+        }
+    }
+    }
+
+    # 4. UI Update
+    Backend -> Frontend: Updated state {
+        style: {
+            stroke-dash: 3
+        }
+    }
+    Frontend -> User: Render result & show status {
+        style: {
+            stroke-dash: 3
+        }
+    }
+}
