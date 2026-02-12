@@ -35,6 +35,10 @@ pub struct CliArgs {
     #[arg(short, long, default_value = "random_bot")]
     pub bot: String,
 
+    /// Whether the bot should play first (only used with --mode=computer)
+    #[arg(long, default_value_t = false)]
+    pub bot_first: bool,
+
     /// Port to run the server on (only used with --mode=server)
     #[arg(short, long, default_value_t = 3000)]
     pub port: u16,
@@ -85,6 +89,11 @@ pub fn run_cli_game() -> Result<()> {
         }
     };
     let mut game = game::GameY::new(args.size);
+    if args.mode == Mode::Computer && args.bot_first {
+        println!("Bot plays first...");
+        trigger_bot_move(&mut game, bot.as_ref());
+    }
+
     loop {
         println!("{}", game.render(&render_options));
         let status = game.status();

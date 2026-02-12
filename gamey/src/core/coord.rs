@@ -40,6 +40,14 @@ impl Coordinates {
         self.z
     }
 
+    /// Returns true if the coordinates are valid for the given board size.
+    pub fn is_valid(&self, board_size: u32) -> bool {
+        self.x + self.y + self.z == board_size - 1
+            && self.x < board_size
+            && self.y < board_size
+            && self.z < board_size
+    }
+
     /// Converts a linear index to barycentric coordinates (x, y, z).
     ///
     /// The index follows row-major order starting from the top of the triangle.

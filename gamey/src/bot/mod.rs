@@ -7,7 +7,6 @@
 //! - [`YBotRegistry`] - A registry for managing multiple bot implementations
 //! - [`RandomBot`] - A simple bot that makes random valid moves
 
-pub mod heuristics;
 pub mod minimax;
 pub mod random;
 pub mod ybot;

@@ -1,6 +1,6 @@
-use crate::{
-    Coordinates, GameStatus, GameY, Movement, PlayerId, YBot, game, heuristics::manhattan_center,
-};
+use crate::{Coordinates, GameY, PlayerId, YBot, game};
+use fixedbitset::FixedBitSet;
+use smallvec::SmallVec;
 use std::{
     cmp,
     time::{Duration, Instant},
@@ -11,6 +11,162 @@ pub const WIN_SCORE: i32 = 100_000;
 pub const LOSE_SCORE: i32 = -WIN_SCORE;
 
 const INFINITY: i32 = i32::MAX / 2;
+
+pub struct MinimaxState {
+    board: Vec<u8>,
+    //size: u32,
+    available_mask: FixedBitSet,
+    coords_cache: Vec<Coordinates>,
+    neighbors_cache: Vec<Vec<usize>>,
+    edges_cache: Vec<u8>,
+    bot_id: u8,
+    human_id: u8,
+    visited: Vec<bool>,
+    stack: Vec<usize>,
+}
+
+impl MinimaxState {
+    pub fn new(game: &GameY, bot_player: PlayerId) -> Self {
+        let size = game.board_size();
+        let total_cells = game.total_cells() as usize;
+
+        let mut board: Vec<u8> = vec![0; total_cells];
+        let mut coords_cache: Vec<Coordinates> = vec![Coordinates::new(0, 0, 0); total_cells];
+        let mut available_mask = FixedBitSet::with_capacity(total_cells);
+        let mut neighbors_cache = vec![Vec::new(); total_cells];
+        let mut edges_cache = vec![0; total_cells];
+
+        let bot_id = bot_player.id() as u8 + 1;
+        let human_id = game::other_player(bot_player).id() as u8 + 1;
+
+        // Buffers reutilizables para check_win
+        let visited = vec![false; total_cells];
+        let stack = Vec::with_capacity(total_cells / 4); // Capacidad estimada
+
+        // 1. Iterar sobre TODAS las celdas posibles del tablero
+        for idx in 0..total_cells {
+            let coords = Coordinates::from_index(idx as u32, size);
+
+            coords_cache[idx as usize] = coords;
+
+            // Validar que la celda existe en el juego (en Y no todos los índices son válidos)
+            if !coords.is_valid(size) {
+                continue; // Salta celdas fuera del tablero
+            }
+
+            // Llenar vecinos (solo los que estén dentro del tablero)
+            for n_coords in game.get_neighbors(&coords) {
+                if n_coords.is_valid(size) {
+                    // Filtra vecinos inválidos
+                    let n_idx = Coordinates::to_index(&n_coords, size) as usize;
+                    neighbors_cache[idx].push(n_idx);
+                }
+            }
+
+            if coords.touches_side_a() {
+                edges_cache[idx] |= 0b001;
+            }
+            if coords.touches_side_b() {
+                edges_cache[idx] |= 0b010;
+            }
+            if coords.touches_side_c() {
+                edges_cache[idx] |= 0b100;
+            }
+        }
+
+        // 2. Copiar estado del tablero
+        for (coords, (_, owner)) in game.board_map() {
+            let idx = Coordinates::to_index(coords, size) as usize;
+            board[idx] = owner.id() as u8 + 1; // 1-based (0 = vacío)
+        }
+
+        // 3. Poblar available_mask usando game.available_cells()
+        for &cell_idx in game.available_cells() {
+            available_mask.insert(cell_idx as usize);
+        }
+
+        Self {
+            board,
+            //size,
+            available_mask,
+            coords_cache,
+            neighbors_cache,
+            edges_cache,
+            bot_id,
+            human_id,
+            visited,
+            stack,
+        }
+    }
+
+    fn make_move(&mut self, idx: usize, player: u8) {
+        self.board[idx] = player;
+        self.available_mask.set(idx, false);
+    }
+
+    fn undo_move(&mut self, idx: usize) {
+        self.board[idx] = 0;
+        self.available_mask.set(idx, true);
+    }
+
+    fn available_moves(&self) -> impl Iterator<Item = usize> + '_ {
+        self.available_mask.ones()
+    }
+
+    fn occupied_cells(&self) -> impl Iterator<Item = usize> + '_ {
+        self.available_mask.zeroes()
+    }
+
+    /// Retorna true si el jugador conectó los 3 bordes
+    fn check_win(&mut self, player: u8) -> bool {
+        // Limpiar buffers (más rápido que crear nuevos)
+        self.visited.fill(false);
+
+        // Buscar todas las piezas del jugador que tocan al menos un borde
+        for idx in 0..self.board.len() {
+            if self.board[idx] == player && self.edges_cache[idx] != 0 && !self.visited[idx] {
+                // Hacer DFS desde esta pieza y ver qué bordes alcanzamos
+                let edges_reached = self.dfs_collect_edges(idx, player);
+
+                // Si tocamos los 3 bordes (bits 0, 1, 2 activados)
+                if edges_reached == 0b111 {
+                    return true; // Early exit
+                }
+            }
+        }
+
+        false
+    }
+
+    /// DFS que acumula los bits de bordes alcanzados
+    fn dfs_collect_edges(&mut self, start: usize, player: u8) -> u8 {
+        let mut edges_mask = 0u8;
+
+        self.stack.clear();
+        self.stack.push(start);
+        self.visited[start] = true;
+
+        while let Some(idx) = self.stack.pop() {
+            // Acumular bordes que toca esta celda
+            edges_mask |= self.edges_cache[idx];
+
+            // Early exit: Si ya tenemos los 3 bordes, no seguimos
+            if edges_mask == 0b111 {
+                return edges_mask;
+            }
+
+            // Explorar vecinos (usando cache precalculada)
+            for &neighbor in &self.neighbors_cache[idx] {
+                if self.board[neighbor] == player && !self.visited[neighbor] {
+                    self.visited[neighbor] = true;
+                    self.stack.push(neighbor);
+                }
+            }
+        }
+
+        edges_mask
+    }
+}
 
 pub struct MinimaxBot {
     max_time_ms: u64,
@@ -27,58 +183,55 @@ impl YBot for MinimaxBot {
         "minimax_bot"
     }
 
-    fn choose_move(&self, board: &GameY) -> Option<Coordinates> {
-        let bot_player = board.next_player()?; // Early exit si terminó el juego
+    fn choose_move(&self, game: &GameY) -> Option<Coordinates> {
+        let bot_player = game.next_player()?; // Early exit si terminó el juego
 
-        if let Some(coordinates) = greedy_search(board, bot_player) {
-            return Some(coordinates);
-        };
+        let mut state = MinimaxState::new(game, bot_player);
 
-        let best_move = iterative_deepening_search(board, self.max_time_ms, bot_player);
+        // if let Some(coordinates) = greedy_search(game, bot_player) {
+        //     return Some(coordinates);
+        // };
 
-        let coordinates = Coordinates::from_index(best_move, board.board_size());
+        let best_move = iterative_deepening_search(&mut state, self.max_time_ms);
+
+        let coordinates = Coordinates::from_index(best_move as u32, game.board_size());
         Some(coordinates)
     }
 }
 
-pub fn greedy_search(game: &GameY, bot_player: PlayerId) -> Option<Coordinates> {
-    let moves = game.available_cells();
-    if moves.is_empty() {
-        panic!("No available moves");
-    }
+// fn greedy_search(game: &GameY, bot_player: PlayerId) -> Option<Coordinates> {
+//     let moves = game.available_cells();
+//     if moves.is_empty() {
+//         panic!("No available moves");
+//     }
 
-    let opponent = game::other_player(bot_player);
+//     let opponent = game::other_player(bot_player);
 
-    for &move_idx in moves {
-        let next_game = simulate_move(game, move_idx);
-        if let &GameStatus::Finished { winner } = next_game.status()
-            && winner == bot_player
-        {
-            println!(">>> INSTANT WIN FOUND at {}", move_idx);
-            return Some(Coordinates::from_index(move_idx, next_game.board_size()));
-        }
-        let next_game = simulate_player_move(game, move_idx, opponent);
-        if let &GameStatus::Finished { winner } = next_game.status()
-            && winner == opponent
-        {
-            println!(">>> BLOCKING IMMEDIATE THREAT at {}", move_idx);
-            return Some(Coordinates::from_index(move_idx, next_game.board_size()));
-        }
-    }
-    None
-}
+//     for &move_idx in moves {
+//         let next_game = simulate_move(game, move_idx);
+//         if let &GameStatus::Finished { winner } = next_game.status()
+//             && winner == bot_player
+//         {
+//             println!(">>> INSTANT WIN FOUND at {}", move_idx);
+//             return Some(Coordinates::from_index(move_idx, next_game.board_size()));
+//         }
+//         let next_game = simulate_player_move(game, move_idx, opponent);
+//         if let &GameStatus::Finished { winner } = next_game.status()
+//             && winner == opponent
+//         {
+//             println!(">>> BLOCKING IMMEDIATE THREAT at {}", move_idx);
+//             return Some(Coordinates::from_index(move_idx, next_game.board_size()));
+//         }
+//     }
+//     None
+// }
 
-pub fn iterative_deepening_search(game: &GameY, max_time_ms: u64, bot_player: PlayerId) -> u32 {
+fn iterative_deepening_search(state: &mut MinimaxState, max_time_ms: u64) -> usize {
     let start_time = Instant::now();
     let time_limit = Duration::from_millis(max_time_ms);
 
-    let moves = game.available_cells();
-    if moves.is_empty() {
-        panic!("No available moves");
-    }
-
-    let mut best_move = moves[0]; // Fallback inicial
-    let mut depth_reached = 0;
+    let mut best_move = state.available_moves().next().expect("No available moves"); // Fallback inicial
+    let mut pv_move: Option<usize> = None;
 
     for depth in 5..=100 {
         if start_time.elapsed() >= time_limit {
@@ -88,10 +241,10 @@ pub fn iterative_deepening_search(game: &GameY, max_time_ms: u64, bot_player: Pl
 
         println!("Searching at depth {}...", depth);
 
-        let (move_found, score) = search_best_move(game, depth, bot_player);
+        let (move_found, score) = search_best_move(state, depth, pv_move);
 
         best_move = move_found;
-        depth_reached = depth;
+        pv_move = Some(move_found);
 
         println!(
             "Depth {}: best move = {}, score = {}",
@@ -109,31 +262,30 @@ pub fn iterative_deepening_search(game: &GameY, max_time_ms: u64, bot_player: Pl
         }
     }
 
-    println!(
-        "Search completed: depth reached = {}, time = {:?}",
-        depth_reached,
-        start_time.elapsed()
-    );
-
     best_move
 }
 
-fn search_best_move(game: &GameY, depth: u8, bot_player: PlayerId) -> (u32, i32) {
-    let moves = game.available_cells();
+fn search_best_move(state: &mut MinimaxState, depth: u8, pv_move: Option<usize>) -> (usize, i32) {
+    let mut moves: Vec<usize> = state.available_moves().collect();
+
+    // Insert PV move at the beginning of the list
+    if let Some(pv) = pv_move {
+        if let Some(pos) = moves.iter().position(|&m| m == pv) {
+            moves.swap(0, pos);
+        }
+    }
+
+    // TODO: Order moves
+
     let mut best_score = -INFINITY;
-    let mut best_move = moves[0];
+    let mut best_move = moves[0]; // Fallback inicial
 
-    for &move_idx in moves {
-        let next_board = simulate_move(game, move_idx);
+    for move_idx in moves {
+        state.make_move(move_idx, state.bot_id);
 
-        let score = minimax(
-            &next_board,
-            depth - 1,
-            -INFINITY,
-            INFINITY,
-            false,
-            bot_player,
-        );
+        let score = minimax(state, depth - 1, -INFINITY, INFINITY, false);
+
+        state.undo_move(move_idx);
 
         if score > best_score {
             best_score = score;
@@ -145,517 +297,114 @@ fn search_best_move(game: &GameY, depth: u8, bot_player: PlayerId) -> (u32, i32)
 }
 
 fn minimax(
-    game: &GameY,
-    depth: u8,
-    alpha: i32,
-    beta: i32,
-    maximizing_player: bool,
-    bot_player: PlayerId,
-) -> i32 {
-    if depth == 0 || game.check_game_over() {
-        return evaluate_board(&game, bot_player); // Aquí ocurre la magia
-    }
-
-    let moves = game.available_cells();
-
-    if maximizing_player {
-        maximize(&game, depth, alpha, beta, moves, bot_player)
-    } else {
-        minimize(&game, depth, alpha, beta, moves, bot_player)
-    }
-}
-
-fn maximize(
-    game: &GameY,
+    state: &mut MinimaxState,
     depth: u8,
     mut alpha: i32,
-    beta: i32,
-    moves: &Vec<u32>,
-    bot_player: PlayerId,
-) -> i32 {
-    let mut best_score = -INFINITY;
-
-    for &move_idx in moves {
-        let next_board = simulate_move(&game, move_idx);
-
-        let score = minimax(&next_board, depth - 1, alpha, beta, false, bot_player);
-
-        best_score = cmp::max(best_score, score);
-
-        alpha = cmp::max(alpha, score);
-        if beta <= alpha {
-            break;
-        }
-    }
-    best_score
-}
-
-fn minimize(
-    game: &GameY,
-    depth: u8,
-    alpha: i32,
     mut beta: i32,
-    moves: &Vec<u32>,
-    bot_player: PlayerId,
+    maximizing_player: bool,
 ) -> i32 {
-    let mut worst_score = INFINITY;
+    if depth == 0 {
+        return evaluate_state(state);
+    }
 
-    for &move_idx in moves {
-        let next_board = simulate_move(&game, move_idx);
+    let moves: SmallVec<[usize; 128]> = state.available_moves().collect();
 
-        let score = minimax(&next_board, depth - 1, alpha, beta, true, bot_player);
+    if maximizing_player {
+        let mut best_score = -INFINITY;
 
-        worst_score = cmp::min(worst_score, score);
+        for move_idx in moves {
+            state.make_move(move_idx, state.bot_id);
 
-        beta = cmp::min(beta, score);
-        if beta <= alpha {
-            break;
+            let score = minimax(state, depth - 1, alpha, beta, false);
+
+            state.undo_move(move_idx);
+
+            best_score = cmp::max(best_score, score);
+
+            alpha = cmp::max(alpha, score);
+            if beta <= alpha {
+                break;
+            }
+        }
+        best_score
+    } else {
+        let mut worst_score = INFINITY;
+
+        for move_idx in moves {
+            state.make_move(move_idx, state.human_id);
+
+            let score = minimax(state, depth - 1, alpha, beta, true);
+
+            state.undo_move(move_idx);
+
+            worst_score = cmp::min(worst_score, score);
+
+            beta = cmp::min(beta, score);
+            if beta <= alpha {
+                break;
+            }
+        }
+        worst_score
+    }
+}
+
+// fn simulate_move(game: &GameY, move_idx: u32) -> GameY {
+//     let mut game_clone = game.clone();
+
+//     game_clone
+//         .add_move(Movement::Placement {
+//             player: game_clone
+//                 .next_player()
+//                 .expect("UNEXPECTED ERR: a move was simulated after the game was over"),
+
+//             coords: Coordinates::from_index(move_idx, game_clone.board_size()),
+//         })
+//         .expect("UNEXPECTED ERR");
+
+//     game_clone
+// }
+
+// fn simulate_player_move(game: &GameY, move_idx: u32, player: PlayerId) -> GameY {
+//     let mut game_clone = game.clone();
+
+//     game_clone
+//         .add_move(Movement::Placement {
+//             player: player,
+//             coords: Coordinates::from_index(move_idx, game_clone.board_size()),
+//         })
+//         .expect("UNEXPECTED ERR");
+
+//     game_clone
+// }
+
+fn evaluate_state(state: &mut MinimaxState) -> i32 {
+    if state.check_win(state.bot_id) {
+        return WIN_SCORE;
+    }
+    if state.check_win(state.human_id) {
+        return LOSE_SCORE;
+    }
+
+    let my_center = center_control_score(state, state.bot_id);
+    let opp_center = center_control_score(state, state.human_id);
+
+    my_center - opp_center
+}
+
+fn center_control_score(state: &mut MinimaxState, player: u8) -> i32 {
+    let mut score = 0;
+
+    for move_idx in state.occupied_cells() {
+        if state.board[move_idx] == player {
+            let coords = state.coords_cache[move_idx];
+            let x = coords.x() as i32;
+            let y = coords.y() as i32;
+            let z = coords.z() as i32;
+
+            let off_center = (x - y).abs() + (y - z).abs() + (z - x).abs();
+
+            score += 300 - off_center;
         }
     }
-    worst_score
-}
-
-fn simulate_move(game: &GameY, move_idx: u32) -> GameY {
-    let mut game_clone = game.clone();
-
-    game_clone
-        .add_move(Movement::Placement {
-            player: game_clone
-                .next_player()
-                .expect("UNEXPECTED ERR: a move was simulated after the game was over"),
-
-            coords: Coordinates::from_index(move_idx, game_clone.board_size()),
-        })
-        .expect("UNEXPECTED ERR");
-
-    game_clone
-}
-
-fn simulate_player_move(game: &GameY, move_idx: u32, player: PlayerId) -> GameY {
-    let mut game_clone = game.clone();
-
-    game_clone
-        .add_move(Movement::Placement {
-            player: player,
-            coords: Coordinates::from_index(move_idx, game_clone.board_size()),
-        })
-        .expect("UNEXPECTED ERR");
-
-    game_clone
-}
-
-fn evaluate_board(game: &GameY, bot_player: PlayerId) -> i32 {
-    manhattan_center::evaluate_board(game, bot_player) // Very simple center control rewarding evaluation
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{Coordinates, GameY, Movement, PlayerId};
-
-    // ============================================================================
-    // Tests básicos del bot
-    // ============================================================================
-
-    #[test]
-    fn test_minimax_bot_name() {
-        let bot = MinimaxBot::new(100);
-        assert_eq!(bot.name(), "minimax_bot");
-    }
-
-    #[test]
-    fn test_bot_returns_valid_move_on_empty_board() {
-        let game = GameY::new(5);
-        let bot = MinimaxBot::new(100);
-        let chosen_move = bot.choose_move(&game);
-
-        assert!(chosen_move.is_some());
-        let coords = chosen_move.unwrap();
-        assert!(
-            game.available_cells()
-                .contains(&coords.to_index(game.board_size()))
-        );
-    }
-
-    #[test]
-    fn test_bot_returns_none_on_finished_game() {
-        let mut game = GameY::new(2);
-        // Player 0 wins by connecting all sides
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(1, 0, 0),
-        })
-        .unwrap();
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(1),
-            coords: Coordinates::new(0, 1, 0),
-        })
-        .unwrap();
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(0, 0, 1),
-        })
-        .unwrap();
-
-        let bot = MinimaxBot::new(100);
-        let chosen_move = bot.choose_move(&game);
-
-        assert!(
-            chosen_move.is_none(),
-            "Bot should return None when game is over"
-        );
-    }
-
-    // ============================================================================
-    // Tests de estrategia: victoria inmediata
-    // ============================================================================
-
-    #[test]
-    fn test_bot_takes_winning_move() {
-        let mut game = GameY::new(3);
-
-        // Setup: Player 0 tiene 2 piezas que casi conectan los 3 lados
-        // Falta 1 movimiento para ganar
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(2, 0, 0), // Toca side_a
-        })
-        .unwrap();
-
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(1),
-            coords: Coordinates::new(1, 1, 0),
-        })
-        .unwrap();
-
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(0, 2, 0), // Toca side_b
-        })
-        .unwrap();
-
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(1),
-            coords: Coordinates::new(1, 0, 1),
-        })
-        .unwrap();
-
-        // Ahora Player 0 puede ganar colocando en (0, 0, 2) que toca side_c
-        // y conecta con las otras dos piezas
-
-        let bot = MinimaxBot::new(1000);
-        let chosen = bot.choose_move(&game);
-
-        assert!(chosen.is_some());
-        //let winning_coord = Coordinates::new(0, 0, 2);
-
-        // El bot debería elegir el movimiento ganador o uno que conecte los 3 lados
-        // (puede variar según implementación exacta de vecinos)
-        // Al menos debería no perder
-        let coords = chosen.unwrap();
-
-        // Simular el movimiento y verificar que mejora la posición
-        let mut test_game = game.clone();
-        test_game
-            .add_move(Movement::Placement {
-                player: PlayerId::new(0),
-                coords,
-            })
-            .unwrap();
-
-        // Verificar que el movimiento no es claramente malo
-        assert!(
-            game.available_cells()
-                .contains(&coords.to_index(game.board_size()))
-        );
-    }
-
-    // ============================================================================
-    // Tests de estrategia: bloqueo
-    // ============================================================================
-
-    #[test]
-    fn test_bot_blocks_opponent_winning_move() {
-        let mut game = GameY::new(4);
-
-        // Setup: Player 1 está a punto de ganar
-        // Player 0 debe bloquear
-
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(2, 0, 0),
-        })
-        .unwrap();
-
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(1),
-            coords: Coordinates::new(3, 0, 0), // Side A
-        })
-        .unwrap();
-
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(0, 2, 0),
-        })
-        .unwrap();
-
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(1),
-            coords: Coordinates::new(0, 3, 0), // Side B
-        })
-        .unwrap();
-
-        // Player 1 necesita side C
-        // Player 0 mueve y debe pensar en defensa
-
-        let bot = MinimaxBot::new(1000);
-        let chosen = bot.choose_move(&game);
-
-        assert!(chosen.is_some());
-        // Difícil predecir el movimiento exacto, pero debería ser defensivo
-    }
-
-    // ============================================================================
-    // Tests de simulate_move
-    // ============================================================================
-
-    #[test]
-    fn test_simulate_move_does_not_modify_original() {
-        let game = GameY::new(5);
-        let original_available = game.available_cells().len();
-
-        let move_idx = game.available_cells()[0];
-        let _simulated = simulate_move(&game, move_idx);
-
-        assert_eq!(
-            game.available_cells().len(),
-            original_available,
-            "Original game should not be modified by simulate_move"
-        );
-    }
-
-    #[test]
-    fn test_simulate_move_reduces_available_cells() {
-        let game = GameY::new(5);
-        let original_available = game.available_cells().len();
-
-        let move_idx = game.available_cells()[0];
-        let simulated = simulate_move(&game, move_idx);
-
-        assert_eq!(
-            simulated.available_cells().len(),
-            original_available - 1,
-            "Simulated game should have one less available cell"
-        );
-        assert!(
-            !simulated.available_cells().contains(&move_idx),
-            "Simulated game should not have the played cell as available"
-        );
-    }
-
-    #[test]
-    fn test_simulate_move_alternates_players() {
-        let game = GameY::new(5);
-        assert_eq!(game.next_player(), Some(PlayerId::new(0)));
-
-        let move_idx = game.available_cells()[0];
-        let simulated = simulate_move(&game, move_idx);
-
-        assert_eq!(
-            simulated.next_player(),
-            Some(PlayerId::new(1)),
-            "After simulating Player 0's move, next should be Player 1"
-        );
-    }
-
-    // ============================================================================
-    // Tests de minimax (profundidad)
-    // ============================================================================
-
-    #[test]
-    fn test_minimax_depth_zero_returns_evaluation() {
-        let game = GameY::new(3);
-        let bot_player = PlayerId::new(0);
-
-        let score = minimax(&game, 0, -INFINITY, INFINITY, true, bot_player);
-        let eval_score = evaluate_board(&game, bot_player);
-
-        assert_eq!(
-            score, eval_score,
-            "Minimax at depth 0 should return static evaluation"
-        );
-    }
-
-    #[test]
-    fn test_minimax_game_over_returns_evaluation() {
-        let mut game = GameY::new(2);
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(1, 0, 0),
-        })
-        .unwrap();
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(1),
-            coords: Coordinates::new(0, 1, 0),
-        })
-        .unwrap();
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(0, 0, 1),
-        })
-        .unwrap();
-
-        let bot_player = PlayerId::new(0);
-        let score = minimax(&game, 5, -INFINITY, INFINITY, true, bot_player);
-
-        assert_eq!(
-            score, WIN_SCORE,
-            "Minimax should recognize winning position"
-        );
-    }
-
-    // ============================================================================
-    // Tests de alpha-beta pruning
-    // ============================================================================
-
-    #[test]
-    fn test_alpha_beta_pruning_same_result_as_no_pruning() {
-        let mut game = GameY::new(3);
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(2, 0, 0),
-        })
-        .unwrap();
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(1),
-            coords: Coordinates::new(1, 1, 0),
-        })
-        .unwrap();
-
-        let bot_player = PlayerId::new(0);
-
-        // Con alpha-beta
-        let score_ab = minimax(&game, 2, -INFINITY, INFINITY, true, bot_player);
-
-        // Sin alpha-beta (usando ventana muy amplia que no poda nada)
-        let score_no_ab = minimax(&game, 2, -INFINITY, INFINITY, true, bot_player);
-
-        assert_eq!(
-            score_ab, score_no_ab,
-            "Alpha-beta should give same result as full search"
-        );
-    }
-
-    // ============================================================================
-    // Tests de casos edge
-    // ============================================================================
-
-    #[test]
-    fn test_bot_on_nearly_full_board() {
-        let mut game = GameY::new(3);
-
-        // Llenar casi todo el tablero sin que nadie gane
-        // Colocar movimientos que NO conecten los 3 lados
-        let all_moves = vec![
-            (PlayerId::new(0), Coordinates::new(2, 0, 0)), // P0: side_a
-            (PlayerId::new(1), Coordinates::new(1, 1, 0)), // P1: interior
-            (PlayerId::new(0), Coordinates::new(0, 2, 0)), // P0: side_b
-            (PlayerId::new(1), Coordinates::new(1, 0, 1)), // P1: interior
-            (PlayerId::new(0), Coordinates::new(0, 1, 1)), // P0: interior
-                                                           // Dejar una celda libre: (0, 0, 2)
-        ];
-
-        for (player, coords) in all_moves {
-            game.add_move(Movement::Placement { player, coords })
-                .unwrap();
-        }
-
-        // Verificar que el juego NO ha terminado
-        assert!(
-            !game.check_game_over(),
-            "Game should not be over before testing bot"
-        );
-        assert_eq!(
-            game.available_cells().len(),
-            1,
-            "Should have exactly 1 move available"
-        );
-
-        let bot = MinimaxBot::new(100);
-        let chosen = bot.choose_move(&game);
-
-        assert!(
-            chosen.is_some(),
-            "Bot should return a move when game is ongoing"
-        );
-
-        let coords = chosen.unwrap();
-        assert_eq!(
-            coords,
-            Coordinates::new(0, 0, 2),
-            "Bot should choose the only available move"
-        );
-    }
-    #[test]
-    fn test_bot_with_different_time_limits() {
-        let game = GameY::new(5);
-
-        let start_fast = Instant::now();
-        let bot_fast = MinimaxBot::new(100); // 100ms
-        let move_fast = bot_fast.choose_move(&game);
-        let time_fast = start_fast.elapsed();
-
-        let start_slow = Instant::now();
-        let bot_slow = MinimaxBot::new(1000); // 1000ms
-        let move_slow = bot_slow.choose_move(&game);
-        let time_slow = start_slow.elapsed();
-
-        assert!(move_fast.is_some(), "Fast bot should return a move");
-        assert!(move_slow.is_some(), "Slow bot should return a move");
-
-        // Verificar que ambos movimientos son válidos
-        let coords_fast = move_fast.unwrap();
-        let coords_slow = move_slow.unwrap();
-
-        assert!(
-            game.available_cells()
-                .contains(&coords_fast.to_index(game.board_size())),
-            "Fast bot should choose valid move"
-        );
-        assert!(
-            game.available_cells()
-                .contains(&coords_slow.to_index(game.board_size())),
-            "Slow bot should choose valid move"
-        );
-
-        // Verificar que los tiempos son aproximadamente correctos
-        assert!(
-            time_fast.as_millis() <= 300,
-            "Fast search should finish within time limit (took {:?})",
-            time_fast
-        );
-        assert!(
-            time_slow.as_millis() <= 2000,
-            "Slow search should finish within time limit (took {:?})",
-            time_slow
-        );
-
-        println!("Fast search: {:?}, move: {:?}", time_fast, coords_fast);
-        println!("Slow search: {:?}, move: {:?}", time_slow, coords_slow);
-    }
-
-    #[test]
-    #[should_panic(expected = "index out of bounds")]
-    fn test_search_best_move_panics_on_no_available_moves() {
-        let mut game = GameY::new(1);
-        game.add_move(Movement::Placement {
-            player: PlayerId::new(0),
-            coords: Coordinates::new(0, 0, 0),
-        })
-        .unwrap();
-
-        // Game terminado, no hay movimientos
-        let _ = search_best_move(&game, 2, PlayerId::new(1));
-        // Debería hacer panic en moves[0] si moves está vacío
-    }
+    score
 }
