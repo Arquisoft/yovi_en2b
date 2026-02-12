@@ -2766,10 +2766,10 @@ print {
 </li>
 <li><a href="#section-runtime-view">6. Runtime View</a>
 <ul class="sectlevel2">
-<li><a href="#_runtime_scenario_1">6.1. &lt;Runtime Scenario 1&gt;</a></li>
-<li><a href="#_runtime_scenario_2">6.2. &lt;Runtime Scenario 2&gt;</a></li>
-<li><a href="#">6.3. &#8230;&#8203;</a></li>
-<li><a href="#_runtime_scenario_n">6.4. &lt;Runtime Scenario n&gt;</a></li>
+<li><a href="#_human_vs_computer_match">6.1. Human vs Computer Match</a></li>
+<li><a href="#_user_registration_and_history_consultation">6.2. User Registration and History Consultation</a></li>
+<li><a href="#_computer_strategy_execution">6.3. Computer Strategy Execution</a></li>
+<li><a href="#_external_bot_interaction">6.4. External Bot Interaction</a></li>
 </ul>
 </li>
 <li><a href="#section-deployment-view">7. Deployment View</a>
@@ -3812,68 +3812,206 @@ You will mainly capture scenarios in your documentation to communicate your arch
 </div>
 </div>
 </div>
+<div class="paragraph">
+<p>The runtime view describes the behaviour and interactions of the system&#8217;s building blocks through selected scenarios. It captures how the TypeScript Web Application and the Rust Module cooperate to fulfill the requirements.</p>
+</div>
 <div class="sect2">
-<h3 id="_runtime_scenario_1">6.1. &lt;Runtime Scenario 1&gt;</h3>
-<div class="ulist">
-<ul>
-<li>
-<p><em>&lt;insert runtime diagram or textual description of the scenario&gt;</em></p>
-</li>
-<li>
-<p><em>&lt;insert description of the notable aspects of the interactions between the
-building block instances depicted in this diagram.&gt;</em></p>
-</li>
-</ul>
+<h3 id="_human_vs_computer_match">6.1. Human vs Computer Match</h3>
+<div class="paragraph">
+<p>This scenario references the high-level requirement: <em>Classic version of Game Y, player-vs-machine mode.</em>
+It covers the logic when a human player makes a move on the board.</p>
+</div>
+<div class="sect3">
+<h4 id="_quality_context">6.1.1. Quality Context</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Source</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Human Player</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Stimulus</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Selects a position on the board via the Web Frontend</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Artifact</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">System (Web App + Rust Module)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Environment</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Normal operation</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The move is validated, if the game ends the result is persisted, and the board is updated</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response Measure</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The UI reflects the new state in less than [TODO: X seconds]</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_interaction_sequence">6.1.2. Interaction sequence</h4>
+<div class="imageblock text-center">
+<div class="content">
+<img src="./images/human_computer.svg" alt="Registration Sequence" width="600">
+</div>
 </div>
 <div class="paragraph">
-<p>It is possible to use a sequence diagram:</p>
+<p><strong>1.</strong> User selects a position on the board via the Web Frontend.</p>
 </div>
-<div class="listingblock">
+<div class="paragraph">
+<p><strong>2.</strong> Web Application (TypeScript) sends a JSON message in YEN notation to the Rust Module to verify the move.</p>
+</div>
+<div class="paragraph">
+<p><strong>3.</strong> Rust Module verifies if the move is valid and if the match has ended.</p>
+</div>
+<div class="paragraph">
+<p><strong>4.</strong> Rust Module returns the result (Move valid/Match won/Match continues) to the Web Application.</p>
+</div>
+<div class="paragraph">
+<p><strong>5.</strong> If the game ended the Web Application updates the game state in the [TODO: Database Name/Type] and reflects the new state in the Web Frontend anyways.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_user_registration_and_history_consultation">6.2. User Registration and History Consultation</h3>
+<div class="paragraph">
+<p>This scenario references the high-level requirement: <em>Users will be able to register and consult participation history.</em>
+It describes how a user interacts with the system to manage their profile and view their match history.</p>
+</div>
+<div class="sect3">
+<h4 id="_quality_context_2">6.2.1. Quality Context</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Source</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Human Player</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Stimulus</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provides registration details via the Web Frontend</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Artifact</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">System (Web App + Rust Module)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Environment</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Normal operation</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Redirects the user to the game app and allows to view the match history</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response Measure</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The UI reflects the new state in less than [TODO: X seconds]</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_interaction_sequence_2">6.2.2. Interaction sequence</h4>
+<table class="tableblock frame-none grid-none stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="imageblock">
 <div class="content">
-<pre>Failed to generate image: Could not find the 'd2' executable in PATH; add it to the PATH or specify its location using the 'd2' document attribute
-vars: {
-  d2-config: {
-    theme-overrides: {
-      n7: "#0D1117"
-    }
-  }
-}
-
-shape: sequence_diagram
-
-alice: Alice
-alice.shape: c4-person
-
-bob: Bob
-bob.shape: c4-person
-
-bob_pod: "Bob's\nPod"
-bob_pod.shape: cylinder
-
-alice -&gt; bob: Authentication request
-bob -&gt; alice: Authentication response {
-  style.stroke-dash: 2
-}
-alice -&gt; bob_pod: Store route {
-  style.stroke-dash: 2
-}
-alice -&gt; bob: Authentication request
-bob -&gt; alice: Authentication response {
-  style.stroke-dash: 2
-}</pre>
+<img src="./images/registration.svg" alt="registration" width="100%">
+</div>
+<div class="title">Figure 1. User registration</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="imageblock">
+<div class="content">
+<img src="./images/history.svg" alt="history" width="100%">
+</div>
+<div class="title">Figure 2. History consultation</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><strong>1.</strong> User provides registration details through the Web Frontend.</p>
+</div>
+<div class="paragraph">
+<p><strong>2.</strong> Web Application (TypeScript) receives the request and validates the information with the data on the [TODO: Database Name/Type].</p>
+</div>
+<div class="paragraph">
+<p><strong>3.</strong> When the registered User requests their history, the Web Application queries the [TODO: Database Name/Type] for the raw data.</p>
+</div>
+<div class="paragraph">
+<p><strong>4.</strong> The Web Application then calculates the history metrics and returns them to the Web Frontend for rendering.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_runtime_scenario_2">6.2. &lt;Runtime Scenario 2&gt;</h3>
-
+<h3 id="_computer_strategy_execution">6.3. Computer Strategy Execution</h3>
+<div class="paragraph">
+<p>This scenario references the high-level requirement: <em>The game against the computer must implement more than one strategy.</em>
+It describes how the system suggests of executes a move for the computer.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="./images/computer_strat.svg" alt="Registration Sequence" width="600">
+</div>
+</div>
+<div class="paragraph">
+<p><strong>1.</strong> Web Application (TypeScript) triggers a request for a computer move based on the user-selected difficulty/strategy.</p>
+</div>
+<div class="paragraph">
+<p><strong>2.</strong> The request is sent to the Rust Module containing the current board state in YEN notation.</p>
+</div>
+<div class="paragraph">
+<p><strong>3.</strong> Rust Module invokes the selected strategy algorithm to calculate the next move.</p>
+</div>
+<div class="paragraph">
+<p><strong>4.</strong> Rust Module suggests the next move via its Web Service Interface.</p>
+</div>
+<div class="paragraph">
+<p><strong>5.</strong> Web Application receives the move and performs the action.</p>
+</div>
 </div>
 <div class="sect2">
-<h3 id="">6.3. &#8230;&#8203;</h3>
-
+<h3 id="_external_bot_interaction">6.4. External Bot Interaction</h3>
+<div class="paragraph">
+<p>This scenario references the high-level requirement: <em>API will enable a bot to play&#8230;&#8203; a 'play' method will be exposed.</em>
+It describes the interaction of an external bot with the YOVI system.</p>
 </div>
-<div class="sect2">
-<h3 id="_runtime_scenario_n">6.4. &lt;Runtime Scenario n&gt;</h3>
+<div class="imageblock text-center">
+<div class="content">
+<img src="./images/bot_interaction.svg" alt="Registration Sequence" width="600">
+</div>
+</div>
+<div class="paragraph">
+<p><strong>1.</strong> External Bot calls the 'play' method on the External API (Web Application).</p>
+</div>
+<div class="paragraph">
+<p><strong>2.</strong> The request includes a 'boardState' parameter, the board state in YEN notation.</p>
+</div>
+<div class="paragraph">
+<p><strong>3.</strong> Web Application forwards the state to the Rust Module for the best&#8217;s move calculation.</p>
+</div>
+<div class="paragraph">
+<p><strong>4.</strong> Rust Module returns the updated state/result to the Web Application.</p>
+</div>
+<div class="paragraph">
+<p><strong>5.</strong> Web Application returns the next move to the External Bot using YEN notation.</p>
+</div>
 <div style="page-break-after: always;"></div>
 </div>
 </div>
@@ -5310,7 +5448,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-02-10 11:43:27 UTC
+Last updated 2026-02-12 22:17:16 UTC
 </div>
 </div>
 </body>
