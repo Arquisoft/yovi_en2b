@@ -5,16 +5,17 @@ ifndef::imagesdir[:imagesdir: ../images]
 
 The deployment view describes the physical environment in which the YOVI system is executed and the automation processes that manage its lifecycle.
 
-=== 7.1 Infrastructure Level 1: Cloud Environment
-The system is deployed on the Microsoft Azure cloud platform, utilizing the "Azure for Students" subscription.
 
-* **Location:** France Central.
-* **Operating System:** Linux Ubuntu.
-* **Hardware Profile:** Standard B2ats v2 (2 vCPUs, 1 GiB memory).
+=== Infrastructure Level 1: Cloud Environment
+The system is deployed on the Microsoft Azure cloud platform, using the "Azure for Students" subscription.
+A system with the following capabilities was deployed looking for a compromise between performance and cost:
 
-image::../images/infrastructure_deployment.svg[Infrastructure Mapping, width=800, align="center"]
+* **Location:** France Central
+* **Operating System:** Linux Ubuntu
+* **Hardware Profile:** Standard B2ats v2 (2 vCPUs, 1 GiB memory)
 
-=== 7.2 Infrastructure Level 2: Execution Environment (Docker)
+
+=== Infrastructure Level 2: Execution Environment (Docker)
 The system follows a "Cattle" not "Pets" approach, using containerization to ensure consistency between development and production.
 
 [cols="1,1,2"]
@@ -22,11 +23,12 @@ The system follows a "Cattle" not "Pets" approach, using containerization to ens
 | Container | Technology | Responsibility
 | **Web Application** | TypeScript / Node.js | Handles the UI, User sessions, and API requests.
 | **Game Engine** | Rust | Performs game logic validation and strategy suggestions.
-| **Database** | [TODO: Technology] | Persistent storage for users and match history.
+| **Database** | MariaDB | Persistent storage for users and match history.
 | **Monitoring** | Prometheus / Grafana | Observability of system health (Ports 9090/9091).
 |===
 
-=== 7.3 Network and Connectivity
+
+=== Network and Connectivity
 The Virtual Machine is configured with a Public IP and specific inbound port rules as required by the project specifications:
 
 * **Port 80/443:** Public access to the Web Application.
@@ -34,7 +36,7 @@ The Virtual Machine is configured with a Public IP and specific inbound port rul
 * **Port 22:** Restricted SSH access for automated deployment.
 * **Ports 9090/9091:** Monitoring and metrics data.
 
-=== 7.4 Deployment Pipeline (CI/CD)
+=== Deployment Pipeline (CI/CD)
 The system utilizes GitHub Actions for Continuous Deployment (CD). The process is triggered automatically when a new release is created or a version tag is pushed.
 
 image::../images/deployment_pipeline.svg[CI/CD Pipeline, width=800, align="center"]
@@ -42,3 +44,13 @@ image::../images/deployment_pipeline.svg[CI/CD Pipeline, width=800, align="cente
 1. **Automation:** Configuration is stored as YAML files in `.github/workflows`.
 2. **Artifact Management:** Docker images are built and stored in the GitHub Container Registry (GHCR).
 3. **Secrets Management:** Sensitive data (IP addresses, SSH keys, DB passwords) are stored as GitHub Actions Secrets and injected into the environment at runtime.
+
+==== Documentation Deployment
+Following the "Documentation as Code" principle, our arc42 documentation is automatically built and published.
+
+1. **Automation:** A dedicated GitHub Action tracks changes in the `docs/` directory.
+2. **Build Process:** The action executes `npm install` and `npm run build` to generate the HTML version of this arc42 documentation from the AsciiDoc source files.
+3. **Publication:** 
+** The system uses the `gh-pages` npm package to automate the transfer of generated files.
+** The build result is pushed to the `gh-pages` branch of the repository.
+** The documentation is then hosted and accessible via **GitHub Pages** at the project's public URL.
