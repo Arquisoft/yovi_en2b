@@ -114,14 +114,14 @@ Consequences::
 
 IMPORTANT: Status: PROPOSED 
 
-=== ADR-006: JWT signing algorithm for M1
+=== ADR-006: JWT signing algorithm
 
 Context::
 - users issues tokens; webapp-backend validates them.
-- We want minimal implementation complexity in M1.
+- We want minimal implementation complexity.
 
 Decision::
-- Use HS256 for JWT signing/verification in M1.
+- Use HS256 for JWT signing/verification.
 
 Consequences::
 - Simpler setup (shared secret).
@@ -194,17 +194,18 @@ Consequences::
 
 IMPORTANT: Status: PROPOSED 
 
-=== ADR-011: Public entrypoint and routing
+=== ADR-011: ADR-011: Client/Server entrypoint and API boundaries
 
 Context::
-- We want a single public entry point.
-- Frontend must be served from the root path.
-- Backend API must be versioned under a stable prefix.
+- The system follows a client/server architecture: clients (web SPA and external bots) communicate with a server over HTTP.
+- We want a single public entrypoint and serve the SPA from root path.
+- The assignment requires a public API for bots and user management (register/login/history).
 
 Decision::
-- Public routes:
-  - / -> frontend (static assets / SPA)
-  - /api/v1/... -> webapp-backend (BFF API)
+- Public entrypoint routes:
+  - / -> client (frontend SPA)
+  - /api/public/v1/... -> server public API (game actions for clients/bots, e.g., play/choose-move using YEN/JSON)
+  - /api/server/v1/... -> server internal API (user/auth/profile/history; not intended as bot API)
 
 Consequences::
 - Clear separation between UI and API.

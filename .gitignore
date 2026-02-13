@@ -6,6 +6,7 @@ docs/build
 .env
 webapp/.env
 .vscode/
+
 personal.md
 flamegraph.svg
 perf.data
