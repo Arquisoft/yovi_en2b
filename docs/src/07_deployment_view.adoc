@@ -36,6 +36,7 @@ The Virtual Machine is configured with a Public IP and specific inbound port rul
 * **Port 22:** Restricted SSH access for automated deployment.
 * **Ports 9090/9091:** Monitoring and metrics data.
 
+
 === Deployment Pipeline (CI/CD)
 The system utilizes GitHub Actions for Continuous Deployment (CD). The process is triggered automatically when a new release is created or a version tag is pushed.
 
@@ -44,6 +45,7 @@ image::../images/deployment_pipeline.svg[CI/CD Pipeline, width=800, align="cente
 1. **Automation:** Configuration is stored as YAML files in `.github/workflows`.
 2. **Artifact Management:** Docker images are built and stored in the GitHub Container Registry (GHCR).
 3. **Secrets Management:** Sensitive data (IP addresses, SSH keys, DB passwords) are stored as GitHub Actions Secrets and injected into the environment at runtime.
+
 
 ==== Documentation Deployment
 Following the "Documentation as Code" principle, our arc42 documentation is automatically built and published.
