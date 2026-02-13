@@ -1,0 +1,22 @@
+Deployment pipeline:{
+    style: {
+        font-size: 40
+        bold: true
+    }
+    shape: sequence_diagram
+
+    Developer: Developer
+    GitHub: GitHub Repository
+    Actions: GitHub Actions
+    GHCR: GitHub Container Registry (GHCR)
+    Azure: Azure VM
+
+    Developer -> GitHub: 1. Push Tag / Create Release
+    GitHub -> Actions: 2. Trigger Workflow
+    Actions -> Actions: 3. Build Docker Images
+    Actions -> Actions: 4. Run Tests & SonarCloud
+    Actions -> GHCR: 5. Push Images
+    Actions -> Azure: 6. SSH: docker-compose pull & up
+    Azure -> GHCR: 7. Pull latest images
+    Azure -> Azure: 8. Restart Containers
+}

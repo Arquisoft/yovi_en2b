@@ -1,0 +1,35 @@
+# Introducing a title
+History consultation: {
+        style: {
+        font-size: 40
+        bold: true
+    }
+    shape: sequence_diagram
+
+    # Define participants
+    User: Registered User
+    Frontend: Web Frontend (TS)
+    Backend: Web Application (TS)
+    DB: Database
+
+    # Scenario: History Consultation
+    User -> Frontend: Request history
+    Frontend -> Backend: Get history
+    Backend -> DB: Get match data
+    DB -> Backend: Raw match data {
+        style: {
+            stroke-dash: 3
+        }
+    }
+    Backend -> Backend: Compute metrics
+    Backend -> Frontend: History {
+        style: {
+            stroke-dash: 3
+        }
+    }
+    Frontend -> User: Render history {
+        style: {
+            stroke-dash: 3
+        }
+    }
+}

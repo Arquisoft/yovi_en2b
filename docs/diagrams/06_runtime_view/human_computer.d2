@@ -1,0 +1,49 @@
+History consultation: {
+        style: {
+        font-size: 40
+        bold: true
+    }   
+    shape: sequence_diagram
+
+    # Participants
+    User: Human Player
+    Frontend: Web Frontend (TS)
+    Backend: Web Application (TS)
+    Engine: Game Engine
+    DB: Database
+
+    # 1. Start Turn
+    User -> Frontend: Selects cell
+    Frontend -> Backend: Perform the move
+
+    # 2. Check the move
+    Backend -> Engine: Verify the move
+    Engine -> Backend: Return validation/win status {
+        style: {
+            stroke-dash: 3
+        }
+    }
+
+    # 3. Check if the game is over
+    If match has ended {
+        # This only happens if Rust says "Match Won"
+        Backend -> DB: Save match results
+        DB -> Backend: Confirmation status {
+        style: {
+            stroke-dash: 3
+        }
+    }
+    }
+
+    # 4. UI Update
+    Backend -> Frontend: Updated state {
+        style: {
+            stroke-dash: 3
+        }
+    }
+    Frontend -> User: Render result & show status {
+        style: {
+            stroke-dash: 3
+        }
+    }
+}

@@ -1,0 +1,40 @@
+# Introducing a title
+User registration: {
+        style: {
+        font-size: 40
+        bold: true
+    }
+
+    shape: sequence_diagram
+
+    # Define participants
+    User: User
+    Frontend: Web Frontend (TS)
+    Backend: Web Application (TS)
+    DB: Database
+
+    # Scenario: User Registration
+    # 1. Get credentials
+    User -> Frontend: Provide credentials
+    Frontend -> Backend: Check credentials
+
+    # 2. Check credentials
+    Backend -> DB: Get credentials
+    DB -> Backend: Credentials {
+        style: {
+            stroke-dash: 3
+        }
+    }
+    Backend -> Frontend: Registration result {
+        style: {
+            stroke-dash: 3
+        }
+    }
+
+    # 3. Render result
+    Frontend -> User: Render result {
+        style: {
+            stroke-dash: 3
+        }
+    }
+}
