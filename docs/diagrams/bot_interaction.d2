@@ -1,0 +1,31 @@
+Bot API: {
+        style: {
+        font-size: 40
+        bold: true
+    }    
+    shape: sequence_diagram
+
+    # Participants
+    Bot: External Bot
+    Backend: Web Application (TS)
+    Engine: Game Engine
+
+    # Scenario: Computer calculates its turn
+    Bot."YEN notation used for board state"
+
+    Bot -> Backend: play(boardState)
+
+    Backend -> Engine: Request next move
+    Engine -> Engine: Calculate the next move
+    Engine -> Backend: Return the next move {
+            style: {
+                stroke-dash: 3
+            }
+        }
+
+    Backend -> Bot: Next move {
+            style: {
+                stroke-dash: 3
+            }
+        }
+}

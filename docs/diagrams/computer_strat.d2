@@ -1,0 +1,22 @@
+Computer strategy: {
+        style: {
+        font-size: 40
+        bold: true
+    }
+    shape: sequence_diagram
+
+    # Participants
+    Backend: Web Application (TS)
+    Engine: Game Engine
+
+    # Scenario: Computer calculates its turn
+    Backend."YEN notation used for board state"
+
+    Backend -> Engine: Fetch current board state
+    Engine -> Engine: Calculate the next move
+    Engine -> Backend: Return the next move {
+            style: {
+                stroke-dash: 3
+            }
+        }
+}
