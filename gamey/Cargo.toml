@@ -22,9 +22,6 @@ name = "gamey"
 name = "gamey"
 path = "src/lib.rs"
 
-[profile.release]
-debug = true
-
 [dependencies]
 anyhow = "1.0"
 axum = { version = "0.8", features = ["macros"] }
