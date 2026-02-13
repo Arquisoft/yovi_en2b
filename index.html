@@ -2772,8 +2772,10 @@ print {
 </li>
 <li><a href="#section-deployment-view">7. Deployment View</a>
 <ul class="sectlevel2">
-<li><a href="#_infrastructure_level_1">7.1. Infrastructure Level 1</a></li>
-<li><a href="#_infrastructure_level_2">7.2. Infrastructure Level 2</a></li>
+<li><a href="#_infrastructure_level_1_cloud_environment">7.1. Infrastructure Level 1: Cloud Environment</a></li>
+<li><a href="#_infrastructure_level_2_execution_environment_docker">7.2. Infrastructure Level 2: Execution Environment (Docker)</a></li>
+<li><a href="#_network_and_connectivity">7.3. Network and Connectivity</a></li>
+<li><a href="#_deployment_pipeline_cicd">7.4. Deployment Pipeline (CI/CD)</a></li>
 </ul>
 </li>
 <li><a href="#section-concepts">8. Cross-cutting Concepts</a>
@@ -2794,12 +2796,12 @@ print {
 <li><a href="#_adr_003_yenjson_as_game_state_contract_validation_in_gamey">9.3. ADR-003: YEN/JSON as game state contract + validation in gamey</a></li>
 <li><a href="#_adr_004_stateless_engine_no_game_state_persistence_in_m1">9.4. ADR-004: Stateless engine + no game state persistence in M1</a></li>
 <li><a href="#_adr_005_api_versioning">9.5. ADR-005: API versioning</a></li>
-<li><a href="#_adr_006_jwt_signing_algorithm_for_m1">9.6. ADR-006: JWT signing algorithm for M1</a></li>
+<li><a href="#_adr_006_jwt_signing_algorithm">9.6. ADR-006: JWT signing algorithm</a></li>
 <li><a href="#_adr_007_secretsconfig_injection_mechanism">9.7. ADR-007: Secrets/config injection mechanism</a></li>
 <li><a href="#_adr_008_error_response_envelope">9.8. ADR-008: Error response envelope</a></li>
 <li><a href="#_adr_009_bff_game_service_timeouts">9.9. ADR-009: BFF &#8594; Game Service Timeouts</a></li>
 <li><a href="#_adr_010_user_persistence_and_minimal_user_entity">9.10. ADR-010: User persistence and minimal user entity</a></li>
-<li><a href="#_adr_011_public_entrypoint_and_routing">9.11. ADR-011: Public entrypoint and routing</a></li>
+<li><a href="#_adr_011_adr_011_clientserver_entrypoint_and_api_boundaries">9.11. ADR-011: ADR-011: Client/Server entrypoint and API boundaries</a></li>
 <li><a href="#_adr_012_reverse_proxy_for_path_based_routing_nginx">9.12. ADR-012: Reverse proxy for path-based routing (Nginx)</a></li>
 </ul>
 </li>
@@ -4011,139 +4013,144 @@ It describes the interaction of an external bot with the YOVI system.</p>
 <div class="sect1">
 <h2 id="section-deployment-view">7. Deployment View</h2>
 <div class="sectionbody">
-<div class="sidebarblock arc42help">
-<div class="content">
 <div class="paragraph">
-<div class="title">Content</div>
-<p>The deployment view describes:</p>
+<p>The deployment view describes the physical environment in which the YOVI system is executed and the automation processes that manage its lifecycle.</p>
+</div>
+<div class="sect2">
+<h3 id="_infrastructure_level_1_cloud_environment">7.1. Infrastructure Level 1: Cloud Environment</h3>
+<div class="paragraph">
+<p>The system is deployed on the Microsoft Azure cloud platform, using the "Azure for Students" subscription.
+A system with the following capabilities was deployed looking for a compromise between performance and cost:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Location:</strong> France Central</p>
+</li>
+<li>
+<p><strong>Operating System:</strong> Linux Ubuntu</p>
+</li>
+<li>
+<p><strong>Hardware Profile:</strong> Standard B2ats v2 (2 vCPUs, 1 GiB memory)</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_infrastructure_level_2_execution_environment_docker">7.2. Infrastructure Level 2: Execution Environment (Docker)</h3>
+<div class="paragraph">
+<p>The system follows a "Cattle" not "Pets" approach, using containerization to ensure consistency between development and production.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Container</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Technology</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Responsibility</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Web Application</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TypeScript / Node.js</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles the UI, User sessions, and API requests.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Game Engine</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rust</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Performs game logic validation and strategy suggestions.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Database</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MariaDB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistent storage for users and match history.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Monitoring</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus / Grafana</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Observability of system health (Ports 9090/9091).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_network_and_connectivity">7.3. Network and Connectivity</h3>
+<div class="paragraph">
+<p>The Virtual Machine is configured with a Public IP and specific inbound port rules as required by the project specifications:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Port 80/443:</strong> Public access to the Web Application.</p>
+</li>
+<li>
+<p><strong>Port 3000/4000:</strong> Internal service communication.</p>
+</li>
+<li>
+<p><strong>Port 22:</strong> Restricted SSH access for automated deployment.</p>
+</li>
+<li>
+<p><strong>Ports 9090/9091:</strong> Monitoring and metrics data.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_deployment_pipeline_cicd">7.4. Deployment Pipeline (CI/CD)</h3>
+<div class="paragraph">
+<p>The system utilizes GitHub Actions for Continuous Deployment (CD). The process is triggered automatically when a new release is created or a version tag is pushed.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="./images/deployment_pipeline.svg" alt="CI/CD Pipeline" width="800">
+</div>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>technical infrastructure used to execute your system, with infrastructure elements like geographical locations, environments, computers, processors, channels and net topologies as well as other infrastructure elements and</p>
+<p><strong>Automation:</strong> Configuration is stored as YAML files in <code>.github/workflows</code>.</p>
 </li>
 <li>
-<p>mapping of (software) building blocks to that infrastructure elements.</p>
+<p><strong>Artifact Management:</strong> Docker images are built and stored in the GitHub Container Registry (GHCR).</p>
+</li>
+<li>
+<p><strong>Secrets Management:</strong> Sensitive data (IP addresses, SSH keys, DB passwords) are stored as GitHub Actions Secrets and injected into the environment at runtime.</p>
 </li>
 </ol>
 </div>
+<div class="sect3">
+<h4 id="_documentation_deployment">7.4.1. Documentation Deployment</h4>
 <div class="paragraph">
-<p>Often systems are executed in different environments, e.g. development environment, test environment, production environment. In such cases you should document all relevant environments.</p>
+<p>Following the "Documentation as Code" principle, our arc42 documentation is automatically built and published.</p>
 </div>
-<div class="paragraph">
-<p>Especially document a deployment view if your software is executed as distributed system with more than one computer, processor, server or container or when you design and construct your own hardware processors and chips.</p>
-</div>
-<div class="paragraph">
-<p>From a software perspective it is sufficient to capture only those elements of an infrastructure that are needed to show a deployment of your building blocks. Hardware architects can go beyond that and describe an infrastructure to any level of detail they need to capture.</p>
-</div>
-<div class="paragraph">
-<div class="title">Motivation</div>
-<p>Software does not run without hardware.
-This underlying infrastructure can and will influence a system and/or some
-cross-cutting concepts. Therefore, there is a need to know the infrastructure.</p>
-</div>
-<div class="paragraph">
-<div class="title">Form</div>
-<p>Maybe a highest level deployment diagram is already contained in section 3.2. as
-technical context with your own infrastructure as ONE black box. In this section one can
-zoom into this black box using additional deployment diagrams:</p>
-</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Automation:</strong> A dedicated GitHub Action tracks changes in the <code>docs/</code> directory.</p>
+</li>
+<li>
+<p><strong>Build Process:</strong> The action executes <code>npm install</code> and <code>npm run build</code> to generate the HTML version of this arc42 documentation from the AsciiDoc source files.</p>
+</li>
+<li>
+<p><strong>Publication:</strong></p>
 <div class="ulist">
 <ul>
 <li>
-<p>UML offers deployment diagrams to express that view. Use it, probably with nested diagrams,
-when your infrastructure is more complex.</p>
+<p>The system uses the <code>gh-pages</code> npm package to automate the transfer of generated files.</p>
 </li>
 <li>
-<p>When your (hardware) stakeholders prefer other kinds of diagrams rather than a deployment diagram, let them use any kind that is able to show nodes and channels of the infrastructure.</p>
+<p>The build result is pushed to the <code>gh-pages</code> branch of the repository.</p>
+</li>
+<li>
+<p>The documentation is then hosted and accessible via <strong>GitHub Pages</strong> at the project&#8217;s public URL.</p>
 </li>
 </ul>
 </div>
-<div class="paragraph">
-<div class="title">Further Information</div>
-<p>See <a href="https://docs.arc42.org/section-7/">Deployment View</a> in the arc42 documentation.</p>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_infrastructure_level_1">7.1. Infrastructure Level 1</h3>
-<div class="sidebarblock arc42help">
-<div class="content">
-<div class="paragraph">
-<p>Describe (usually in a combination of diagrams, tables, and text):</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>distribution of a system to multiple locations, environments, computers, processors, .., as well as physical connections between them</p>
 </li>
-<li>
-<p>important justifications or motivations for this deployment structure</p>
-</li>
-<li>
-<p>quality and/or performance features of this infrastructure</p>
-</li>
-<li>
-<p>mapping of software artifacts to elements of this infrastructure</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>For multiple environments or alternative deployments please copy and adapt this section of arc42 for all relevant environments.</p>
-</div>
-</div>
-</div>
-<div class="paragraph">
-<p><em><strong>&lt;Overview Diagram&gt;</strong></em></p>
-</div>
-<div class="dlist">
-<dl>
-<dt class="hdlist1">Motivation</dt>
-<dd>
-<p><em>&lt;explanation in text form&gt;</em></p>
-</dd>
-<dt class="hdlist1">Quality and/or Performance Features</dt>
-<dd>
-<p><em>&lt;explanation in text form&gt;</em></p>
-</dd>
-<dt class="hdlist1">Mapping of Building Blocks to Infrastructure</dt>
-<dd>
-<p><em>&lt;description of the mapping&gt;</em></p>
-</dd>
-</dl>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_infrastructure_level_2">7.2. Infrastructure Level 2</h3>
-<div class="sidebarblock arc42help">
-<div class="content">
-<div class="paragraph">
-<p>Here you can include the internal structure of (some) infrastructure elements from level 1.</p>
-</div>
-<div class="paragraph">
-<p>Please copy the structure from level 1 for each selected element.</p>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_infrastructure_element_1">7.2.1. <em>&lt;Infrastructure Element 1&gt;</em></h4>
-<div class="paragraph">
-<p><em>&lt;diagram + explanation&gt;</em></p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_infrastructure_element_2">7.2.2. <em>&lt;Infrastructure Element 2&gt;</em></h4>
-<div class="paragraph">
-<p><em>&lt;diagram + explanation&gt;</em></p>
-</div>
-<div class="paragraph">
-<p>&#8230;&#8203;</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_infrastructure_element_n">7.2.3. <em>&lt;Infrastructure Element n&gt;</em></h4>
-<div class="paragraph">
-<p><em>&lt;diagram + explanation&gt;</em></p>
+</ol>
 </div>
 <div style="page-break-after: always;"></div>
 </div>
@@ -4832,7 +4839,7 @@ Status: PROPOSED
 </div>
 </div>
 <div class="sect2">
-<h3 id="_adr_006_jwt_signing_algorithm_for_m1">9.6. ADR-006: JWT signing algorithm for M1</h3>
+<h3 id="_adr_006_jwt_signing_algorithm">9.6. ADR-006: JWT signing algorithm</h3>
 <div class="dlist">
 <dl>
 <dt class="hdlist1">Context</dt>
@@ -4843,7 +4850,7 @@ Status: PROPOSED
 <p>users issues tokens; webapp-backend validates them.</p>
 </li>
 <li>
-<p>We want minimal implementation complexity in M1.</p>
+<p>We want minimal implementation complexity.</p>
 </li>
 </ul>
 </div>
@@ -4853,7 +4860,7 @@ Status: PROPOSED
 <div class="ulist">
 <ul>
 <li>
-<p>Use HS256 for JWT signing/verification in M1.</p>
+<p>Use HS256 for JWT signing/verification.</p>
 </li>
 </ul>
 </div>
@@ -5122,7 +5129,7 @@ Status: PROPOSED
 </div>
 </div>
 <div class="sect2">
-<h3 id="_adr_011_public_entrypoint_and_routing">9.11. ADR-011: Public entrypoint and routing</h3>
+<h3 id="_adr_011_adr_011_clientserver_entrypoint_and_api_boundaries">9.11. ADR-011: ADR-011: Client/Server entrypoint and API boundaries</h3>
 <div class="dlist">
 <dl>
 <dt class="hdlist1">Context</dt>
@@ -5130,13 +5137,13 @@ Status: PROPOSED
 <div class="ulist">
 <ul>
 <li>
-<p>We want a single public entry point.</p>
+<p>The system follows a client/server architecture: clients (web SPA and external bots) communicate with a server over HTTP.</p>
 </li>
 <li>
-<p>Frontend must be served from the root path.</p>
+<p>We want a single public entrypoint and serve the SPA from root path.</p>
 </li>
 <li>
-<p>Backend API must be versioned under a stable prefix.</p>
+<p>The assignment requires a public API for bots and user management (register/login/history).</p>
 </li>
 </ul>
 </div>
@@ -5146,13 +5153,16 @@ Status: PROPOSED
 <div class="ulist">
 <ul>
 <li>
-<p>Public routes:</p>
+<p>Public entrypoint routes:</p>
 </li>
 <li>
-<p>/ &#8594; frontend (static assets / SPA)</p>
+<p>/ &#8594; client (frontend SPA)</p>
 </li>
 <li>
-<p>/api/v1/&#8230;&#8203; &#8594; webapp-backend (BFF API)</p>
+<p>/api/public/v1/&#8230;&#8203; &#8594; server public API (game actions for clients/bots, e.g., play/choose-move using YEN/JSON)</p>
+</li>
+<li>
+<p>/api/server/v1/&#8230;&#8203; &#8594; server internal API (user/auth/profile/history; not intended as bot API)</p>
 </li>
 </ul>
 </div>
@@ -5299,6 +5309,37 @@ concrete and measurable.</p>
 </div>
 </div>
 </div>
+<div class="paragraph">
+<p>Root: Usefulness / Quality</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Usability (High) &#8594; <a href="#QS-01">[QS-01]</a>, <a href="#QS-02">[QS-02]</a></p>
+</li>
+<li>
+<p>Performance efficiency (High) &#8594; <a href="#QS-03">[QS-03]</a>, <a href="#QS-04">[QS-04]</a>, <a href="#QS-05">[QS-05]</a></p>
+</li>
+<li>
+<p>Maintainability (High) &#8594; <a href="#QS-06">[QS-06]</a>, <a href="#QS-07">[QS-07]</a></p>
+</li>
+<li>
+<p>Reliability (High) &#8594; <a href="#QS-08">[QS-08]</a>, <a href="#QS-09">[QS-09]</a></p>
+</li>
+<li>
+<p>Security (Low) &#8594; <a href="#QS-10">[QS-10]</a>, <a href="#QS-11">[QS-11]</a>, <a href="#QS-12">[QS-12]</a></p>
+</li>
+<li>
+<p>Compatibility / Interoperability (Medium) &#8594; <a href="#QS-13">[QS-13]</a></p>
+</li>
+<li>
+<p>Operability / Observability (Medium) &#8594; <a href="#QS-14">[QS-14]</a></p>
+</li>
+<li>
+<p>Documentation quality (High) &#8594; <a href="#QS-15">[QS-15]</a></p>
+</li>
+</ul>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_quality_scenarios">10.2. Quality Scenarios</h3>
@@ -5317,7 +5358,7 @@ concrete and measurable.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Usage scenarios (also called application scenarios or use case scenarios) describe the system’s runtime reaction to a certain stimulus. This also includes scenarios that describe the system’s efficiency or performance. Example: The system reacts to a user’s request within one second.</p>
+<p>Usage scenarios (also called application scenarios or use case scenarios) describe the system&#8217;s runtime reaction to a certain stimulus. This also includes scenarios that describe the system&#8217;s efficiency or performance. Example: The system reacts to a user&#8217;s request within one second.</p>
 </li>
 <li>
 <p>Change scenarios describe a modification of the system or of its immediate environment. Example: Additional functionality is implemented or requirements for a quality attribute change.</p>
@@ -5340,6 +5381,151 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 </div>
 </div>
 </div>
+<div class="paragraph">
+<p>This section makes quality requirements concrete through a quality tree and measurable scenarios, referencing the quality goals defined in section 1.2 <a href="#_quality_goals">Quality Goals</a> where applicable.
+The quality-attribute taxonomy follows ISO/IEC 25010 (product quality: usability, performance efficiency, reliability, security, maintainability, compatibility, portability, etc.).
+The YOVI system consists of a TypeScript web application and a Rust module exposed via a web interface, communicating through JSON messages and YEN notation to represent game states.</p>
+</div>
+<div class="paragraph">
+<p>Scenarios make quality requirements precise by stating stimulus, response, and measurable criteria (usage scenarios and change scenarios).</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 12.5%;">
+<col style="width: 12.5%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ID</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Stimulus</th>
+<th class="tableblock halign-left valign-top">Response</th>
+<th class="tableblock halign-left valign-top">Measure / Acceptance criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-01"></a>QS-01 (Fast start)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new player accesses the web application for the first time.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">They can register, log in, and start a game against the bot.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Completes the flow in &lt; 30 s without needing a manual (quality goal 1).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-02"></a>QS-02 (Playable UI)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A player starts a game and makes a move.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The UI responds without noticeable blocking and reflects the new state.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Main interaction (render + local confirmation) does not exceed 500 ms on the client (TBD: might measure in the future).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-03"></a>QS-03 (API latency without Rust)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A standard REST request to the Node/Express backend (e.g., login/profile) that does not require Rust computation.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system responds with the result.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">p95 &#8656; 50 ms for ~10 concurrent users (internal target).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-04"></a>QS-04 (Rust healthcheck)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The backend invokes the Rust service health-check endpoint.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It receives OK/FAIL and can degrade functionality if FAIL.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">p95 &#8656; 50 ms.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-05"></a>QS-05 (Choose-move latency by board size)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A player/bot requests “choose next move” from the Rust module (Random strategy or Minimax with alpha-beta + iterative deepening).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The service returns a valid move in the expected format.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p>“Hard” target (board size 4-12): p95 &#8656; 500 ms (quality goal 2).</p>
+</li>
+<li>
+<p>“Hard” target (board size 13-16): p95 &#8656; 3000 ms, and the UI shows a “thinking…” state without blocking the session.</p>
+</li>
+<li>
+<p>Note: these thresholds will be validated with real measurements (not fully measured yet).</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-06"></a>QS-06 (Add bot strategy in 1 day)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Change</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new bot strategy or difficulty adjustment is added to the Rust module.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The feature is integrated without breaking the frontend or API contracts.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Effort &#8656; 1 work day, and the /play endpoint contract remains compatible (quality goal 3).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-07"></a>QS-07 (Extend board size)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Change</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Board-size support is extended/refactored within the allowed range.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The change does not require rewriting the UI or persistence layer.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Localized changes and updated tests; the YEN/JSON format is not broken.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-08"></a>QS-08 (Persist match result)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A game ends and the result is saved to MariaDB.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The result is persisted and appears in the user&#8217;s history.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">99% of save operations without losing the result (quality goal 4); on failure, an explicit error is returned and no match is “confirmed” as saved when it was not.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-09"></a>QS-09 (Service degraded availability)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The VPS suffers downtime/restarts (low availability, short-lived operation).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system becomes operational again after restart, even if live sessions are lost.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service recovers after restart (TBD: &#8656; 5 min) and keeps already persisted data (no backups).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-10"></a>QS-10 (Authenticated score submission)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An unauthenticated user tries to submit a score/result or access private data.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The backend rejects the operation.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Only authenticated users can submit scores to their own profile (quality goal 5).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-11"></a>QS-11 (Score spoofing)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An authenticated user attempts to forge results: submit results without having played, manipulate the state/input (e.g., YEN) to obtain an illegitimate score.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The backend validates consistency and rejects the operation.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">“Score spoofing” is prevented for those two scenarios (quality goal 5); replay &#169; will be addressed when a global scoring system exists.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-12"></a>QS-12 (Anti-abuse / rate limiting)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A malicious client attempts brute force / spam against server-side “users” endpoints.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system limits and logs the abuse.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rate limiting enabled (TBD: thresholds per IP/user) and security-event logs.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-13"></a>QS-13 (Documented external API)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A third party implements a bot using the public API.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">They can integrate without reverse engineering.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API is “fully documented” (OpenAPI/Swagger + examples) as required by the assignment.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-14"></a>QS-14 (Observability)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Usage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An error occurs in a match (Node or Rust) or latency increases.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The team diagnoses the issue using metrics/logs.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Minimum metrics (p95 latencies, error rate, Rust health) and logs with correlation-id (TBD implementation).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-15"></a>QS-15 (Arc42 + ADR quality)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Change</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Team reviews the architecture and decisions.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">They can trace decisions and quality attributes.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clear documentation (complete arc42) and relevant decisions recorded (e.g., ADR) per evaluation criteria.</p></td>
+</tr>
+</tbody>
+</table>
 <div style="page-break-after: always;"></div>
 </div>
 </div>
@@ -5440,7 +5626,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-02-13 17:57:22 UTC
+Last updated 2026-02-13 18:26:30 UTC
 </div>
 </div>
 </body>
