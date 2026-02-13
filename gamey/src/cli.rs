@@ -7,7 +7,8 @@
 //! - Server: Run as an HTTP server for bot API
 
 use crate::{
-    Coordinates, GameAction, Movement, RandomBot, RenderOptions, YBot, YBotRegistry, game,
+    Coordinates, GameAction, MinimaxBot, Movement, RandomBot, RenderOptions, YBot, YBotRegistry,
+    game,
 };
 use crate::{GameStatus, GameY, PlayerId};
 use anyhow::Result;
@@ -33,6 +34,14 @@ pub struct CliArgs {
     /// The bot to use (only used with --mode=computer), default = random_bot
     #[arg(short, long, default_value = "random_bot")]
     pub bot: String,
+
+    /// Whether the bot should play first (only used with --mode=computer)
+    #[arg(long, default_value_t = false)]
+    pub botfirst: bool,
+
+    /// Maximum time in milliseconds for the bot to search (only used with --mode=computer and --bot=minimax_bot)
+    #[arg(long, default_value_t = 1000)]
+    pub maxms: u64,
 
     /// Port to run the server on (only used with --mode=server)
     #[arg(short, long, default_value_t = 3000)]
@@ -69,7 +78,9 @@ pub fn run_cli_game() -> Result<()> {
     let args = CliArgs::parse();
     let mut render_options = crate::RenderOptions::default();
     let mut rl = DefaultEditor::new()?;
-    let bots_registry = YBotRegistry::new().with_bot(Arc::new(RandomBot));
+    let bots_registry = YBotRegistry::new()
+        .with_bot(Arc::new(RandomBot))
+        .with_bot(Arc::new(MinimaxBot::new(args.maxms)));
     let bot: Arc<dyn YBot> = match bots_registry.find(&args.bot) {
         Some(b) => b,
         None => {
@@ -82,6 +93,11 @@ pub fn run_cli_game() -> Result<()> {
         }
     };
     let mut game = game::GameY::new(args.size);
+    if args.mode == Mode::Computer && args.botfirst {
+        println!("Bot plays first...");
+        trigger_bot_move(&mut game, bot.as_ref());
+    }
+
     loop {
         println!("{}", game.render(&render_options));
         let status = game.status();
@@ -291,13 +307,7 @@ pub fn parse_idx(part: &str, bound: u32) -> Result<u32, String> {
 }
 
 /// Application logic for a Move command (Human + optional Bot response)
-fn handle_place_command(
-    game: &mut GameY,
-    idx: u32,
-    player: PlayerId,
-    mode: Mode,
-    bot: &dyn YBot,
-) {
+fn handle_place_command(game: &mut GameY, idx: u32, player: PlayerId, mode: Mode, bot: &dyn YBot) {
     let coords = Coordinates::from_index(idx, game.board_size());
     let movement = Movement::Placement { player, coords };
 
@@ -511,4 +521,3 @@ mod tests {
         assert!(debug.contains("5"));
     }
 }
-

@@ -22,7 +22,6 @@ name = "gamey"
 name = "gamey"
 path = "src/lib.rs"
 
-
 [dependencies]
 anyhow = "1.0"
 axum = { version = "0.8", features = ["macros"] }
@@ -35,6 +34,8 @@ thiserror = "1.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 tokio = { version = "1.0", features = ["full"] }
+fixedbitset = "0.5"
+smallvec = "1.13"
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
