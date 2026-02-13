@@ -3313,10 +3313,52 @@ The title of the table is the name of your system, the three columns contain the
 </div>
 </div>
 <div class="paragraph">
-<p><strong>&lt;Diagram or Table&gt;</strong></p>
+<p>The business context defines the external actors and how they interact with the YOVI system. The system handles user management, Y game logic, and the game interface for both humans and machines.</p>
 </div>
-<div class="paragraph">
-<p><strong>&lt;optionally: Explanation of external domain interfaces&gt;</strong></p>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. Communication Partners</caption>
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 40%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Communication Partner</th>
+<th class="tableblock halign-left valign-top">Inputs</th>
+<th class="tableblock halign-left valign-top">Outputs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Human Player</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Registration/Login, board movement commands, game configuration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Visual interface (UI), game state, personal history</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bot API (External)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game requests with board state in YEN format</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response with the next move calculated by the engine</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Administrator</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service status queries and metrics</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">System availability and performance reports</p></td>
+</tr>
+</tbody>
+</table>
+<div class="sect3">
+<h4 id="_domain_interfaces">3.1.1. Domain Interfaces</h4>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Web UI:</strong> React-based interface for end-user interaction.</p>
+</li>
+<li>
+<p><strong>Bot API:</strong> REST endpoint that allows external systems to play against the server logic using JSON/YEN format.</p>
+</li>
+</ul>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -3339,15 +3381,70 @@ together with a mapping table showing the relationships between channels and inp
 </div>
 </div>
 <div class="paragraph">
-<p><strong>&lt;Diagram or Table&gt;</strong></p>
+<p>The technical context describes the protocols and communication channels between the three main services and external systems.</p>
 </div>
-<div class="paragraph">
-<p><strong>&lt;optionally: Explanation of technical interfaces&gt;</strong></p>
+<div class="sect3">
+<h4 id="_technical_interfaces_and_channels">3.2.1. Technical Interfaces and Channels</h4>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 2. Technical Interfaces and Channels</caption>
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Interface</th>
+<th class="tableblock halign-left valign-top">Channel / Protocol</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Frontend ↔ Webapp</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTPS / JSON</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The React application (Vite) communicates with the Node.js backend through REST calls</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Webapp ↔ Gamey</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP / JSON (YEN)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Node.js service delegates heavy logic and game validation to the Rust engine</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Webapp ↔ Users</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP / REST</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Internal communication to validate sessions (JWT) and retrieve profiles</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Users ↔ MariaDB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MariaDB Wire Protocol</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistence of user data, credentials, and audit logs</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Monitoring ↔ All</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP / Metrics</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The monitoring module collects health check status from each service</p></td>
+</tr>
+</tbody>
+</table>
 </div>
-<div class="paragraph">
-<p><strong>&lt;Mapping Input/Output to Channels&gt;</strong></p>
+<div class="sect3">
+<h4 id="_mapping_of_inputsoutputs_to_channels">3.2.2. Mapping of Inputs/Outputs to Channels</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Access Management:</strong> Login requests are processed in the Users service, which verifies against MariaDB and returns a JWT.</p>
+</li>
+<li>
+<p><strong>Move Processing:</strong> The game flow travels from Frontend → Webapp (Node) → Gamey (Rust), where the AI algorithm or validation is applied.</p>
+</li>
+<li>
+<p><strong>Persistence:</strong> Only the Users service (and optionally Webapp for history) has direct access to the database to ensure data integrity.</p>
+</li>
+</ol>
 </div>
 <div style="page-break-after: always;"></div>
+</div>
 </div>
 </div>
 </div>
@@ -5343,7 +5440,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-02-13 17:50:03 UTC
+Last updated 2026-02-13 17:57:22 UTC
 </div>
 </div>
 </body>
