@@ -4,9 +4,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 
 
 == Building Block View
-TODO -> Diagram
 
-=== Motivation
 
 ifdef::arc42help[]
 [role="arc42help"]
@@ -46,6 +44,9 @@ See https://docs.arc42.org/section-5/[Building Block View] in the arc42 document
 endif::arc42help[]
 
 === Whitebox Overall System
+image::../images/overview_diagram.svg[alt="Overview Architecture", width=800, height=600, align="center"]
+
+
 
 ifdef::arc42help[]
 [role="arc42help"]
@@ -70,92 +71,41 @@ In the best case you will get away with examples or simple signatures.
 ****
 endif::arc42help[]
 
-_**<Overview Diagram>**_
 
-Motivation::
+Rationale::
+We applied *functional decomposition* to separate responsibilities within the YOVI system:
 
-_<text explanation>_
+Contained Blackboxes::
 
-
-Contained Building Blocks::
-_<Description of contained building block (black boxes)>_
-
-Important Interfaces::
-_<Description of important interfaces>_
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Insert your explanations of black boxes from level 1:
-
-If you use tabular form you will only describe your black boxes with name and
-responsibility according to the following schema:
-
-[cols="1,2" options="header"]
+[cols="1,3", options="header"]
 |===
-| **Name** | **Responsibility**
-| _<black box 1>_ | _<Text>_
-| _<black box 2>_ | _<Text>_
+| Building Block | Description
+
+| Web Frontend
+| Browser-based TypeScript application. Renders the Y game board, handles user interaction, displays match history and statistics, and communicates with the Backend API using REST.
+
+| Backend API
+| Central application logic implemented in Node/TypeScript. Provides endpoints for authentication, user management, match flow, statistics, and the public Bot API. Manages requests to the Rust Engine using JSON/YEN.
+
+| Rust Engine
+| Rust service responsible for validating game states and computing the next move. Uses YEN notation for board representation and exposes a minimal JSON-based web service interface to the Backend API.
+
+| Database
+| Persistent storage containing users, match records, statistics, and historical data. Accessed exclusively through repository components in the Backend API.
+
+| Player (external)
+| Human user interacting with the system through the Web Frontend to play matches, manage their account, and review their statistics.
+
+| External Bots (external)
+| Automated agents consuming the public Bot API. Bots send board positions in YEN format and receive suggested moves from the system.
+
 |===
-
-
-
-If you use a list of black box descriptions then you fill in a separate black box template for every important building block .
-Its headline is the name of the black box.
-****
-endif::arc42help[]
-
-==== <Name black box 1>
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Here you describe <black box 1>
-according the the following black box template:
-
-* Purpose/Responsibility
-* Interface(s), when they are not extracted as separate paragraphs. This interfaces may include qualities and performance characteristics.
-* (Optional) Quality-/Performance characteristics of the black box, e.g.availability, run time behavior, ....
-* (Optional) directory/file location
-* (Optional) Fulfilled requirements (if you need traceability to requirements).
-* (Optional) Open issues/problems/risks
-
-****
-endif::arc42help[]
-
-_<Purpose/Responsibility>_
-
-_<Interface(s)>_
-
-_<(Optional) Quality/Performance Characteristics>_
-
-_<(Optional) Directory/File Location>_
-
-_<(Optional) Fulfilled Requirements>_
-
-_<(optional) Open Issues/Problems/Risks>_
-
-
-
-
-==== <Name black box 2>
-
-_<black box template>_
-
-==== <Name black box n>
-
-_<black box template>_
-
-
-==== <Name interface 1>
-
-...
-
-==== <Name interface m>
 
 
 
 === Level 2
+image::../images/level2_diagram.svg[alt="Level 2 Architecture", width=800, height=600, align="center"]
+
 
 ifdef::arc42help[]
 [role="arc42help"]
@@ -168,61 +118,30 @@ Leave out normal, simple, boring or standardized parts of your system
 ****
 endif::arc42help[]
 
-==== White Box _<building block 1>_
+[cols="1,3", options="header"]
+|===
+| Building Block | Description
 
-ifdef::arc42help[]
-[role="arc42help"]
-****
-...describes the internal structure of _building block 1_.
-****
-endif::arc42help[]
+| Routes
+| Handles all HTTP requests entering the Backend API. Delegates user‑related requests to *UserService* and game‑related requests (match flow, play actions) to *MatchService*.
 
-_<white box template>_
+| UserService
+| Contains business logic related to user operations (authentication, profile management, statistics). Interacts with *UserRepository* to access persistent user data.
 
-==== White Box _<building block 2>_
+| MatchService
+| Encapsulates all game workflow logic: creating matches, updating board states, preparing YEN structures, and coordinating validation and next‑move computations. Uses *YENAdapter* for conversions and *RustClient* for game logic execution.
 
+| YENAdapter
+| Converts data structures between internal board representation and **YEN notation**. Ensures serialization and parsing for communication with the Rust module.
 
-_<white box template>_
+| RustClient
+| HTTP client responsible for invoking the Rust Engine service. Sends board state in JSON/YEN format to request validation or next‑move suggestions.
 
-...
+| UserRepository
+| Persistence component managing user data (create, read, update, delete). Accessed exclusively via *UserService*.
 
-==== White Box _<building block m>_
-
-
-_<white box template>_
-
-
-
-=== Level 3
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Here you can specify the inner structure of (some) building blocks from level 2 as white boxes.
-
-When you need more detailed levels of your architecture please copy this
-part of arc42 for additional levels.
-****
-endif::arc42help[]
-
-==== White Box <_building block x.1_>
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Specifies the internal structure of _building block x.1_.
-****
-endif::arc42help[]
-
-_<white box template>_
+| MatchRepository
+| Persistence component managing match records (create, read, update, delete). Accessed exclusively via *MatchService*.
+|===
 
 
-==== White Box <_building block x.2_>
-
-_<white box template>_
-
-
-
-==== White Box <_building block y.1_>
-
-_<white box template>_

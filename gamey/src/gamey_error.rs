@@ -122,6 +122,10 @@ pub enum GameYError {
         /// Description of what went wrong.
         message: String,
     },
+
+    /// Attempted to undo a move while the history is empty.
+    #[error("Invalid attempt to undo a move with an empty history")]
+    NoMoveToUndo,
 }
 
 #[cfg(test)]
