@@ -115,8 +115,8 @@ The technical context describes the protocols and communication channels between
 | HTTP / REST
 | Internal communication to validate sessions (JWT) and retrieve profiles
 
-| Users ↔ MongoDB
-| MongoDB Wire Protocol
+| Users ↔ MariaDB
+| MariaDB Wire Protocol
 | Persistence of user data, credentials, and audit logs
 
 | Monitoring ↔ All
@@ -126,6 +126,6 @@ The technical context describes the protocols and communication channels between
 
 ==== Mapping of Inputs/Outputs to Channels
 
-. *Access Management:* Login requests are processed in the Users service, which verifies against MongoDB and returns a JWT.
+. *Access Management:* Login requests are processed in the Users service, which verifies against MariaDB and returns a JWT.
 . *Move Processing:* The game flow travels from Frontend → Webapp (Node) → Gamey (Rust), where the AI algorithm or validation is applied.
 . *Persistence:* Only the Users service (and optionally Webapp for history) has direct access to the database to ensure data integrity.
