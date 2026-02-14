@@ -1,7 +1,7 @@
 import './App.css'
-import RegisterForm from './RegisterForm';
-import reactLogo from './assets/react.svg'
-
+//import RegisterForm from './components/RegisterForm';
+//import reactLogo from './assets/react.svg'
+/*
 function App() {
   return (
     <div className="App">
@@ -18,6 +18,13 @@ function App() {
       <RegisterForm />
     </div>
   );
+}*/ 
+// THIS WAS THE PREVIOUS, I KEEP IT JUST IN CASE.
+
+import LoginPage from "./pages/LoginPage";
+
+function App() {
+  return <LoginPage />;
 }
 
 export default App;
