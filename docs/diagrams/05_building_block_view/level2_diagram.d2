@@ -1,0 +1,8 @@
+direction: right
+
+Routes -> UserService: "User endpoints"
+Routes -> MatchService: "Game endpoints"
+MatchService -> YENAdapter: "to/from YEN"
+MatchService -> RustClient: "validate / suggest move"
+UserService -> UserRepo: "CRUD users"
+MatchService -> MatchRepo: "CRUD matches"
