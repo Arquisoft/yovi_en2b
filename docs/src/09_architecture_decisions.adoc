@@ -208,19 +208,23 @@ Decision::
   - /api/server/v1/... -> server internal API (user/auth/profile/history; not intended as bot API)
 
 Consequences::
-- Clear separation between UI and API.
-- Enables a reverse proxy setup with path-based routing.
+- Makes the client/server split explicit: “clients use public API”, “user management stays server-side”.
+- Allows different security policies per boundary (API key for public game API, JWT for user/auth API).
 
 IMPORTANT: Status: PROPOSED 
 
-=== ADR-012: Reverse proxy for path-based routing (Nginx)
+=== ADR-012: Reverse proxy to expose one client/server endpoint (Nginx)
 
 Context::
-- We need to route / to the frontend and /api/v1/... to the BFF behind a single port.
-- An API gateway is considered overkill for this project.
+- We want one public host/port while serving the client and routing requests to the server APIs.
+- A full API gateway is unnecessary for the project scope.
 
 Decision::
-- Use an Nginx reverse proxy for path-based routing.
+- Use Nginx for path-based routing:
++ / -> frontend (client)
++ /api/public/v1/ -> Node/Express (server: public game API)
++ /api/server/v1/ -> Node/Express (server: user/auth API)
++ (optional) /ws/ -> Node/Express (server: WebSocket for realtime/multiplayer)
 
 Consequences::
 - One public port with simple routing rules (e.g., `location` + `proxy_pass`). [web:187]
