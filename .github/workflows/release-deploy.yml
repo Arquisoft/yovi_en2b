@@ -153,6 +153,14 @@ jobs:
           user: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
           command: |
+            mkdir -p /opt/yovi
+            cd /opt/yovi
             wget https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/master/docker-compose.yml -O docker-compose.yml
+            cat > .env << EOF
+            MARIADB_ROOT_PASSWORD=${{ secrets.MARIADB_ROOT_PASSWORD }}
+            MARIADB_USER=${{ secrets.MARIADB_USER }}
+            MARIADB_PASSWORD=${{ secrets.MARIADB_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            EOF
             docker compose down
             docker compose up -d --pull always

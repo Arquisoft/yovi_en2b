@@ -6,10 +6,9 @@ CREATE TABLE IF NOT EXISTS users (
   username VARCHAR(50) UNIQUE NOT NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
-  role VARCHAR(20) DEFAULT 'player',
+  role ENUM('player', 'admin') DEFAULT 'player',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   last_login TIMESTAMP NULL,
   is_active BOOLEAN DEFAULT TRUE
-  CHECK (role IN ('player', 'admin'))
 );
