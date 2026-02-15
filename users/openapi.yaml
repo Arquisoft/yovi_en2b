@@ -100,6 +100,11 @@ paths:
                 duplicateUser:
                   value:
                     error: Username or email already exists
+                invalidJson:
+                  value:
+                    error: Invalid JSON
+                    message: The request body contains malformed JSON.
+                    details: Unexpected token in JSON at position 0
 
   /api/auth/login:
     post:
@@ -156,13 +161,20 @@ paths:
                         enum: [player, admin]
                         example: player
         "400":
-          description: Missing required fields
+          description: Missing required fields or invalid JSON
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-              example:
-                error: Email and password are required
+              examples:
+                missingFields:
+                  value:
+                    error: Email and password are required
+                invalidJson:
+                  value:
+                    error: Invalid JSON
+                    message: The request body contains malformed JSON.
+                    details: Unexpected token in JSON at position 0
         "401":
           description: Invalid credentials or user deactivated
           content:
@@ -192,11 +204,36 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserProfile"
         "401":
-          description: Unauthorized
+          description: Unauthorized - Missing, invalid, or expired token
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/AuthError"
+              examples:
+                noToken:
+                  value:
+                    error: No authentication token provided
+                invalidToken:
+                  value:
+                    error: Invalid token
+                    message: Authentication token is invalid.
+                expiredToken:
+                  value:
+                    error: Token expired
+                    message: Your session has expired. Please login again.
+                userNotFound:
+                  value:
+                    error: User not found
+                    message: Invalid authentication token
+        "403":
+          description: Forbidden - Account deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+              example:
+                error: Account deactivated
+                message: Your account has been deactivated. Please contact support.
         "404":
           description: User not found
           content:
@@ -270,12 +307,27 @@ paths:
                 userNotFound:
                   value:
                     error: User not found
+                invalidJson:
+                  value:
+                    error: Invalid JSON
+                    message: The request body contains malformed JSON.
+                    details: Unexpected token in JSON at position 0
+                databaseError:
+                  value:
+                    error: Database error
+                    message: Invalid data provided
         "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/AuthError"
+        "403":
+          description: Forbidden - Account deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
 
   /api/auth/change-password:
     put:
@@ -333,12 +385,23 @@ paths:
                 userNotFound:
                   value:
                     error: User not found
+                invalidJson:
+                  value:
+                    error: Invalid JSON
+                    message: The request body contains malformed JSON.
+                    details: Unexpected token in JSON at position 0
         "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/AuthError"
+        "403":
+          description: Forbidden - Account deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
 
   /api/auth/account:
     delete:
@@ -371,7 +434,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/AuthError"
+        "403":
+          description: Forbidden - Account deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
 
   /metrics:
     get:
@@ -396,6 +465,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: Bearer token authentication using JWT
 
   schemas:
     UserProfile:
@@ -430,4 +500,20 @@ components:
       properties:
         error:
           type: string
-          example: Error message description
+          example: Error message
+        message:
+          type: string
+          example: Additional error details
+        details:
+          type: string
+          example: Technical error details
+
+    AuthError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Authentication error
+        message:
+          type: string
+          example: Detailed authentication error message

@@ -1,6 +1,7 @@
+import 'reflect-metadata';
 import express from 'express';
 import cors from 'cors';
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import promBundle from 'express-prom-bundle';
 import swaggerUi from 'swagger-ui-express';
 import helmet from 'helmet';
@@ -11,9 +12,14 @@ import { AppDataSource } from './config/database';
 import authRoutes from './routes/authRoutes';
 import { jsonErrorHandler, globalErrorHandler } from './middleware/errorHandler';
 
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// GLOBAL MIDDLEWARES
+app.use(cors());
+app.use(express.json());
 
 // SECURITY 
 app.use(helmet({
@@ -43,10 +49,6 @@ try {
 } catch (error) {
     console.warn('Could not load openapi.yaml:', error);
 }
-
-// GLOBAL MIDDLEWARES
-app.use(cors());
-app.use(express.json());
 
 // JSON ERROR HANDLING
 app.use(jsonErrorHandler);

@@ -1,10 +1,44 @@
 services:
+  mariadb:
+    image: mariadb:11.4
+    container_name: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_passwd}
+      MYSQL_DATABASE: users_db
+      MYSQL_USER: ${DB_USER:-yovi}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-yovi_passwd}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./users/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - monitor-net
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+  
   users:
     build: ./users
     container_name: users
     image: ghcr.io/arquisoft/yovi_en2b-users:latest
     ports:
       - "3000:3000"
+    environment:
+      NODE_ENV: development # or production
+      PORT: 3000
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_NAME: users_db
+      DB_USER: ${DB_USER:-yovi}
+      DB_PASSWORD: ${DB_PASSWORD:-yovi_passwd}
+      JWT_SECRET: ${JWT_SECRET:-please_dont_tell_anyone}
+    depends_on:
+      mariadb:
+        condition: service_healthy
     networks:
       - monitor-net
 
@@ -54,3 +88,7 @@ services:
 networks:
   monitor-net:
     driver: bridge
+
+volumes:
+  mariadb-data:
+    driver: local
