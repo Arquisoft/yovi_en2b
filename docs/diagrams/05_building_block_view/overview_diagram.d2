@@ -1,0 +1,16 @@
+
+direction: right
+
+User: {shape: person}
+Bot: {shape: person}
+
+Frontend: {label: "Frontend (TS)"}
+Backend: {label: "Backend API (Node/TS)"}
+RustModule: {label: "Rust Module\nWin Check + Next Move"}
+Database: {label: "Database"}
+
+User -> Frontend: "User Interaction (UI)"
+Bot -> Backend: "Bot API (/play)"
+Frontend -> Backend: "REST API"
+Backend -> RustModule: "Validate state\nCompute next move\n(JSON / YEN)"
+Backend -> Database: "Store users\nStore matches"
