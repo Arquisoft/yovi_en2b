@@ -17,8 +17,15 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// GLOBAL MIDDLEWARES
-app.use(cors());
+// CROSS-ORIGIN RESOURCE SHARING
+app.use(cors({
+    origin: process.env.NODE_ENV === 'production'
+        ? 'https://yovi-dominio.com' // cambiar por dominio de real
+        : true,
+    credentials: true
+}));
+
+// JSON PARSING
 app.use(express.json());
 
 // SECURITY 
