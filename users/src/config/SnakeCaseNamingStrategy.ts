@@ -7,8 +7,12 @@ export class SnakeCaseNamingStrategy extends DefaultNamingStrategy implements Na
     }
 
     columnName(propertyName: string, customName: string, embeddedPrefixes: string[]): string {
-        return snakeCase(embeddedPrefixes.join('_')) + (customName ? customName : snakeCase(propertyName));
+        const prefix = embeddedPrefixes.length > 0
+            ? snakeCase(embeddedPrefixes.join('_')) + '_'
+            : '';
+        return prefix + (customName ? customName : snakeCase(propertyName));
     }
+
 
     relationName(propertyName: string): string {
         return snakeCase(propertyName);
@@ -36,6 +40,7 @@ export class SnakeCaseNamingStrategy extends DefaultNamingStrategy implements Na
     }
 
     eagerJoinRelationAlias(alias: string, propertyPath: string): string {
-        return alias + '__' + propertyPath.replace('.', '_');
+        return alias + '__' + propertyPath.replace(/\./g, '_');
     }
+
 }
