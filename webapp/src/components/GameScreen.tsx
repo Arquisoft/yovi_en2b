@@ -62,8 +62,8 @@ function HexBoard() {
         return (
           <button
             key={i}
-            className={`hex-tile hex-tile--${tile.color}`} //Por ejemplo: (hex-tile hex-tile--white)
-            style={{ //Posición y tamaño --> TODO: Revisar si esto es correcto, al usar etiqueta style en el codigo.
+            className={`hex-tile hex-tile--${tile.color}`} {//Por ejemplo: (hex-tile hex-tile--white)}
+            style={{ {//Posición y tamaño --> TODO: Revisar si esto es correcto, al usar etiqueta style en el codigo.}
               left: `${x}px`,
               top: `${y}px`,
               width: `${hexW}px`,
@@ -71,8 +71,8 @@ function HexBoard() {
             }}
             aria-label={`Tile row ${tile.row} column ${tile.col}, ${tile.color}`}
           >
-            <svg viewBox="0 0 100 87" className="hex-svg">/ /TODO: Revisar si funciona bien.
-              <polygon points="25,0 75,0 100,43.5 75,87 25,87 0,43.5" /> //Hexágono creado con svg. 
+            <svg viewBox="0 0 100 87" className="hex-svg"> {//TODO: Revisar si funciona bien.}
+              <polygon points="25,0 75,0 100,43.5 75,87 25,87 0,43.5" /> {//Hexágono creado con svg. }
             </svg>
           </button>
         );
