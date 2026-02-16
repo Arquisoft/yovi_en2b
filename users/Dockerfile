@@ -5,8 +5,9 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-# Instalar todas las dependencias (incluyendo devDependencies para build)
-RUN npm ci
+# Instalar con --ignore-scripts y recompilar bcrypt de forma controlada
+RUN npm ci --ignore-scripts && \
+    npm rebuild bcrypt --build-from-source
 
 COPY tsconfig.json ./
 COPY src ./src
@@ -24,7 +25,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # Instalar SOLO dependencias de producción
-RUN npm ci --omit=dev --omit=optional
+RUN npm ci --omit=dev --omit=optional --ignore-scripts && \
+    npm rebuild bcrypt --build-from-source
 
 # Copiar el build del stage anterior
 COPY --from=builder /app/dist ./dist

@@ -6,7 +6,7 @@ services:
       MYSQL_ROOT_PASSWORD: test_password
       MYSQL_DATABASE: test_db
       MYSQL_USER: test_user
-      MYSQL_PASSWORD: test_password
+      MYSQL_PASSWORD: ${TEST_DB_PASSWORD}
     ports:
       - "3307:3306"
     tmpfs:

@@ -30,7 +30,14 @@ app.use(express.json());
 
 // SECURITY 
 app.use(helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "script-src": ["'self'", "'unsafe-inline'"],
+            "style-src": ["'self'", "'unsafe-inline'", "https:"],
+            "img-src": ["'self'", "data:", "validator.swagger.io"]
+        }
+    },
     crossOriginEmbedderPolicy: false
 }));
 

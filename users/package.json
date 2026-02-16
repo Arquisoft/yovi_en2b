@@ -12,7 +12,7 @@
     "test:db:down": "docker compose -f docker-compose.test.yml down -v",
     "test": "npm run test:db:up && vitest run && npm run test:db:down",
     "test:watch": "vitest",
-    "test:coverage": "npm run test:db:up && vitest run --coverage; npm run test:db:down"
+    "test:coverage": "export TEST_DB_PASSWORD=test_password; npm run test:db:up && vitest run --coverage; npm run test:db:down"
   },
   "author": "",
   "license": "ISC",
