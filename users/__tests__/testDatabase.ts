@@ -11,6 +11,5 @@ export const TestDataSource = new DataSource({
   database: 'test_db',
   entities: [User],
   synchronize: true,
-  logging: false,
-  dropSchema: true
+  logging: false
 });
