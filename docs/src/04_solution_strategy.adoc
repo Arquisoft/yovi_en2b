@@ -3,58 +3,23 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-solution-strategy]]
 == Solution Strategy
 
-The architecture of the YOVI system is based on a modular approach that separates the user interface from the core game logic. This strategy supports mantainability, extensibility and interoperability, which are key quality goals of the system. The web application acts as the client-facing component, handling user interaction, presentation logic, and API exposure, while the game logic is encapsulated in a separate backend module.
-This separation allows the core game logic to remain independent from the user interface
-and facilitates future extensions such as additional clients or alternative frontends.
+The architecture of the YOVI system follows a modular client/server approach that separates the user interface from backend services and the core game engine. This strategy supports maintainability and interoperability by keeping clear boundaries between UI, user management, and game logic.
+The system exposes public APIs for user management and game interaction, while the Rust game engine remains internal and focused on validation and bot move computation.
 
 === Technology decisions
 
-The web application is implemented in TypeScript to facilitate the use of frameworks and ease the development of interactive user interfaces.
-
-The game logic module is implemented in Rust due to its performance characteristics, memory safety and suitability for implementing complex algorithm.
-
-Communication between the two subsystems is performed using JSON and following the YEN notation, this ensures that data is exchanged correctly.
+The web client is implemented in TypeScript to enable fast development of an interactive UI using modern web frameworks.
+Backend services are implemented as HTTP APIs, and the game engine is implemented in Rust for performance and memory safety when running validation and search-based bot strategies.
+Inter-service communication uses JSON and the YEN notation as the game-state contract.
 
 === Quality Goal Realization
 
-Correctness and reliability are achieved by having all rule enforcement and game logic within the Rust game module.
-
-Usability is achieved thanks to having an intuitive and clear frontend that is easy to use for players.
-
-Performance is ensured by using efficient algorithms and a really efficient compiled language.
-
-Maintainability is achieved thanks to the modular design of the system and the clear separation of subsystems.
+Correctness and reliability are improved by enforcing game rules and validating YEN/JSON game states in the Rust engine.
+Usability is addressed through a simple web-based flow (register/login/start game) and a clear UI.
+Performance is addressed by using a compiled Rust engine for the computationally intensive bot logic and by keeping service calls bounded (timeouts) to avoid hanging requests.
+Maintainability is supported by the separation into services (webapp-backend, users, gamey) and stable API contracts between them.
+Security is handled through JWT-based authentication and role-based authorization (player/admin) for protected operations.
 
 === Organizational decisions
 
-The system is developed by a four-member team with clear responsability separation. Version control and issue tracking are used to support collaborative development and ensure code quality.
-
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-.Contents
-A short summary and explanation of the fundamental decisions and solution strategies, that shape system architecture. It includes
-
-* technology decisions
-* decisions about the top-level decomposition of the system, e.g. usage of an architectural pattern or design pattern
-* decisions on how to achieve key quality goals
-* relevant organizational decisions, e.g. selecting a development process or delegating certain tasks to third parties.
-
-.Motivation
-These decisions form the cornerstones for your architecture. They are the foundation for many other detailed decisions or implementation rules.
-
-.Form
-Keep the explanations of such key decisions short.
-
-Motivate what was decided and why it was decided that way,
-based upon problem statement, quality goals and key constraints.
-Refer to details in the following sections.
-
-
-.Further Information
-
-See https://docs.arc42.org/section-4/[Solution Strategy] in the arc42 documentation.
-
-****
-endif::arc42help[]
+The system is developed by a four-member team with shared responsibilities across the stack. Version control and issue tracking support collaborative work and code quality through reviews and automated checks.

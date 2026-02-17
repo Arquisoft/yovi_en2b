@@ -17,28 +17,96 @@ You should clearly define your terms, so that all stakeholders
 * have an identical understanding of these terms
 * do not use synonyms and homonyms
 
-
 .Form
-
 A table with columns <Term> and <Definition>.
 
-Potentially more columns in case you need translations.
-
-
 .Further Information
-
 See https://docs.arc42.org/section-12/[Glossary] in the arc42 documentation.
-
 ****
 endif::arc42help[]
 
-[cols="e,2e" options="header"]
+[cols="1,2", options="header"]
 |===
 |Term |Definition
 
-|<Term-1>
-|<definition-1>
+|YOVI
+|System name: a web-based platform to play Game Y through a browser and public APIs.
 
-|<Term-2>
-|<definition-2>
+|Game Y
+|Board game implemented by the system, including a player-vs-bot mode.
+
+|Micrati
+|Company behind the project in the assignment context (project sponsor).
+
+|Web Frontend
+|Browser-based TypeScript SPA that renders the board UI and interacts with backend APIs via HTTP (and WebSockets when enabled).
+
+|SPA (Single-Page Application)
+|Web application that loads once and updates the UI dynamically by calling backend APIs.
+
+|webapp-backend
+|Backend that exposes the public Game API and acts as orchestration layer (BFF) towards internal services (notably `gamey`) and the `users` service.
+
+|BFF (Backend for Frontend)
+|Pattern where a single backend endpoint is tailored to a specific frontend, centralizing orchestration and cross-cutting concerns.
+
+|users (service)
+|Service responsible for authentication and user management, exposing the public User API (e.g., register/login/profile) and persisting user data in MariaDB.
+
+|User API (Public User API)
+|Public HTTP API surface for user management (register/login/profile) provided by the `users` service.
+
+|Game API (Public Game API)
+|Public HTTP API surface for game interaction (match flow/play actions) provided by `webapp-backend`.
+
+|gamey (Rust engine)
+|Internal Rust service that validates game states and computes bot moves; invoked by `webapp-backend` via HTTP using JSON/YEN.
+
+|YEN
+|Notation used to represent a Game Y state (board size, players, turn, and layout), exchanged as JSON between services.
+
+|YEN/JSON game state
+|JSON payload that encodes the game state following YEN; invalid states must be rejected by the engine.
+
+|JSON
+|Default payload format used in the system APIs and service-to-service communication.
+
+|REST
+|HTTP-based style used for request/response APIs in the system.
+
+|WebSocket
+|Bidirectional communication channel used for realtime gameplay/multiplayer events when enabled.
+
+|JWT (JSON Web Token)
+|Token format used for authentication; clients send it via `Authorization: Bearer <token>`.
+
+|HS256
+|HMAC-SHA256 algorithm used to sign/verify JWTs using a shared secret.
+
+|Authentication
+|Process of proving identity (who a user/client is), handled by the `users` service via JWT issuance/verification.
+
+|Authorization
+|Process of deciding permissions (what a user can do), implemented as role-based checks (e.g., `player`/`admin`).
+
+|Role (player/admin)
+|User permission label used for authorization decisions.
+
+|MariaDB
+|Relational database used by the `users` service to persist user accounts and credentials/roles.
+
+|ADR (Architecture Decision Record)
+|Short document describing an important architectural decision, its context, and consequences.
+
+|arc42
+|Software architecture documentation template used to structure this documentation (sections 1–12).
+
+|M1
+|First milestone focused on end-to-end functionality.
+
+|Error envelope
+|Standard JSON structure for error responses using `errorCode`, `message`, and `requestId`.
+
+|requestId
+|Identifier included in error responses to correlate client-visible failures with server-side logs/traces.
 |===

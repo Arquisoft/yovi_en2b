@@ -109,9 +109,16 @@ Conventions::
 
 === Authentication and authorization
 
-TBD
+Scope::
+- Applies to public endpoints exposed by `users` (authentication/user management) and to protected endpoints in `webapp-backend` (game interaction).
 
-...
+Authentication::
+- `users` acts as the auth server: it issues JWTs and verifies them (HS256).
+- Clients send JWTs in `Authorization: Bearer <token>`; `webapp-backend` may also verify them when protecting endpoints.
+
+Authorization::
+- Role-based access control with roles: `player` and `admin`.
+- Default rule: a user can only access/modify their own data; admin-only operations (if any) require `admin`.
 
 === Backend for Frontend (BFF)
 

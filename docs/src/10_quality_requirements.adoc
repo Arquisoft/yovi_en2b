@@ -3,7 +3,6 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-quality-scenarios]]
 == Quality Requirements
 
-
 ifdef::arc42help[]
 [role="arc42help"]
 ****
@@ -50,16 +49,35 @@ In any case the tree should include links to the scenarios of the following sect
 ****
 endif::arc42help[]
 
-Root: Usefulness / Quality
-
-- Usability (High) -> <<QS-01>>, <<QS-02>>
-- Performance efficiency (High) -> <<QS-03>>, <<QS-04>>, <<QS-05>>
-- Maintainability (High) -> <<QS-06>>, <<QS-07>>
-- Reliability (High) -> <<QS-08>>, <<QS-09>>
-- Security (Low) -> <<QS-10>>, <<QS-11>>, <<QS-12>>
-- Compatibility / Interoperability (Medium) -> <<QS-13>>
-- Operability / Observability (Medium) -> <<QS-14>>
-- Documentation quality (High) -> <<QS-15>>
+[plantuml, quality-tree-horizontal, svg]
+....
+@startwbs
+* Root: Usefulness / Quality
+** Usability (High)
+*** QS-01
+*** QS-02
+** Performance efficiency (High)
+*** QS-03
+*** QS-04
+*** QS-05
+** Maintainability (High)
+*** QS-06
+*** QS-07
+** Reliability (High)
+*** QS-08
+*** QS-09
+** Security (Low)
+*** QS-10
+*** QS-11
+*** QS-12
+** Compatibility / Interoperability (Medium)
+*** QS-13
+** Operability / Observability (Medium)
+*** QS-14
+** Documentation quality (High)
+*** QS-15
+@endwbs
+....
 
 === Quality Scenarios
 
