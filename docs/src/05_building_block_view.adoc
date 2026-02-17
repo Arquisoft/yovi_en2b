@@ -35,18 +35,43 @@ Thus it contains the white box description of selected building blocks of level 
 
 *Level 3* zooms into selected building blocks of level 2, and so on.
 
-
 .Further Information
-
 See https://docs.arc42.org/section-5/[Building Block View] in the arc42 documentation.
-
 ****
 endif::arc42help[]
 
+
 === Whitebox Overall System
-image::../images/overview_diagram.svg[alt="Overview Architecture", width=800, height=600, align="center"]
 
+[plantuml, overview-diagram, svg]
+....
+@startuml
+left to right direction
+skinparam componentStyle rectangle
 
+actor "Player" as player
+actor "External client\n(Public API consumer)" as ext
+
+rectangle "Web Frontend\n(TypeScript SPA)" as fe
+rectangle "webapp-backend\n(Game API / BFF)" as webapp
+rectangle "users service\n(User API / Auth)" as users
+rectangle "gamey\n(Rust engine)" as gamey
+database "MariaDB" as db
+
+player --> fe : UI
+
+fe --> users : REST (login/profile)
+fe --> webapp : REST/WebSocket (game)
+
+ext --> users : REST (User API)
+ext --> webapp : REST (Game API)
+
+webapp --> users : REST (auth + profile)
+webapp --> gamey : HTTP (JSON/YEN)
+
+users --> db : read/write
+@enduml
+....
 
 ifdef::arc42help[]
 [role="arc42help"]
@@ -61,19 +86,17 @@ Here you describe the decomposition of the overall system using the following wh
    ** use a list of black box descriptions of the building blocks according to the black box template (see below).
    Depending on your choice of tool this list could be sub-chapters (in text files), sub-pages (in a Wiki) or nested elements (in a modeling tool).
 
-
  * (optional:) important interfaces, that are not explained in the black box templates of a building block, but are very important for understanding the white box.
 Since there are so many ways to specify interfaces why do not provide a specific template for them.
  In the worst case you have to specify and describe syntax, semantics, protocols, error handling,
  restrictions, versions, qualities, necessary compatibilities and many things more.
 In the best case you will get away with examples or simple signatures.
-
 ****
 endif::arc42help[]
 
 
 Rationale::
-We applied *functional decomposition* to separate responsibilities within the YOVI system:
+We applied *functional decomposition* to separate responsibilities within the YOVI system and keep clear client/server boundaries.
 
 Contained Blackboxes::
 
@@ -82,30 +105,70 @@ Contained Blackboxes::
 | Building Block | Description
 
 | Web Frontend
-| Browser-based TypeScript application. Renders the Y game board, handles user interaction, displays match history and statistics, and communicates with the Backend API using REST.
+| Browser-based TypeScript application. Renders the Y game board, handles user interaction, and communicates with the public APIs via REST (and WebSockets when realtime gameplay is enabled).
 
-| Backend API
-| Central application logic implemented in Node/TypeScript. Provides endpoints for authentication, user management, match flow, statistics, and the public Bot API. Manages requests to the Rust Engine using JSON/YEN.
+| webapp-backend (Game API / BFF)
+| Node/TypeScript service exposing the public Game API (match flow, play actions, game-related statistics). Orchestrates calls to `gamey` using JSON/YEN and calls `users` when authentication/profile data is required.
 
-| Rust Engine
-| Rust service responsible for validating game states and computing the next move. Uses YEN notation for board representation and exposes a minimal JSON-based web service interface to the Backend API.
+| users service (User API / Auth)
+| Service exposing the public User API (register/login/profile). Issues and verifies JWTs, applies basic authorization (roles), and is the only component that accesses MariaDB.
 
-| Database
-| Persistent storage containing users, match records, statistics, and historical data. Accessed exclusively through repository components in the Backend API.
+| gamey (Rust engine)
+| Rust service responsible for validating game states and computing the next move. Uses YEN notation for board representation and exposes a minimal JSON-based web service interface to `webapp-backend`.
+
+| Database (MariaDB)
+| Persistent storage for user accounts and credentials/roles. Accessed exclusively by the `users` service.
 
 | Player (external)
-| Human user interacting with the system through the Web Frontend to play matches, manage their account, and review their statistics.
+| Human user interacting through the Web Frontend to play matches and manage their account.
 
-| External Bots (external)
-| Automated agents consuming the public Bot API. Bots send board positions in YEN format and receive suggested moves from the system.
-
+| External client (external)
+| Any third-party client consuming the public APIs (User API and/or Game API) over HTTP, e.g., automated gameplay clients.
 |===
 
 
 
 === Level 2
-image::../images/level2_diagram.svg[alt="Level 2 Architecture", width=800, height=600, align="center"]
 
+[plantuml, level2-diagram, svg]
+....
+@startuml
+left to right direction
+skinparam componentStyle rectangle
+
+package "webapp-backend (Game API / BFF)" as PWebapp {
+  [Routes] as WebappRoutes
+  [MatchService] as MatchService
+  [RustClient] as RustClient
+}
+
+package "users service (User API / Auth)" as PUsers {
+  [Routes] as UsersRoutes
+  [UserService] as UserService
+  [UserRepository] as UserRepo
+}
+
+package "gamey (Rust engine)" as PGamey {
+  [Axum API] as GameyApi
+  [YENAdapter] as YENAdapter
+  [Validator + Bot] as BotCore
+}
+
+database "MariaDB" as db
+
+WebappRoutes --> MatchService
+MatchService --> RustClient
+RustClient --> GameyApi : HTTP (JSON/YEN)
+
+BotCore --> YENAdapter
+GameyApi --> BotCore 
+
+WebappRoutes --> UserService : REST (auth + profile)
+UsersRoutes --> UserService
+UserService --> UserRepo
+UserRepo --> db
+@enduml
+....
 
 ifdef::arc42help[]
 [role="arc42help"]
@@ -118,30 +181,53 @@ Leave out normal, simple, boring or standardized parts of your system
 ****
 endif::arc42help[]
 
+
+==== Level 2 - webapp-backend (Game API / BFF)
+
 [cols="1,3", options="header"]
 |===
 | Building Block | Description
 
 | Routes
-| Handles all HTTP requests entering the Backend API. Delegates user‑related requests to *UserService* and game‑related requests (match flow, play actions) to *MatchService*.
-
-| UserService
-| Contains business logic related to user operations (authentication, profile management, statistics). Interacts with *UserRepository* to access persistent user data.
+| Single entry point for the public APIs exposed by `webapp-backend`. Delegates game requests to *MatchService* and forwards authentication/profile operations to the `users` service.
 
 | MatchService
-| Encapsulates all game workflow logic: creating matches, updating board states, preparing YEN structures, and coordinating validation and next‑move computations. Uses *YENAdapter* for conversions and *RustClient* for game logic execution.
-
-| YENAdapter
-| Converts data structures between internal board representation and **YEN notation**. Ensures serialization and parsing for communication with the Rust module.
+| Encapsulates game workflow logic: creating matches/rooms, updating board states, and coordinating validation and next-move computations. Calls `users` only for authentication/profile data when required.
 
 | RustClient
-| HTTP client responsible for invoking the Rust Engine service. Sends board state in JSON/YEN format to request validation or next‑move suggestions.
-
-| UserRepository
-| Persistence component managing user data (create, read, update, delete). Accessed exclusively via *UserService*.
-
-| MatchRepository
-| Persistence component managing match records (create, read, update, delete). Accessed exclusively via *MatchService*.
+| HTTP client responsible for invoking the `gamey` service. Sends board state in JSON/YEN format to request validation or next-move suggestions.
 |===
 
 
+==== Level 2 - users service (User API / Auth)
+
+[cols="1,3", options="header"]
+|===
+| Building Block | Description
+
+| Routes
+| Handles HTTP requests entering the User API. Delegates to *UserService*.
+
+| UserService
+| Business logic for authentication and user operations (issue/verify JWTs, profile management, role checks). Coordinates persistence via *UserRepository*.
+
+| UserRepository
+| Persistence component managing user accounts and credentials/roles (create, read, update, delete). Accessed exclusively via *UserService*.
+|===
+
+
+==== Level 2 - gamey (Rust engine)
+
+[cols="1,3", options="header"]
+|===
+| Building Block | Description
+
+| Axum API
+| Minimal internal HTTP interface invoked by `webapp-backend` for validation and choose-move requests.
+
+| YENAdapter
+| Parses and serializes YEN/JSON game states and converts them to/from internal board representation.
+
+| Validator + Bot
+| Enforces game rules and computes next moves.
+|===
