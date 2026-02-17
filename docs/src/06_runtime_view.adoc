@@ -54,7 +54,7 @@ It covers the logic when a human player makes a move on the board.
 | **Artifact** | System (Web App + Rust Module)
 | **Environment** | Normal operation
 | **Response** | The move is validated, if the game ends the result is persisted, and the board is updated
-| **Response Measure** | The UI reflects the new state in less than [TODO: X seconds]
+| **Response Measure** | The UI reflects the new state in less than 0.5 seconds
 |===
 
 ==== Interaction sequence
@@ -68,7 +68,7 @@ image::../images/human_computer.svg[alt="Registration Sequence", width=600, alig
 
 *4.* Rust Module returns the result (Move valid/Match won/Match continues) to the Web Application.
 
-*5.* If the game ended the Web Application updates the game state in the [TODO: Database Name/Type] and reflects the new state in the Web Frontend anyways.
+*5.* If the game ended the Web Application updates the game state in the MariaDB database and reflects the new state in the Web Frontend anyways.
 
 
 === User Registration and History Consultation
@@ -81,10 +81,10 @@ It describes how a user interacts with the system to manage their profile and vi
 |===
 | **Source** | Human Player
 | **Stimulus** | Provides registration details via the Web Frontend
-| **Artifact** | System (Web App + Rust Module)
+| **Artifact** | System (Web App)
 | **Environment** | Normal operation
 | **Response** | Redirects the user to the game app and allows to view the match history
-| **Response Measure** | The UI reflects the new state in less than [TODO: X seconds]
+| **Response Measure** | The UI reflects the new state in less than 0.5 seconds
 |===
 
 ==== Interaction sequence
@@ -97,9 +97,9 @@ It describes how a user interacts with the system to manage their profile and vi
 
 *1.* User provides registration details through the Web Frontend.
 
-*2.* Web Application (TypeScript) receives the request and validates the information with the data on the [TODO: Database Name/Type].
+*2.* Web Application (TypeScript) receives the request and validates the information with the data on the MariaDB database.
 
-*3.* When the registered User requests their history, the Web Application queries the [TODO: Database Name/Type] for the raw data.
+*3.* When the registered User requests their history, the Web Application queries the MariaDB database for the raw data.
 
 *4.* The Web Application then calculates the history metrics and returns them to the Web Frontend for rendering.
 
@@ -107,6 +107,19 @@ It describes how a user interacts with the system to manage their profile and vi
 === Computer Strategy Execution 
 This scenario references the high-level requirement: _The game against the computer must implement more than one strategy._ 
 It describes how the system suggests of executes a move for the computer.
+
+==== Quality Context
+[cols="1,3"]
+|===
+| **Source** | Human Player
+| **Stimulus** | Provides a computer difficulty level via the Web Frontend
+| **Artifact** | System (Web App + Rust Module)
+| **Environment** | Normal operation
+| **Response** | The GameEngine works with the strategy according to the difficulty level chosen
+| **Response Measure** | The UI reflects the new state in less than 1 seconds
+|===
+
+==== Interaction sequence
 
 image::../images/computer_strat.svg[alt="Registration Sequence", width=600, align="center"]
 
@@ -124,6 +137,19 @@ image::../images/computer_strat.svg[alt="Registration Sequence", width=600, alig
 === External Bot Interaction
 This scenario references the high-level requirement: _API will enable a bot to play... a 'play' method will be exposed._ 
 It describes the interaction of an external bot with the YOVI system.
+
+==== Quality Context
+[cols="1,3"]
+|===
+| **Source** | External Bot
+| **Stimulus** | Invokes the API 'play' method providing a 'boardState' in YEN notation
+| **Artifact** | System (Web App + Rust Module)
+| **Environment** | Normal operation
+| **Response** | The system validates the input, processes game logic via the Rust module, and returns the result
+| **Response Measure** | The API returns the next move in YEN notation in less than 1 seconds
+|===
+
+==== Interaction sequence
 
 image::../images/bot_interaction.svg[alt="Registration Sequence", width=600, align="center"]
 
