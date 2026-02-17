@@ -10,29 +10,59 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MYSQL_ROOT_PASSWORD: test_password
+          MYSQL_DATABASE: test_db
+          MYSQL_USER: test_user
+          MYSQL_PASSWORD: test_password
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=2s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
           components: rustfmt, clippy
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+
       - run: npm --prefix users ci
       - run: npm --prefix webapp ci
-      - run: npm --prefix users run test:coverage
-      - run: npm --prefix webapp run test:coverage
+
+      - name: Run users tests with coverage
+        run: npm --prefix users run test:coverage
+        env:
+          CI: true
+
+      - name: Run webapp tests with coverage
+        run: npm --prefix webapp run test:coverage
+
       - name: Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov --locked
+
       - name: Generate gamey code coverage
         run: cd gamey && cargo llvm-cov --lcov --output-path lcov.info
+
       - name: Normalize Rust coverage paths
         run: |
           sed -i "s|SF:${GITHUB_WORKSPACE}/|SF:|g" gamey/lcov.info
           grep '^SF:' gamey/lcov.info | head
+
       - name: Analyze with SonarQube
         uses: SonarSource/sonarqube-scan-action@master
         env:
