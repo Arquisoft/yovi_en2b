@@ -9,9 +9,11 @@ ifndef::imagesdir[:imagesdir: ../images]
 |===
 |Constraint |Background and/or Motivation
 | **Web-based Access** | The game must be accessible via a standard web browser (Chrome, Firefox, etc.) without requiring local installation.
-| **Backend/Frontend Separation** | To simulate professional workflows, the logic (API) and the presentation (UI) must be decoupled.
-| **Bot Implementation** | The system must include an algorithmic bot with at least three levels of difficulty (Easy, Medium, Hard).
+| **Public Deployment** | The application must be deployed and publicly accessible via the Web (academic delivery constraint).
+| **Backend/Frontend Separation** | The logic (APIs/services) and the presentation (UI) must be decoupled to keep clear client/server boundaries and enable independent development.
+| **Bot Implementation** | The system must include an algorithmic bot with selectable difficulty and/or multiple strategies (exact number of difficulty levels is not fixed).
 | **Persistence** | A database or persistent storage must be used to save player profiles and game history.
+| **YEN notation (JSON messages)** | Game state must be exchanged as JSON using YEN notation to ensure interoperability between modules.
 |===
 
 === Organizational Constraints
@@ -21,7 +23,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 |Constraint |Background and/or Motivation
 | **Team Structure** | Work is divided among students acting as a full-stack development team, requiring clear communication and task management.
 | **Deadline** | The project must be completed and documented within the academic semester timeframe.
-| **Software and API decisions** | We will be forced to used new software like docker, typescript, and rust, in which we are novice.
+| **Technology adoption (learning curve)** | The project requires using technologies that are new to the team (e.g., Docker, TypeScript, Rust), which may affect planning and delivery.
 |===
 
 === Conventions
@@ -31,7 +33,7 @@ ifndef::imagesdir[:imagesdir: ../images]
 |Constraint |Background and/or Motivation
 | **arc42 Documentation** | The software architecture must be documented using the arc42 template.
 | **Version Control** | Use of Git (e.g., GitHub or GitLab) is mandatory to track progress and manage collaborative code changes.
-| **YEN notation** | Use of the YEN notation in JSON messages.
+| **YEN notation** | Use YEN notation in JSON messages whenever a game state is exchanged.
 |===
 
 ifdef::arc42help[]
@@ -51,10 +53,7 @@ If needed you can subdivide them into
 technical constraints, organizational and political constraints and
 conventions (e.g. programming or versioning guidelines, documentation or naming conventions)
 
-
 .Further Information
-
 See https://docs.arc42.org/section-2/[Architecture Constraints] in the arc42 documentation.
-
 ****
 endif::arc42help[]

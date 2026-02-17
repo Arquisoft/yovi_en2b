@@ -14,7 +14,7 @@ Please use your judgement to decide whether an architectural decision should be 
 here in this central section or whether you better document it locally
 (e.g. within the white box template of one building block).
 
-Avoid redundancy. 
+Avoid redundancy.
 Refer to section 4, where you already captured the most important decisions of your architecture.
 
 .Motivation
@@ -28,201 +28,140 @@ Various options:
 * more detailed in form of separate sections per decision
 
 .Further Information
-
 See https://docs.arc42.org/section-9/[Architecture Decisions] in the arc42 documentation.
 There you will find links and examples about ADR.
-
 ****
 endif::arc42help[]
 
+
 === ADR-001: BFF + internal services (REST)
 
-Context::
-- Browser-facing API must be centralized.
-- We have webapp (frontend + backend), users, and gamey.
-
-Decision::
-- Use webapp-backend as Backend-for-Frontend (BFF).
-- webapp-backend communicates with users and gamey via REST.
-
-Consequences::
-- Frontend only talks to BFF; internal services are not directly called from the browser.
-- BFF centralizes orchestration and security checks.
-
-IMPORTANT: Status: PROPOSED 
+[options="header",cols="1,3"]
+|===
+|Field |Description
+|Status |icon:check-circle[] APPROVED
+|Context |Browser-facing API should be centralized; system is split into webapp (frontend + backend), users, and gamey.
+|Decision |Use webapp-backend as a Backend-for-Frontend (BFF); the BFF calls users and gamey via REST.
+|Consequences |Browser talks only to BFF; orchestration and cross-cutting concerns (auth, validation, timeouts) are centralized.
+|===
 
 === ADR-002: Internal endpoints between BFF and gamey
 
-Context::
-- gamey is internal and provides core game logic.
-- BFF must check availability and request bot move selection.
-
-Decision::
-- gamey exposes (internal) endpoints:
-  - GET /Status (health check)
-  - POST /{api_version}/ybot/choose/{bot_id} (accepts YEN/JSON game state, returns coordinates as JSON)
-
-Consequences::
-- Internal API is small and focused.
-- Requires stable request/response contracts for YEN and move coordinates.
-
-IMPORTANT: Status: PROPOSED 
+[options="header",cols="1,3"]
+|===
+|Field |Description
+|Status |icon:check-circle[] APPROVED
+|Context |gamey provides core game logic (win verification + bot move selection); BFF must check health and request moves.
+|Decision |Expose a minimal internal HTTP API in gamey: `GET /status` (health), `POST /ybot/choose/{botId}` (YEN/JSON in, move out as JSON).
+|Consequences |Small, stable internal surface; requires consistent contracts for YEN and coordinate encoding.
+|===
 
 === ADR-003: YEN/JSON as game state contract + validation in gamey
 
-Context::
-- Game state must follow YEN notation.
-- Invalid game states must be rejected.
-
-Decision::
-- Exchange game state as JSON following YEN.
-- Validate YEN in gamey; return JSON error response when invalid.
-
-Consequences::
-- Single point of truth for domain validation is gamey.
-- BFF treats validation errors as 4xx and surfaces them to clients.
-
-IMPORTANT: Status: PROPOSED 
+[options="header",cols="1,3"]
+|===
+|Field |Description
+|Status |icon:check-circle[] APPROVED
+|Context |Game state must follow YEN notation; invalid states must be rejected.
+|Decision |Exchange game state as JSON following YEN; validate YEN in gamey and return a JSON error on invalid input.
+|Consequences |Single source of truth for domain validation; BFF maps validation failures to 4xx for clients.
+|===
 
 === ADR-004: Stateless engine + no game state persistence in M1
 
-Context::
-- M1 prioritizes end-to-end functionality.
-- Persisting game states is out of scope for M1.
-
-Decision::
-- gamey is stateless.
-- No persistence of game state in M1.
-
-Consequences::
-- Each request must carry all required state.
-- Simplifies deployment and testing for M1.
-
-IMPORTANT: Status: PROPOSED 
+[options="header",cols="1,3"]
+|===
+|Field |Description
+|Status |icon:check-circle[] APPROVED
+|Context |M1 prioritizes end-to-end functionality; persisting full game states is out of scope for M1.
+|Decision |Keep gamey stateless; do not persist game state in M1.
+|Consequences |Each request must carry full required state; simpler deployment/testing for M1.
+|===
 
 === ADR-005: API versioning
 
-Context::
-- Breaking changes may happen; backward compatibility is not strict.
+[options="header",cols="1,3"]
+|===
+|Field |Description
+|Status |icon:times-circle[] NOT APPROVED
+|Context |Breaking changes may happen; a versioning policy was proposed early.
+|Decision |(Not approved) URL-based versioning and “major bump rules” are not decided yet; avoid committing to `/v1` paths until requirements stabilize.
+|Consequences |No premature coupling to a versioning scheme; versioning can be introduced later (or via headers) if needed.
+|===
 
-Decision::
-- Breaking changes require a major version bump (v1.x -> v2).
-- M1 ships API v1 only.
+=== ADR-006: JWT signing algorithm
 
-Consequences::
-- Clear rule for future evolution.
-
-IMPORTANT: Status: PROPOSED 
-
-=== ADR-006: JWT signing algorithm for M1
-
-Context::
-- users issues tokens; webapp-backend validates them.
-- We want minimal implementation complexity in M1.
-
-Decision::
-- Use HS256 for JWT signing/verification in M1.
-
-Consequences::
-- Simpler setup (shared secret).
-- The verification component (webapp-backend) also needs the shared secret, increasing impact if it leaks (trade-off accepted).
-
-IMPORTANT: Status: PROPOSED 
+[options="header",cols="1,3"]
+|===
+|Field |Description
+|Status |icon:check-circle[] APPROVED
+|Context |The users service acts as the auth server: it issues tokens and also verifies them; the webapp (BFF and/or frontend) receives tokens and may verify them when needed.
+|Decision |Use HS256 for JWT signing/verification (shared secret) for M1.
+|Consequences |Simple setup and fast verification; secret must be protected across components that verify tokens.
+|===
 
 === ADR-007: Secrets/config injection mechanism
 
-Context::
-- Secrets must not be stored in git.
-- We need a simple approach for local dev and CI.
-
-Decision::
-- Use environment variables for secrets/config.
-- In local dev, load them via dotenv (.env not committed).
-
-Consequences::
-- Easy to use with Docker Compose and CI secret stores.
-- Requires discipline to avoid printing/leaking env values in logs.
-
-IMPORTANT: Status: PROPOSED 
+[options="header",cols="1,3"]
+|===
+|Field |Description
+|Status |icon:check-circle[] APPROVED
+|Context |Secrets must not be stored in git; configuration must work locally and in CI/CD.
+|Decision |Use environment variables for configuration; store sensitive values as GitHub Actions Secrets and inject them into the deployment as env vars; local dev uses dotenv (`.env` not committed).
+|Consequences |Consistent secret values across deployments; requires discipline to avoid leaking env values in logs.
+|===
 
 === ADR-008: Error response envelope
 
-Context::
-- Multiple services and clients need consistent error handling.
+[options="header",cols="1,3"]
+|===
+|Field |Description
+|Status |icon:check-circle[] APPROVED
+|Context |Multiple services/clients need consistent error handling.
+|Decision |Standardize JSON error responses with: `errorCode`, `message`, `requestId`.
+|Consequences |Simpler client-side mapping and debugging; requires stable error codes over time.
+|===
 
-Decision::
-- Standardize JSON error responses using:
-  - errorCode
-  - message
-  - requestId
+=== ADR-009: BFF -> Game Service timeouts
 
-Consequences::
-- Easier frontend/BFF error mapping and debugging.
-- Requires keeping error codes stable over time.
-
-IMPORTANT: Status: PROPOSED 
-
-=== ADR-009: BFF -> Game Service Timeouts
-
-Context::
-- Bot move computation and network calls can be slow or fail.
-- The BFF must remain responsive.
-
-Decision::
-- Apply timeouts to BFF -> game service requests.
-- Allow strictly bounded retries only for safe, idempotent operations.
-
-Consequences::
-- Prevents hanging requests and improves UX.
-- Retries can increase load during outages; keep limits conservative and configurable.
-
-IMPORTANT: Status: PROPOSED 
+[options="header",cols="1,3"]
+|===
+|Field |Description
+|Status |icon:question-circle[] PROPOSED
+|Context |Bot computation and network calls may be slow/fail; BFF must stay responsive.
+|Decision |Apply timeouts for BFF → gamey requests; allow strictly bounded retries only for safe idempotent operations.
+|Consequences |Prevents hanging requests; retries must be conservative to avoid overload during outages.
+|===
 
 === ADR-010: User persistence and minimal user entity
 
-Context::
-- users should persist users in a database.
-- We likely need credentials, not only usernames.
+[options="header",cols="1,3"]
+|===
+|Field |Description
+|Status |icon:check-circle[] APPROVED
+|Context |users must persist accounts; we need credentials and basic authorization.
+|Decision |Persist user accounts; minimal user entity includes: `id`, `username`, `email`, `passwordHash`, `role` (`player`/`admin`) (extra fields TBD).
+|Consequences |Enables authentication and basic admin features; requires clear password hashing rules and role-based authorization checks.
+|===
 
-Decision::
-- users will persist user accounts.
-- Minimal entity includes credentials (exact schema TBD, e.g., username + password hash + id).
+=== ADR-011: Client/Server entrypoint and public APIs
 
-Consequences::
-- Requires choosing DB technology and defining credential storage rules (hashing, etc.).
-- Enables real authentication flows.
-
-IMPORTANT: Status: PROPOSED 
-
-=== ADR-011: Public entrypoint and routing
-
-Context::
-- We want a single public entry point.
-- Frontend must be served from the root path.
-- Backend API must be versioned under a stable prefix.
-
-Decision::
-- Public routes:
-  - / -> frontend (static assets / SPA)
-  - /api/v1/... -> webapp-backend (BFF API)
-
-Consequences::
-- Clear separation between UI and API.
-- Enables a reverse proxy setup with path-based routing.
-
-IMPORTANT: Status: PROPOSED 
+[options="header",cols="1,3"]
+|===
+|Field |Description
+|Status |icon:check-circle[] APPROVED
+|Context |Client/server architecture: browser client (SPA) calls server APIs over HTTP; we want a single public entrypoint.
+|Decision |Expose: `/` for the SPA, plus two public API surfaces: one for user management (register/login/profile/history) and one for game interaction (create/join room, play, etc.); exact path prefixes are stable but versioning is not decided.
+|Consequences |Clear boundaries between “user management” and “game” concerns; simpler documentation and security rules per API.
+|===
 
 === ADR-012: Reverse proxy for path-based routing (Nginx)
 
-Context::
-- We need to route / to the frontend and /api/v1/... to the BFF behind a single port.
-- An API gateway is considered overkill for this project.
-
-Decision::
-- Use an Nginx reverse proxy for path-based routing.
-
-Consequences::
-- One public port with simple routing rules (e.g., `location` + `proxy_pass`). [web:187]
-- Adds an extra component to configure and maintain (but still lightweight).
-
-IMPORTANT: Status: PROPOSED 
+[options="header",cols="1,3"]
+|===
+|Field |Description
+|Status |icon:question-circle[] PROPOSED
+|Context |Single public port must serve the SPA and route requests to backend APIs; full API gateway is overkill.
+|Decision |Use Nginx to route by path: `/` → SPA static assets, `/api/...` → BFF (covering both public APIs), optional `/ws/...` → BFF for WebSockets; no API version prefix is assumed.
+|Consequences |One clean entrypoint with simple routing rules; adds a lightweight component to configure and maintain.
+|===

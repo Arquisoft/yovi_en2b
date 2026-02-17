@@ -17,27 +17,26 @@ These include
 ****
 endif::arc42help[]
 
-The project that was proposed was implementing the game "gamey", all while mantaining a professional
-
+The project that was proposed was implementing the "Game Y" (similar to the best-known board game "Hex"), all while mantaining a professional
 workflow simulating real life situations, covering all the aspects that could happen, these include:
 
-**  Backend development
+- Backend development
 
-**  Frontend development
+- Frontend development
 
-**  Management of new API's and overcome difficulties with new software
+- Management of the APIs
+ 
+- Overcome difficulties with new software
 
-**  Quality control
+- Quality control
 
 If all of these are followed correctly the resulting project should go according to the theory.
 
 === Requirements Overview
 
-The game should be accessed in a web server, in which the player will be able to log in and save its results.
-
-As for the game, a bot will be implemented with an algorithm according to the difficulty selected by the player,
-
-so it should go from easy to hard.
+- The game will be available as a web application. 
+- Players can register, log in, play matches, and have their results stored and accessible from their profile.
+- The game includes an AI opponent whose behavior depends on the selected difficulty, ranging from easy to hard.
 
 ifdef::arc42help[]
 [role="arc42help"]
@@ -70,11 +69,11 @@ endif::arc42help[]
 [options="header",cols="1,2,3"]
 |===
 |Priority |Quality Goal |Scenario
-| 1 | **Usability** | Players should be able to register, log in, and start a game against the bot in under 30 seconds without needing a manual.
-| 2 | **Performance** | The bot's move calculation (latency) must be under 500ms, even on the "Hard" difficulty setting, to maintain game flow.
-| 3 | **Maintainability** | New features or bot algorithms can be integrated within one work day without breaking the existing frontend or API contracts.
-| 4 | **Reliability** | The system must ensure 99% data integrity, specifically that game results are never lost during a database save operation.
-| 5 | **Security** | Only authenticated users can submit scores to their own profiles; the API must prevent "score spoofing" from external tools.
+| 1 | **Usability** | A new player can register, log in, select a difficulty, and start a match against the bot in under 30 seconds without reading documentation.
+| 2 | **Performance** | For typical board sizes, bot move computation stays below 500 ms on "Hard" to keep gameplay fluid; worst cases must degrade gracefully (e.g., show a "thinking" state rather than freezing).
+| 3 | **Maintainability** | A new bot strategy or feature can be implemented and integrated in <= 1 work day without breaking the existing frontend or any published API contract.
+| 4 | **Security** | Only authenticated users can submit results to their own profile; the system must prevent score spoofing attempts (e.g., forged results or manipulated game states).
+| 5 | **Reliability** | Game results are reliably persisted: at least 99% of save operations complete without data loss, and failures are reported explicitly (no silent loss).
 |===
 
 ifdef::arc42help[]
@@ -126,8 +125,10 @@ endif::arc42help[]
 [options="header",cols="1,2,2"]
 |===
 |Role/Name|Contact|Expectations
-| **Project Supervisor (Teacher)** | Teaching Staff | Expects a professional development workflow, clean and documented code, and fulfillment of all functional requirements (the bot and web server).
-| **Development Team (Students)** | Student Group | Expect to learn new technologies (API management, Frontend/Backend), gain experience in professional workflows, and achieve a high grade.
-| **End Users (Players)** | Web Access | Expect a functional and entertaining game, a challenging bot difficulty, and the ability to save their progress reliably.
-| **Quality Assurance (QA)** | Internal Team | Expects the code to be testable and the game to be free of critical bugs before deployment.
+| **Project Sponsor (Micrati)** | Company (Micrati) | Expects a working, publicly accessible web game with a clear architecture, documented APIs, and a deliverable aligned with the assignment scope and timeline.
+| **Project Supervisor (Teacher)** | Teaching Staff | Expects a professional development workflow, clean and documented code, and fulfillment of all functional requirements (bot + web application).
+| **Development Team (Team)** | Team members | Expect to learn new technologies (API management, frontend/backend), gain experience in professional workflows, and achieve a high grade.
+| **End Users (Players)** | Web | Expect a functional and entertaining game, a challenging bot difficulty, and the ability to save their progress reliably.
+| **API Consumers (Bot developers / external clients)** | Public API | Expect a stable and well-documented API contract, with clear error messages and examples.
+| **Quality Assurance (Team / reviewers)** | Team members | Expect the code to be testable and the game to be free of critical bugs before deployment.
 |===

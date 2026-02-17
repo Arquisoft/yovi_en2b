@@ -3,7 +3,6 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-technical-risks]]
 == Risks and Technical Debts
 
-
 ifdef::arc42help[]
 [role="arc42help"]
 ****
@@ -11,13 +10,12 @@ ifdef::arc42help[]
 A list of identified technical risks or technical debts, ordered by priority
 
 .Motivation
-“Risk management is project management for grown-ups” (Tim Lister, Atlantic Systems Guild.) 
+"Risk management is project management for grown-ups" (Tim Lister, Atlantic Systems Guild.) 
 
 This should be your motto for systematic detection and evaluation of risks and technical debts in the architecture, which will be needed by management stakeholders (e.g. project managers, product owners) as part of the overall risk analysis and measurement planning.
 
 .Form
 List of risks and/or technical debts, probably including suggested measures to minimize, mitigate or avoid risks or reduce technical debts.
-
 
 .Further Information
 
@@ -25,3 +23,89 @@ See https://docs.arc42.org/section-11/[Risks and Technical Debt] in the arc42 do
 
 ****
 endif::arc42help[]
+
+This section lists identified technical risks and technical debts, ordered by priority.
+Risk management enables proactive decision-making and informs stakeholders (project managers, teaching staff) about architectural concerns.
+
+=== Technical Risks
+
+[options="header",cols="2,1,3,3"]
+|===
+|ID |Priority |Impact |Mitigation
+
+|**R-01** (Minimax algorithm does not scale beyond board size 11)
+|**HIGH**
+|The current Minimax implementation (alpha-beta + iterative deepening) cannot handle boards of size 11+ within acceptable time limits; this limits the "variable board size" requirement.
+a|
+- Option A: Cap maximum board size to 10 for "Hard" difficulty.
+- Option B: Optimize algorithm (transposition tables, better move ordering) or reduce search depth for larger boards.
+- Option C: Add time-limit cutoff and return best move found so far; display "thinking..." state to user.
+
+|**R-02** (Rust service failure blocks gameplay)
+|**HIGH**
+|If the Rust module (win verification + move suggestion) becomes unavailable, players cannot continue games against the bot.
+a|
+- Implement a fallback mode: automatically switch to **local player-vs-player** with a clear notification ("Bot unavailable; multiplayer mode enabled").
+- Add health-check monitoring and alert if Rust service is down.
+- Ensure graceful degradation rather than complete system failure.
+
+|**R-03** (WebSocket technology adoption unproven)
+|**HIGH**
+|The team has not tested WebSocket integration for real-time multiplayer; lack of experience increases risk of incomplete implementation or bugs.
+a|
+- Spike/prototype WebSocket basics early (by sprint N, TBD).
+- Allocate buffer time for debugging connection issues and state synchronization.
+- Fallback: if WebSocket multiplayer is not ready, prioritize player-vs-bot and consider multiplayer optional.
+
+|**R-04** (Lack of observability in production)
+|**HIGH**
+|Without metrics and correlation-based logging, diagnosing errors or performance issues in the deployed VPS will be difficult.
+a|
+- Implement basic structured logging with correlation-id (request tracing across Node ↔ Rust).
+- Add minimal metrics (error rate, p95 latencies, Rust health) using a lightweight tool (e.g., Prometheus + Grafana, or simpler: logs + parsing scripts).
+- Allocate time for this before final deployment.
+
+|**R-05** (Team inexperience with stack)
+|**MEDIUM**
+|The team is relatively inexperienced with the chosen stack (React/Node/Rust), which may slow development and increase bug rate.
+a|
+- The team has sufficient time to learn (academic project schedule).
+- Pair programming and code reviews help share knowledge.
+- SonarQube enforces quality standards and catches common mistakes (see TD-01).
+
+|**R-06** (Scope creep from optional features)
+|**MEDIUM**
+|The assignment includes many optional features (variants, i18n, mobile, undo, hints, etc.); the team has not yet decided which to implement, risking overcommitment.
+a|
+- Finalize scope early: prioritize 1–2 optional features aligned with grading criteria (e.g., one Game Y variant + leaderboard).
+- Avoid starting optional features until core requirements (player-vs-bot, API, user management) are stable and tested.
+
+|**R-07** (Documentation contains TBD sections)
+|**MEDIUM**
+|Arc42 documentation is up-to-date and API documentation is exhaustive, but some sections still contain "TBD" placeholders.
+a|
+- Schedule a documentation review sprint before final delivery.
+- Assign owners to close remaining TBDs (e.g., finalize ADRs, update deployment diagrams).
+
+|===
+
+=== Technical Debt
+
+[options="header",cols="2,3,3"]
+|===
+|ID |Debt |Impact / Plan
+
+|**TD-01** (SonarQube slows development velocity)
+|SonarQube quality gates are enabled and catch issues early, but they slow down the development workflow (additional checks, required fixes before merge).
+a|
+- **Impact**: Reduced short-term velocity, but higher long-term code quality and fewer bugs.
+- **Plan**: Accept this trade-off; SonarQube prevents accumulation of worse technical debt (poor code, security issues).
+- Consider adjusting thresholds if checks become overly strict for the project scope.
+
+|===
+
+NOTE: Test coverage is currently >= 80% across the codebase, which is acceptable.
+Score spoofing validation is implemented in the Rust module (validates YEN state integrity server-side).
+CI/CD pipeline for deployment is already operational.
+Rate limiting is not prioritized (low risk in academic/closed project context).
+VPS availability is low (cheap Azure instance, no backups), but this risk is accepted given the academic scope.

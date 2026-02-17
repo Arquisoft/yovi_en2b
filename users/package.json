@@ -4,21 +4,46 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node users-service.js",
-    "test": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "dev": "nodemon",
+    "build": "rimraf ./dist && tsc",
+    "start": "node dist/app.js",
+    "start:prod": "npm run build && npm start",
+    "test:db:up": "docker compose -f docker-compose.test.yml up -d && sleep 5",
+    "test:db:down": "docker compose -f docker-compose.test.yml down -v",
+    "test": "npm run test:db:up && vitest run && npm run test:db:down",
+    "test:watch": "vitest",
+    "test:coverage": "export TEST_DB_PASSWORD=test_password; npm run test:db:up && vitest run --coverage; npm run test:db:down"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "express-prom-bundle": "^8.0.0",
-    "js-yaml": "^4.1.0",
-    "swagger-ui-express": "^5.0.1"
+    "helmet": "^8.1.0",
+    "js-yaml": "^4.1.1",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.17.1",
+    "swagger-ui-express": "^5.0.1",
+    "typeorm": "^0.3.28"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/helmet": "^4.0.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/supertest": "^6.0.3",
+    "@types/swagger-ui-express": "^4.1.8",
     "@vitest/coverage-v8": "^4.0.15",
+    "nodemon": "^3.1.11",
+    "rimraf": "^6.1.2",
     "supertest": "^7.1.4",
+    "testcontainers": "^11.11.0",
+    "ts-node": "^10.9.2",
     "vitest": "^4.0.15"
   }
 }

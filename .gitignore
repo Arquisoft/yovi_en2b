@@ -4,5 +4,10 @@ gamey/target
 lcov.info
 docs/build
 .env
+.env.test
 webapp/.env
 .vscode/
+
+personal.md
+flamegraph.svg
+perf.data

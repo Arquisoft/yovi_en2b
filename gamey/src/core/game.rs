@@ -62,6 +62,10 @@ impl GameY {
         &self.status
     }
 
+    pub fn board_map(&self) -> &HashMap<Coordinates, (SetIdx, PlayerId)> {
+        &self.board_map
+    }
+
     /// Returns true if the game has ended (has a winner).
     pub fn check_game_over(&self) -> bool {
         match self.status {
@@ -258,7 +262,7 @@ impl GameY {
     }
 
     /// Returns the neighboring coordinates for a given cell.
-    fn get_neighbors(&self, coords: &Coordinates) -> Vec<Coordinates> {
+    pub fn get_neighbors(&self, coords: &Coordinates) -> Vec<Coordinates> {
         let mut neighbors = Vec::new();
         let x = coords.x();
         let y = coords.y();
@@ -277,6 +281,10 @@ impl GameY {
             neighbors.push(Coordinates::new(x, y + 1, z - 1));
         }
         neighbors
+    }
+
+    pub fn cell_owner(&self, coords: &Coordinates) -> Option<PlayerId> {
+        self.board_map.get(coords).map(|(_, player)| *player)
     }
 
     /// Renders the current state of the board as a text string.
@@ -527,7 +535,7 @@ impl From<&GameY> for YEN {
     }
 }
 
-fn other_player(player: PlayerId) -> PlayerId {
+pub fn other_player(player: PlayerId) -> PlayerId {
     // Assuming two players with IDs 0 and 1
     if player.id() == 0 {
         PlayerId::new(1)

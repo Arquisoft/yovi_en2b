@@ -3,7 +3,6 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-quality-scenarios]]
 == Quality Requirements
 
-
 ifdef::arc42help[]
 [role="arc42help"]
 ****
@@ -50,6 +49,36 @@ In any case the tree should include links to the scenarios of the following sect
 ****
 endif::arc42help[]
 
+[plantuml, quality-tree-horizontal, svg]
+....
+@startwbs
+* Root: Usefulness / Quality
+** Usability (High)
+*** QS-01
+*** QS-02
+** Performance efficiency (High)
+*** QS-03
+*** QS-04
+*** QS-05
+** Maintainability (High)
+*** QS-06
+*** QS-07
+** Reliability (High)
+*** QS-08
+*** QS-09
+** Security (Low)
+*** QS-10
+*** QS-11
+*** QS-12
+** Compatibility / Interoperability (Medium)
+*** QS-13
+** Operability / Observability (Medium)
+*** QS-14
+** Documentation quality (High)
+*** QS-15
+@endwbs
+....
+
 === Quality Scenarios
 
 ifdef::arc42help[]
@@ -62,7 +91,7 @@ These scenarios describe what should happen when a stimulus arrives at the syste
 
 For architects, two kinds of scenarios are important:
 
-* Usage scenarios (also called application scenarios or use case scenarios) describe the system’s runtime reaction to a certain stimulus. This also includes scenarios that describe the system’s efficiency or performance. Example: The system reacts to a user’s request within one second.
+* Usage scenarios (also called application scenarios or use case scenarios) describe the system's runtime reaction to a certain stimulus. This also includes scenarios that describe the system's efficiency or performance. Example: The system reacts to a user's request within one second.
 * Change scenarios describe a modification of the system or of its immediate environment. Example: Additional functionality is implemented or requirements for a quality attribute change.
 
 .Motivation
@@ -77,3 +106,107 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 Tabular or free form text.
 ****
 endif::arc42help[]
+
+This section makes quality requirements concrete through a quality tree and measurable scenarios, referencing the quality goals defined in section 1.2 <<Quality Goals>> where applicable.
+The quality-attribute taxonomy follows ISO/IEC 25010 (product quality: usability, performance efficiency, reliability, security, maintainability, compatibility, portability, etc.).
+The YOVI system consists of a TypeScript web application and a Rust module exposed via a web interface, communicating through JSON messages and YEN notation to represent game states.
+
+Scenarios make quality requirements precise by stating stimulus, response, and measurable criteria (usage scenarios and change scenarios).
+
+[options="header",cols="1,1,2,2,2"]
+|===
+|ID |Type |Stimulus |Response |Measure / Acceptance criteria
+
+|[[QS-01]]**QS-01** (Fast start)
+|**Usage**
+|A new player accesses the web application for the first time.
+|They can register, log in, and start a game against the bot.
+|Completes the flow in < 30 s without needing a manual (quality goal 1).
+
+|[[QS-02]]**QS-02** (Playable UI)
+|**Usage**
+|A player starts a game and makes a move.
+|The UI responds without noticeable blocking and reflects the new state.
+|Main interaction (render + local confirmation) does not exceed 500 ms on the client (TBD: might measure in the future).
+
+|[[QS-03]]**QS-03** (API latency without Rust)
+|**Usage**
+|A standard REST request to the Node/Express backend (e.g., login/profile) that does not require Rust computation.
+|The system responds with the result.
+|p95 <= 50 ms for ~10 concurrent users (internal target).
+
+|[[QS-04]]**QS-04** (Rust healthcheck)
+|**Usage**
+|The backend invokes the Rust service health-check endpoint.
+|It receives OK/FAIL and can degrade functionality if FAIL.
+|p95 <= 50 ms.
+
+|[[QS-05]]**QS-05** (Choose-move latency by board size)
+|**Usage**
+|A player/bot requests “choose next move” from the Rust module (Random strategy or Minimax with alpha-beta + iterative deepening).
+|The service returns a valid move in the expected format.
+a|
+- “Hard” target (board size 4-12): p95 <= 500 ms (quality goal 2).
+- “Hard” target (board size 13-16): p95 <= 3000 ms, and the UI shows a “thinking…” state without blocking the session.
+- Note: these thresholds will be validated with real measurements (not fully measured yet).
+
+|[[QS-06]]**QS-06** (Add bot strategy in 1 day)
+|**Change**
+|A new bot strategy or difficulty adjustment is added to the Rust module.
+|The feature is integrated without breaking the frontend or API contracts.
+|Effort <= 1 work day, and the /play endpoint contract remains compatible (quality goal 3).
+
+|[[QS-07]]**QS-07** (Extend board size)
+|**Change**
+|Board-size support is extended/refactored within the allowed range.
+|The change does not require rewriting the UI or persistence layer.
+|Localized changes and updated tests; the YEN/JSON format is not broken.
+
+|[[QS-08]]**QS-08** (Persist match result)
+|**Usage**
+|A game ends and the result is saved to MariaDB.
+|The result is persisted and appears in the user's history.
+|99% of save operations without losing the result (quality goal 4); on failure, an explicit error is returned and no match is “confirmed” as saved when it was not.
+
+|[[QS-09]]**QS-09** (Service degraded availability)
+|**Usage**
+|The VPS suffers downtime/restarts (low availability, short-lived operation).
+|The system becomes operational again after restart, even if live sessions are lost.
+|Service recovers after restart (TBD: <= 5 min) and keeps already persisted data (no backups).
+
+|[[QS-10]]**QS-10** (Authenticated score submission)
+|**Usage**
+|An unauthenticated user tries to submit a score/result or access private data.
+|The backend rejects the operation.
+|Only authenticated users can submit scores to their own profile (quality goal 5).
+
+|[[QS-11]]**QS-11** (Score spoofing)
+|**Usage**
+|An authenticated user attempts to forge results: submit results without having played, manipulate the state/input (e.g., YEN) to obtain an illegitimate score.
+|The backend validates consistency and rejects the operation.
+|“Score spoofing” is prevented for those two scenarios (quality goal 5); replay (C) will be addressed when a global scoring system exists.
+
+|[[QS-12]]**QS-12** (Anti-abuse / rate limiting)
+|**Usage**
+|A malicious client attempts brute force / spam against server-side “users” endpoints.
+|The system limits and logs the abuse.
+|Rate limiting enabled (TBD: thresholds per IP/user) and security-event logs.
+
+|[[QS-13]]**QS-13** (Documented external API)
+|**Usage**
+|A third party implements a bot using the public API.
+|They can integrate without reverse engineering.
+|API is “fully documented” (OpenAPI/Swagger + examples) as required by the assignment.
+
+|[[QS-14]]**QS-14** (Observability)
+|**Usage**
+|An error occurs in a match (Node or Rust) or latency increases.
+|The team diagnoses the issue using metrics/logs.
+|Minimum metrics (p95 latencies, error rate, Rust health) and logs with correlation-id (TBD implementation).
+
+|[[QS-15]]**QS-15** (Arc42 + ADR quality)
+|**Change**
+|Team reviews the architecture and decisions.
+|They can trace decisions and quality attributes.
+|Clear documentation (complete arc42) and relevant decisions recorded (e.g., ADR) per evaluation criteria.
+|===
