@@ -1,4 +1,3 @@
-// __tests__/errorHandler.test.ts
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
 import { jsonErrorHandler, globalErrorHandler } from '../src/middleware/errorHandler';
