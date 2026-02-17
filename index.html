@@ -3922,7 +3922,7 @@ It covers the logic when a human player makes a move on the board.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response Measure</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The UI reflects the new state in less than [TODO: X seconds]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The UI reflects the new state in less than 0.5 seconds</p></td>
 </tr>
 </tbody>
 </table>
@@ -3947,7 +3947,7 @@ It covers the logic when a human player makes a move on the board.</p>
 <p><strong>4.</strong> Rust Module returns the result (Move valid/Match won/Match continues) to the Web Application.</p>
 </div>
 <div class="paragraph">
-<p><strong>5.</strong> If the game ended the Web Application updates the game state in the [TODO: Database Name/Type] and reflects the new state in the Web Frontend anyways.</p>
+<p><strong>5.</strong> If the game ended the Web Application updates the game state in the MariaDB database and reflects the new state in the Web Frontend anyways.</p>
 </div>
 </div>
 </div>
@@ -3975,7 +3975,7 @@ It describes how a user interacts with the system to manage their profile and vi
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Artifact</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">System (Web App + Rust Module)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">System (Web App)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Environment</strong></p></td>
@@ -3987,7 +3987,7 @@ It describes how a user interacts with the system to manage their profile and vi
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response Measure</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The UI reflects the new state in less than [TODO: X seconds]</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The UI reflects the new state in less than 0.5 seconds</p></td>
 </tr>
 </tbody>
 </table>
@@ -4020,10 +4020,10 @@ It describes how a user interacts with the system to manage their profile and vi
 <p><strong>1.</strong> User provides registration details through the Web Frontend.</p>
 </div>
 <div class="paragraph">
-<p><strong>2.</strong> Web Application (TypeScript) receives the request and validates the information with the data on the [TODO: Database Name/Type].</p>
+<p><strong>2.</strong> Web Application (TypeScript) receives the request and validates the information with the data on the MariaDB database.</p>
 </div>
 <div class="paragraph">
-<p><strong>3.</strong> When the registered User requests their history, the Web Application queries the [TODO: Database Name/Type] for the raw data.</p>
+<p><strong>3.</strong> When the registered User requests their history, the Web Application queries the MariaDB database for the raw data.</p>
 </div>
 <div class="paragraph">
 <p><strong>4.</strong> The Web Application then calculates the history metrics and returns them to the Web Frontend for rendering.</p>
@@ -4036,6 +4036,43 @@ It describes how a user interacts with the system to manage their profile and vi
 <p>This scenario references the high-level requirement: <em>The game against the computer must implement more than one strategy.</em>
 It describes how the system suggests of executes a move for the computer.</p>
 </div>
+<div class="sect3">
+<h4 id="_quality_context_3">6.3.1. Quality Context</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Source</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Human Player</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Stimulus</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provides a computer difficulty level via the Web Frontend</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Artifact</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">System (Web App + Rust Module)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Environment</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Normal operation</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The GameEngine works with the strategy according to the difficulty level chosen</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response Measure</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The UI reflects the new state in less than 1 seconds</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_interaction_sequence_3">6.3.2. Interaction sequence</h4>
 <div class="imageblock text-center">
 <div class="content">
 <img src="./images/computer_strat.svg" alt="Registration Sequence" width="600">
@@ -4057,12 +4094,50 @@ It describes how the system suggests of executes a move for the computer.</p>
 <p><strong>5.</strong> Web Application receives the move and performs the action.</p>
 </div>
 </div>
+</div>
 <div class="sect2">
 <h3 id="_external_bot_interaction">6.4. External Bot Interaction</h3>
 <div class="paragraph">
 <p>This scenario references the high-level requirement: <em>API will enable a bot to play&#8230;&#8203; a 'play' method will be exposed.</em>
 It describes the interaction of an external bot with the YOVI system.</p>
 </div>
+<div class="sect3">
+<h4 id="_quality_context_4">6.4.1. Quality Context</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Source</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">External Bot</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Stimulus</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Invokes the API 'play' method providing a 'boardState' in YEN notation</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Artifact</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">System (Web App + Rust Module)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Environment</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Normal operation</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system validates the input, processes game logic via the Rust module, and returns the result</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response Measure</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The API returns the next move in YEN notation in less than 1 seconds</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_interaction_sequence_4">6.4.2. Interaction sequence</h4>
 <div class="imageblock text-center">
 <div class="content">
 <img src="./images/bot_interaction.svg" alt="Registration Sequence" width="600">
@@ -4084,6 +4159,7 @@ It describes the interaction of an external bot with the YOVI system.</p>
 <p><strong>5.</strong> Web Application returns the next move to the External Bot using YEN notation.</p>
 </div>
 <div style="page-break-after: always;"></div>
+</div>
 </div>
 </div>
 </div>
@@ -5702,7 +5778,7 @@ VPS availability is low (cheap Azure instance, no backups), but this risk is acc
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-02-17 10:09:20 UTC
+Last updated 2026-02-17 10:21:50 UTC
 </div>
 </div>
 </body>
