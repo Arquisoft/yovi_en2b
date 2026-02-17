@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
+    "test:ci": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
     "test:e2e:run": "cucumber-js --import test/e2e/support/setup.mjs --import test/e2e/steps/**/*.mjs test/e2e/features --format progress",
