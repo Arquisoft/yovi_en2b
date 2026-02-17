@@ -7,7 +7,7 @@ export const TestDataSource = new DataSource({
   host: 'localhost',
   port: 3307,
   username: 'test_user',
-  password: process.env.TEST_DB_PASSWORD,
+  password: 'test_password',
   database: 'test_db',
   entities: [User],
   synchronize: true,
