@@ -26,7 +26,7 @@ describe('RegisterForm', () => {
     // Mock fetch - el componente ahora ignora data.message y genera su propio mensaje
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({}),  // ← Ya no necesita devolver message
+      json: async () => ({}),
     } as Response)
 
     render(<RegisterForm />)
@@ -37,6 +37,11 @@ describe('RegisterForm', () => {
     // El componente muestra "Hello Pablo" (sin el texto adicional)
     await waitFor(() => {
       expect(screen.getByText(/hello pablo/i)).toBeInTheDocument()
+    })
+    
+    // Espera a que loading termine completamente
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /lets go!/i })).toBeInTheDocument()
     })
     
     // Verifica que fetch fue llamado correctamente
@@ -70,6 +75,11 @@ describe('RegisterForm', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/username already exists/i)).toBeInTheDocument()
+    })
+    
+    // Espera a que loading termine completamente
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /lets go!/i })).toBeInTheDocument()
     })
   })
 })
