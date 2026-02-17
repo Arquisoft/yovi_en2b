@@ -28,7 +28,7 @@ const RegisterForm: React.FC = () => {
         body: JSON.stringify({
           username,
           email: `${username.toLowerCase()}@test.com`,
-          password: 'Password123!'
+          password: import.meta.env.VITE_TEST_PASSWORD ?? 'DefaultPass123!'
         })
       });
 
