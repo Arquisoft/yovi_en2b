@@ -10,9 +10,11 @@
     "start:prod": "npm run build && npm start",
     "test:db:up": "docker compose -f docker-compose.test.yml up -d && sleep 10",
     "test:db:down": "docker compose -f docker-compose.test.yml down -v",
-    "test": "if [ \"$CI\" = \"true\" ]; then vitest run; else npm run test:db:up && vitest run && npm run test:db:down; fi",
-    "test:coverage": "if [ \"$CI\" = \"true\" ]; then vitest run --coverage; else npm run test:db:up && vitest run --coverage; npm run test:db:down; fi",
-    "test:watch": "vitest"
+    "test": "npm run test:db:up && vitest run && npm run test:db:down",
+    "test:coverage": "npm run test:db:up && vitest run --coverage; npm run test:db:down",
+    "test:watch": "vitest",
+    "test:ci": "vitest run",
+    "test:coverage:ci": "vitest run --coverage"
   },
   "author": "",
   "license": "ISC",

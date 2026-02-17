@@ -45,9 +45,7 @@ jobs:
       - run: npm --prefix webapp ci
 
       - name: Run users tests with coverage
-        run: npm --prefix users run test:coverage
-        env:
-          CI: true
+        run: npm --prefix users run test:coverage:ci
 
       - name: Run webapp tests with coverage
         run: npm --prefix webapp run test:coverage
