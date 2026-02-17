@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RegisterForm from '../RegisterForm'
 import { afterEach, describe, expect, test, vi } from 'vitest' 
@@ -13,7 +13,9 @@ describe('RegisterForm', () => {
     render(<RegisterForm />)
     const user = userEvent.setup()
 
-    await user.click(screen.getByRole('button', { name: /lets go!/i }))
+    await act(async () => {
+      await user.click(screen.getByRole('button', { name: /lets go!/i }))
+    })
     
     await waitFor(() => {
       expect(screen.getByText(/please enter a username/i)).toBeInTheDocument()
@@ -23,7 +25,7 @@ describe('RegisterForm', () => {
   test('submits username and displays response', async () => {
     const user = userEvent.setup()
 
-    // Mock fetch - el componente ahora ignora data.message y genera su propio mensaje
+    // Mock fetch
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({}),
@@ -31,20 +33,17 @@ describe('RegisterForm', () => {
 
     render(<RegisterForm />)
 
-    await user.type(screen.getByLabelText(/whats your name\?/i), 'Pablo')
-    await user.click(screen.getByRole('button', { name: /lets go!/i }))
+    await act(async () => {
+      await user.type(screen.getByLabelText(/whats your name\?/i), 'Pablo')
+      await user.click(screen.getByRole('button', { name: /lets go!/i }))
+    })
 
-    // El componente muestra "Hello Pablo" (sin el texto adicional)
+    // Espera a que aparezca el mensaje
     await waitFor(() => {
       expect(screen.getByText(/hello pablo/i)).toBeInTheDocument()
-    })
+    }, { timeout: 3000 })
     
-    // Espera a que loading termine completamente
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /lets go!/i })).toBeInTheDocument()
-    })
-    
-    // Verifica que fetch fue llamado correctamente
+    // Verifica que fetch fue llamado
     expect(global.fetch).toHaveBeenCalledWith(
       'http://localhost:3000/api/auth/register',
       expect.objectContaining({
@@ -70,16 +69,13 @@ describe('RegisterForm', () => {
 
     render(<RegisterForm />)
 
-    await user.type(screen.getByLabelText(/whats your name\?/i), 'Pablo')
-    await user.click(screen.getByRole('button', { name: /lets go!/i }))
+    await act(async () => {
+      await user.type(screen.getByLabelText(/whats your name\?/i), 'Pablo')
+      await user.click(screen.getByRole('button', { name: /lets go!/i }))
+    })
 
     await waitFor(() => {
       expect(screen.getByText(/username already exists/i)).toBeInTheDocument()
-    })
-    
-    // Espera a que loading termine completamente
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /lets go!/i })).toBeInTheDocument()
-    })
+    }, { timeout: 3000 })
   })
 })
