@@ -19,17 +19,23 @@ const RegisterForm: React.FC = () => {
     setLoading(true);
     try {
       const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
-      const res = await fetch(`${API_URL}/createuser`, {
+
+      const res = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username })
+        body: JSON.stringify({
+          username,
+          email: `${username.toLowerCase()}@test.com`,
+          password: 'Password123!'
+        })
       });
 
       const data = await res.json();
+
       if (res.ok) {
-        setResponseMessage(data.message);
+        setResponseMessage(`Hello ${username}`);
         setUsername('');
       } else {
         setError(data.error || 'Server error');
@@ -40,6 +46,7 @@ const RegisterForm: React.FC = () => {
       setLoading(false);
     }
   };
+
 
   return (
     <form onSubmit={handleSubmit} className="register-form">
