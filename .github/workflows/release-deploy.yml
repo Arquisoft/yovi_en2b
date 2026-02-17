@@ -52,7 +52,7 @@ jobs:
       - name: Run tests
         run: |
           cd ${{ matrix.service }}
-          npm test:ci
+          npm run test:ci
 
   test-rust:
     name: Run rust (gamey) tests
