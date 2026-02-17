@@ -1,12 +1,13 @@
-node_modules
-coverage
-gamey/target
+node_modules/
+coverage/
+gamey/target/
 lcov.info
-docs/build
+docs/build/
 .env
 .env.test
 webapp/.env
 .vscode/
+dist/
 
 personal.md
 flamegraph.svg
