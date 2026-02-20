@@ -196,18 +196,23 @@ jobs:
           command: |
             set -e
 
-            export NODE_ENV=production
+            APP_DIR=/opt/yovi
+            mkdir -p "$APP_DIR"
+            cd "$APP_DIR"
 
-            export MARIADB_ROOT_PASSWORD='${{ secrets.MARIADB_ROOT_PASSWORD }}'
-            export MARIADB_USER='${{ secrets.MARIADB_USER }}'
-            export MARIADB_PASSWORD='${{ secrets.MARIADB_PASSWORD }}'
+            cat > .env <<'EOF'
+            NODE_ENV=production
+            MARIADB_ROOT_PASSWORD=${{ secrets.MARIADB_ROOT_PASSWORD }}
+            MARIADB_USER=${{ secrets.MARIADB_USER }}
+            MARIADB_PASSWORD=${{ secrets.MARIADB_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            EOF
+            chmod 600 .env
 
-            export JWT_SECRET='${{ secrets.JWT_SECRET }}'
+            wget -q https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/master/docker-compose.yml -O docker-compose.yml
 
-            wget https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/master/docker-compose.yml -O docker-compose.yml
             docker compose down
             docker compose up -d --pull always || {
-              echo "Docker Compose failed. Showing logs:"
               docker compose logs
               exit 1
             }
