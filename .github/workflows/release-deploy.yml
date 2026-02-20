@@ -188,31 +188,17 @@ jobs:
     needs: [docker-push-users, docker-push-webapp, docker-push-gamey]
     steps:
       - name: Deploy over SSH
-        uses: fifsky/ssh-action@master
+        uses: appleboy/ssh-action@v1
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          MARIADB_ROOT_PASSWORD: ${{ secrets.MARIADB_ROOT_PASSWORD }}
+          MARIADB_USER: ${{ secrets.MARIADB_USER }}
+          MARIADB_PASSWORD: ${{ secrets.MARIADB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
-          user: ${{ secrets.DEPLOY_USER }}
+          username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
-          command: |
-            set -e
-
-            APP_DIR=$HOME/yovi
-            mkdir -p "$APP_DIR"
-            cd "$APP_DIR"
-
-            cat > .env <<'EOF'
-            NODE_ENV=production
-            MARIADB_ROOT_PASSWORD=${{ secrets.MARIADB_ROOT_PASSWORD }}
-            MARIADB_USER=${{ secrets.MARIADB_USER }}
-            MARIADB_PASSWORD=${{ secrets.MARIADB_PASSWORD }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            EOF
-            chmod 600 .env
-
-            wget -q https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/master/docker-compose.yml -O docker-compose.yml
-
-            docker compose down
-            docker compose up -d --pull always || {
-              docker compose logs
-              exit 1
-            }
+          envs: REPO_OWNER,REPO_NAME,MARIADB_ROOT_PASSWORD,MARIADB_USER,MARIADB_PASSWORD,JWT_SECRET
+          script_path: deploy.sh
