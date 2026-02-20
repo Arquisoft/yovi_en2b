@@ -201,4 +201,4 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
           envs: REPO_OWNER,REPO_NAME,MARIADB_ROOT_PASSWORD,MARIADB_USER,MARIADB_PASSWORD,JWT_SECRET
-          script_path: deploy.sh
+          script_path: .github/workflows/deploy.sh
