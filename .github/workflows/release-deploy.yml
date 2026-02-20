@@ -196,7 +196,7 @@ jobs:
           command: |
             set -e
 
-            APP_DIR=/opt/yovi
+            APP_DIR=$HOME/yovi
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
 
