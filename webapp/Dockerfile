@@ -16,5 +16,9 @@ RUN export VITE_API_URL=${VITE_API_URL} && npm run build
 # Production image
 FROM nginx:stable-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
+
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
