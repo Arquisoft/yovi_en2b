@@ -46,15 +46,14 @@ services:
     build:
       context: ./webapp
       args:
-        - VITE_API_URL=http://localhost:3000
-    container_name: webapp
-    image: ghcr.io/arquisoft/yovi_en2b-webapp:latest
+        - VITE_API_URL=https://api.micrati.com
     ports:
-      - "80:80"
+    - "80:80"
+    - "443:443"
+    volumes:
+    - /etc/nginx/certs:/etc/nginx/certs:ro
     depends_on:
-      - users
-    networks:
-      - monitor-net
+    - users
 
   gamey:
     build: ./gamey
