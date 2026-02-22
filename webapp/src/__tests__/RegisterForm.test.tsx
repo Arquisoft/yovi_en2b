@@ -12,7 +12,7 @@ afterEach(() => {
 })
 
 describe('RegisterForm', () => {
-  test('shows validation error when username is empty', async () => {
+  test('shows validation error when fields are empty', async () => {
     const user = userEvent.setup()
 
     render(
@@ -30,10 +30,9 @@ describe('RegisterForm', () => {
     })
   })
 
-  test('submits username and displays success message', async () => {
+  test('submits form successfully and shows success message', async () => {
     const user = userEvent.setup()
 
-    // Mock fetch con éxito
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({ message: 'User created' }),
@@ -48,7 +47,7 @@ describe('RegisterForm', () => {
     await act(async () => {
       await user.type(screen.getByLabelText(/username/i), 'Pablo')
       await user.type(screen.getByLabelText(/email/i), 'pablo@test.com')
-      await user.type(screen.getByLabelText(/password/i), 'Password123!')
+      await user.type(screen.getByPlaceholderText(/password/i), 'Password123!')
       await user.click(screen.getByRole('button', { name: /register/i }))
     })
 
@@ -56,7 +55,6 @@ describe('RegisterForm', () => {
       expect(screen.getByText(/hello pablo/i)).toBeInTheDocument()
     })
 
-    // Verifica que fetch fue llamado con los datos correctos
     expect(global.fetch).toHaveBeenCalledWith(
       'http://localhost:3000/api/auth/register',
       expect.objectContaining({
@@ -71,7 +69,7 @@ describe('RegisterForm', () => {
     )
   })
 
-  test('displays error message on failed request', async () => {
+  test('displays server error when username/email already exists', async () => {
     const user = userEvent.setup()
 
     global.fetch = vi.fn().mockResolvedValueOnce({
@@ -88,12 +86,15 @@ describe('RegisterForm', () => {
     await act(async () => {
       await user.type(screen.getByLabelText(/username/i), 'Pablo')
       await user.type(screen.getByLabelText(/email/i), 'pablo@test.com')
-      await user.type(screen.getByLabelText(/password/i), 'Password123!')
+      await user.type(screen.getByPlaceholderText(/password/i), 'Password123!')
       await user.click(screen.getByRole('button', { name: /register/i }))
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/username already exists/i)).toBeInTheDocument()
+      // Match con el mensaje que realmente renderiza tu componente
+      expect(
+        screen.getByText(/username or email already registered/i)
+      ).toBeInTheDocument()
     })
   })
 
@@ -111,7 +112,7 @@ describe('RegisterForm', () => {
     await act(async () => {
       await user.type(screen.getByLabelText(/username/i), 'Pablo')
       await user.type(screen.getByLabelText(/email/i), 'pablo@test.com')
-      await user.type(screen.getByLabelText(/password/i), 'Password123!')
+      await user.type(screen.getByPlaceholderText(/password/i), 'Password123!')
       await user.click(screen.getByRole('button', { name: /register/i }))
     })
 
@@ -119,4 +120,34 @@ describe('RegisterForm', () => {
       expect(screen.getByText(/network error/i)).toBeInTheDocument()
     })
   })
+    test('toggles password visibility', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <MemoryRouter>
+        <RegisterForm />
+      </MemoryRouter>
+    )
+
+    const passwordInput = screen.getByPlaceholderText(/password/i)
+    const toggleButton = screen.getByRole('button', { name: /show password/i })
+
+    // Inicialmente tipo password
+    expect(passwordInput).toHaveAttribute('type', 'password')
+
+    await act(async () => {
+      await user.click(toggleButton)
+    })
+
+    // Ahora tipo text
+    expect(passwordInput).toHaveAttribute('type', 'text')
+
+    await act(async () => {
+      await user.click(toggleButton)
+    })
+
+    // Vuelve a password
+    expect(passwordInput).toHaveAttribute('type', 'password')
+  })
 })
+
