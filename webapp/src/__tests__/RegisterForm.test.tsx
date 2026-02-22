@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import RegisterForm from '../components/RegisterForm'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom'
+import { MemoryRouter } from 'react-router-dom'
 
 // Limpiar mocks después de cada test
 afterEach(() => {
@@ -12,15 +13,20 @@ afterEach(() => {
 
 describe('RegisterForm', () => {
   test('shows validation error when username is empty', async () => {
-    render(<RegisterForm />)
     const user = userEvent.setup()
 
+    render(
+      <MemoryRouter>
+        <RegisterForm />
+      </MemoryRouter>
+    )
+
     await act(async () => {
-      await user.click(screen.getByRole('button', { name: /lets go!/i }))
+      await user.click(screen.getByRole('button', { name: /register/i }))
     })
 
     await waitFor(() => {
-      expect(screen.getByText(/please enter a username/i)).toBeInTheDocument()
+      expect(screen.getByText(/all fields are required/i)).toBeInTheDocument()
     })
   })
 
@@ -33,11 +39,17 @@ describe('RegisterForm', () => {
       json: async () => ({ message: 'User created' }),
     } as Response)
 
-    render(<RegisterForm />)
+    render(
+      <MemoryRouter>
+        <RegisterForm />
+      </MemoryRouter>
+    )
 
     await act(async () => {
-      await user.type(screen.getByLabelText(/whats your name\?/i), 'Pablo')
-      await user.click(screen.getByRole('button', { name: /lets go!/i }))
+      await user.type(screen.getByLabelText(/username/i), 'Pablo')
+      await user.type(screen.getByLabelText(/email/i), 'pablo@test.com')
+      await user.type(screen.getByLabelText(/password/i), 'Password123!')
+      await user.click(screen.getByRole('button', { name: /register/i }))
     })
 
     await waitFor(() => {
@@ -67,11 +79,17 @@ describe('RegisterForm', () => {
       json: async () => ({ error: 'Username already exists' }),
     } as Response)
 
-    render(<RegisterForm />)
+    render(
+      <MemoryRouter>
+        <RegisterForm />
+      </MemoryRouter>
+    )
 
     await act(async () => {
-      await user.type(screen.getByLabelText(/whats your name\?/i), 'Pablo')
-      await user.click(screen.getByRole('button', { name: /lets go!/i }))
+      await user.type(screen.getByLabelText(/username/i), 'Pablo')
+      await user.type(screen.getByLabelText(/email/i), 'pablo@test.com')
+      await user.type(screen.getByLabelText(/password/i), 'Password123!')
+      await user.click(screen.getByRole('button', { name: /register/i }))
     })
 
     await waitFor(() => {
@@ -80,21 +98,25 @@ describe('RegisterForm', () => {
   })
 
   test('shows network error when fetch fails', async () => {
-  const user = userEvent.setup()
+    const user = userEvent.setup()
 
-  global.fetch = vi.fn().mockRejectedValueOnce(
-    new Error('Network error')
-  )
+    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'))
 
-  render(<RegisterForm />)
+    render(
+      <MemoryRouter>
+        <RegisterForm />
+      </MemoryRouter>
+    )
 
-  await act(async () => {
-    await user.type(screen.getByLabelText(/whats your name\?/i), 'Pablo')
-    await user.click(screen.getByRole('button', { name: /lets go!/i }))
+    await act(async () => {
+      await user.type(screen.getByLabelText(/username/i), 'Pablo')
+      await user.type(screen.getByLabelText(/email/i), 'pablo@test.com')
+      await user.type(screen.getByLabelText(/password/i), 'Password123!')
+      await user.click(screen.getByRole('button', { name: /register/i }))
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText(/network error/i)).toBeInTheDocument()
+    })
   })
-
-  await waitFor(() => {
-    expect(screen.getByText(/network error/i)).toBeInTheDocument()
-  })
-})
 })
