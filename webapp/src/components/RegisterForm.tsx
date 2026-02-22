@@ -30,9 +30,12 @@ export default function RegisterScreen({ onRegister }: RegisterScreenProps) {
     }
 
     setLoading(true);
+
     try {
       const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
+      
+      
       const res = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -41,16 +44,21 @@ export default function RegisterScreen({ onRegister }: RegisterScreenProps) {
 
       const data = await res.json();
 
-      if (res.ok) {
+      if (!res.ok) {
+      if (data.error?.includes("exists")) {
+        setError("Username or email already registered.");
+      } else {
+        setError(data.error || "Server error");
+      }
+      return;
+    }
         setResponseMessage(`Hello ${username}, registration successful!`);
         setUsername("");
         setEmail("");
         setPassword("");
         onRegister?.(username, email, password);
         navigate("/game");
-      } else {
-        setError(data.error || "Server error");
-      }
+      
     } catch (err: any) {
       setError(err.message || "Network error");
     } finally {

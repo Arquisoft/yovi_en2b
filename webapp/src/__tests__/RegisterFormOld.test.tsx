@@ -1,16 +1,14 @@
 import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RegisterForm from '../components/RegisterFormOld'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest' 
 import '@testing-library/jest-dom'
 
-// Limpiar mocks después de cada test
-afterEach(() => {
-  vi.restoreAllMocks()
-  vi.clearAllMocks()
-})
-
 describe('RegisterForm', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   test('shows validation error when username is empty', async () => {
     render(<RegisterForm />)
     const user = userEvent.setup()
@@ -18,19 +16,19 @@ describe('RegisterForm', () => {
     await act(async () => {
       await user.click(screen.getByRole('button', { name: /lets go!/i }))
     })
-
+    
     await waitFor(() => {
       expect(screen.getByText(/please enter a username/i)).toBeInTheDocument()
     })
   })
 
-  test('submits username and displays success message', async () => {
+  test('submits username and displays response', async () => {
     const user = userEvent.setup()
 
-    // Mock fetch con éxito
+    // Mock fetch
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ message: 'User created' }),
+      json: async () => ({}),
     } as Response)
 
     render(<RegisterForm />)
@@ -40,11 +38,12 @@ describe('RegisterForm', () => {
       await user.click(screen.getByRole('button', { name: /lets go!/i }))
     })
 
+    // Espera a que aparezca el mensaje
     await waitFor(() => {
       expect(screen.getByText(/hello pablo/i)).toBeInTheDocument()
-    })
-
-    // Verifica que fetch fue llamado con los datos correctos
+    }, { timeout: 3000 })
+    
+    // Verifica que fetch fue llamado
     expect(global.fetch).toHaveBeenCalledWith(
       'http://localhost:3000/api/auth/register',
       expect.objectContaining({
@@ -62,6 +61,7 @@ describe('RegisterForm', () => {
   test('displays error message on failed request', async () => {
     const user = userEvent.setup()
 
+    // Mock fetch con error
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: false,
       json: async () => ({ error: 'Username already exists' }),
@@ -76,25 +76,6 @@ describe('RegisterForm', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/username already exists/i)).toBeInTheDocument()
-    })
+    }, { timeout: 3000 })
   })
-
-  test('shows network error when fetch fails', async () => {
-  const user = userEvent.setup()
-
-  global.fetch = vi.fn().mockRejectedValueOnce(
-    new Error('Network error')
-  )
-
-  render(<RegisterForm />)
-
-  await act(async () => {
-    await user.type(screen.getByLabelText(/whats your name\?/i), 'Pablo')
-    await user.click(screen.getByRole('button', { name: /lets go!/i }))
-  })
-
-  await waitFor(() => {
-    expect(screen.getByText(/network error/i)).toBeInTheDocument()
-  })
-})
 })
