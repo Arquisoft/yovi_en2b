@@ -9,16 +9,16 @@ Given('the register page is open', async function () {
 
 When('I enter {string} as the username and submit', async function (username) {
   const page = this.page
+
   await page.fill('[aria-label="Username"]', username)
-  await page.fill('[aria-label="Email"]', 'alice@test.com')
+  await page.fill('[aria-label="Email"]', 'email@test.com')
   await page.fill('[aria-label="Password"]', 'password123')
   await page.click('[type="submit"]')
 })
 
-Then('I should see a welcome message containing {string}', async function (expected) {
+Then('I should be redirected to the game screen', async function () {
   const page = this.page
-  if (!page) throw new Error('Page not initialized')
-  await page.waitForSelector('.success-message', { timeout: 5000 })
-  const text = await page.textContent('.success-message')
-  assert.ok(text && text.includes(expected), `Expected success message to include "${expected}", got: "${text}"`)
+  await page.waitForURL('**/game', { timeout: 5000 })
+  await page.waitForSelector('[aria-label="Game board"]', { timeout: 5000 })
+  assert.ok(page.url().includes('/game'))
 })

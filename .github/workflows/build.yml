@@ -16,11 +16,11 @@ jobs:
         image: mariadb:11.4
         env:
           MYSQL_ROOT_PASSWORD: test_password
-          MYSQL_DATABASE: test_db
+          MYSQL_DATABASE: users_db
           MYSQL_USER: test_user
           MYSQL_PASSWORD: test_password
         ports:
-        - 3307:3306
+        - 3306:3306
         options: >-
           --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=10
 
