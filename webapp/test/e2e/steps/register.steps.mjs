@@ -9,9 +9,10 @@ Given('the register page is open', async function () {
 
 When('I enter {string} as the username and submit', async function (username) {
   const page = this.page
-  if (!page) throw new Error('Page not initialized')
-  await page.fill('#username', username)
-  await page.click('.submit-button')
+  await page.fill('[aria-label="Username"]', username)
+  await page.fill('[aria-label="Email"]', 'alice@test.com')
+  await page.fill('[aria-label="Password"]', 'password123')
+  await page.click('[type="submit"]')
 })
 
 Then('I should see a welcome message containing {string}', async function (expected) {
