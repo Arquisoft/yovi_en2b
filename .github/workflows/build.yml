@@ -3,9 +3,9 @@ name: Build
 on:
   push:
     branches:
-      - master
+    - master
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [ opened, synchronize, reopened ]
 
 jobs:
   tests:
@@ -20,48 +20,45 @@ jobs:
           MYSQL_USER: test_user
           MYSQL_PASSWORD: test_password
         ports:
-          - 3307:3306
+        - 3307:3306
         options: >-
-          --health-cmd="healthcheck.sh --connect --innodb_initialized"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
+          --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=10
 
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          components: rustfmt, clippy
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+        components: rustfmt, clippy
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
 
-      - run: npm --prefix users ci
-      - run: npm --prefix webapp ci
+    - run: npm --prefix users ci
+    - run: npm --prefix webapp ci
 
-      - name: Run users tests with coverage
-        run: npm --prefix users run test:coverage:ci
+    - name: Run users tests with coverage
+      run: npm --prefix users run test:coverage:ci
 
-      - name: Run webapp tests with coverage
-        run: npm --prefix webapp run test:coverage
+    - name: Run webapp tests with coverage
+      run: npm --prefix webapp run test:coverage
 
-      - name: Install cargo-llvm-cov
-        run: cargo install cargo-llvm-cov --locked
+    - name: Install cargo-llvm-cov
+      run: cargo install cargo-llvm-cov --locked
 
-      - name: Generate gamey code coverage
-        run: cd gamey && cargo llvm-cov --lcov --output-path lcov.info
+    - name: Generate gamey code coverage
+      run: cd gamey && cargo llvm-cov --lcov --output-path lcov.info
 
-      - name: Normalize Rust coverage paths
-        run: |
-          sed -i "s|SF:${GITHUB_WORKSPACE}/|SF:|g" gamey/lcov.info
-          grep '^SF:' gamey/lcov.info | head
+    - name: Normalize Rust coverage paths
+      run: |
+        sed -i "s|SF:${GITHUB_WORKSPACE}/|SF:|g" gamey/lcov.info
+        grep '^SF:' gamey/lcov.info | head
 
-      - name: Analyze with SonarQube
-        uses: SonarSource/sonarqube-scan-action@master
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    - name: Analyze with SonarQube
+      uses: SonarSource/sonarqube-scan-action@master
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

@@ -2,7 +2,7 @@ name: Release — Test, Build, Publish, Deploy
 
 on:
   release:
-    types: [published]
+    types: [ published ]
 
 permissions:
   contents: read
@@ -25,54 +25,51 @@ jobs:
           MYSQL_USER: test_user
           MYSQL_PASSWORD: test_password
         ports:
-          - 3307:3306
+        - 3307:3306
         options: >-
-          --health-cmd="healthcheck.sh --connect --innodb_initialized"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
+          --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=10
 
     strategy:
       matrix:
-        service: [webapp, users]
+        service: [ webapp, users ]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
 
-      - name: Install dependencies
-        run: |
-          cd ${{ matrix.service }}
-          npm ci
+    - name: Install dependencies
+      run: |
+        cd ${{ matrix.service }}
+        npm ci
 
-      - name: Run tests
-        run: |
-          cd ${{ matrix.service }}
-          npm run test:ci
+    - name: Run tests
+      run: |
+        cd ${{ matrix.service }}
+        npm run test:ci
 
   test-rust:
     name: Run rust (gamey) tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
 
-      - name: Run tests
-        run: |
-          cd gamey
-          cargo test
+    - name: Run tests
+      run: |
+        cd gamey
+        cargo test
 
   e2e:
     name: Run E2E tests
     runs-on: ubuntu-latest
-    needs: [test-node, test-rust]
+    needs: [ test-node, test-rust ]
 
     services:
       mariadb:
@@ -83,43 +80,40 @@ jobs:
           MYSQL_USER: users_user
           MYSQL_PASSWORD: users_password
         ports:
-          - 3306:3306
+        - 3306:3306
         options: >-
-          --health-cmd="healthcheck.sh --connect --innodb_initialized"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
+          --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=10
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Install users dependencies
-        run: |
-          cd users
-          npm ci
-      - name: Install webapp dependencies
-        run: |
-          cd webapp
-          npm ci
-      - name: Install Playwright browsers
-        run: |
-          cd webapp
-          npm run test:e2e:install-browsers
-      - name: Run E2E tests (start servers and run cucumber)
-        run: |
-          cd webapp
-          npm run test:e2e
-        env:
-          NODE_ENV: development
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_NAME: users_db
-          DB_USER: users_user
-          DB_PASSWORD: users_password
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Install users dependencies
+      run: |
+        cd users
+        npm ci
+    - name: Install webapp dependencies
+      run: |
+        cd webapp
+        npm ci
+    - name: Install Playwright browsers
+      run: |
+        cd webapp
+        npm run test:e2e:install-browsers
+    - name: Run E2E tests (start servers and run cucumber)
+      run: |
+        cd webapp
+        npm run test:e2e
+      env:
+        NODE_ENV: development
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+        DB_NAME: users_db
+        DB_USER: users_user
+        DB_PASSWORD: users_password
 
   docker-push-users:
     name: Publish users image
@@ -129,17 +123,17 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Publish to Registry (users)
-        uses: elgohr/Publish-Docker-Github-Action@v5
-        with:
-          name: ${{ github.repository_owner }}/${{ github.event.repository.name }}-users
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: ghcr.io
-          workdir: users
+    - name: Publish to Registry (users)
+      uses: elgohr/Publish-Docker-Github-Action@v5
+      with:
+        name: ${{ github.repository_owner }}/${{ github.event.repository.name }}-users
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: ghcr.io
+        workdir: users
 
   docker-push-webapp:
     name: Publish webapp image
@@ -149,18 +143,18 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Publish to Registry (webapp)
-        uses: elgohr/Publish-Docker-Github-Action@v5
-        with:
-          name: ${{ github.repository_owner }}/${{ github.event.repository.name }}-webapp
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: ghcr.io
-          workdir: webapp
-          buildargs: VITE_API_URL=http://${{ secrets.DEPLOY_HOST }}:3000
+    - name: Publish to Registry (webapp)
+      uses: elgohr/Publish-Docker-Github-Action@v5
+      with:
+        name: ${{ github.repository_owner }}/${{ github.event.repository.name }}-webapp
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: ghcr.io
+        workdir: webapp
+        buildargs: VITE_API_URL=http://${{ secrets.DEPLOY_HOST }}:3000
 
   docker-push-gamey:
     name: Publish gamey image
@@ -170,42 +164,42 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Publish to Registry (gamey)
-        uses: elgohr/Publish-Docker-Github-Action@v5
-        with:
-          name: ${{ github.repository_owner }}/${{ github.event.repository.name }}-gamey
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          registry: ghcr.io
-          workdir: gamey
+    - name: Publish to Registry (gamey)
+      uses: elgohr/Publish-Docker-Github-Action@v5
+      with:
+        name: ${{ github.repository_owner }}/${{ github.event.repository.name }}-gamey
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: ghcr.io
+        workdir: gamey
 
   deploy:
     name: Deploy over SSH
     runs-on: ubuntu-latest
-    needs: [docker-push-users, docker-push-webapp, docker-push-gamey]
+    needs: [ docker-push-users, docker-push-webapp, docker-push-gamey ]
     steps:
-      - name: Checkout solo deploy.sh
-        uses: actions/checkout@v4
-        with:
-          sparse-checkout: |
-            .github/workflows/deploy.sh
-          sparse-checkout-cone-mode: false
+    - name: Checkout solo deploy.sh
+      uses: actions/checkout@v4
+      with:
+        sparse-checkout: |
+          .github/workflows/deploy.sh
+        sparse-checkout-cone-mode: false
 
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1
-        env:
-          REPO_OWNER: ${{ github.repository_owner }}
-          REPO_NAME: ${{ github.event.repository.name }}
-          MARIADB_ROOT_PASSWORD: ${{ secrets.MARIADB_ROOT_PASSWORD }}
-          MARIADB_USER: ${{ secrets.MARIADB_USER }}
-          MARIADB_PASSWORD: ${{ secrets.MARIADB_PASSWORD }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_KEY }}
-          envs: REPO_OWNER,REPO_NAME,MARIADB_ROOT_PASSWORD,MARIADB_USER,MARIADB_PASSWORD,JWT_SECRET
-          script_path: .github/workflows/deploy.sh
+    - name: Deploy over SSH
+      uses: appleboy/ssh-action@v1
+      env:
+        REPO_OWNER: ${{ github.repository_owner }}
+        REPO_NAME: ${{ github.event.repository.name }}
+        MARIADB_ROOT_PASSWORD: ${{ secrets.MARIADB_ROOT_PASSWORD }}
+        MARIADB_USER: ${{ secrets.MARIADB_USER }}
+        MARIADB_PASSWORD: ${{ secrets.MARIADB_PASSWORD }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USER }}
+        key: ${{ secrets.DEPLOY_KEY }}
+        envs: REPO_OWNER,REPO_NAME,MARIADB_ROOT_PASSWORD,MARIADB_USER,MARIADB_PASSWORD,JWT_SECRET
+        script_path: .github/workflows/deploy.sh
