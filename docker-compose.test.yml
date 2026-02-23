@@ -4,13 +4,15 @@ services:
     container_name: mariadb-test
     environment:
       MYSQL_ROOT_PASSWORD: test_password
-      MYSQL_DATABASE: test_db
+      MYSQL_DATABASE: users_db
       MYSQL_USER: test_user
       MYSQL_PASSWORD: test_password
     ports:
-      - "3307:3306"
+      - "3306:3306"
     tmpfs:
       - /var/lib/mysql:size=512M
+    volumes:
+      - ./users/schema.sql:/docker-entrypoint-initdb.d/1.sql
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 2s

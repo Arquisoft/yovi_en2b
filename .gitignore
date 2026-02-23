@@ -13,3 +13,7 @@ personal.md
 flamegraph.svg
 perf.data
 conexion-base.txt
+
+.staging/
+.DS_Store
+tmp/

@@ -8,14 +8,21 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    
+    "test:db:up": "docker compose -f ../docker-compose.test.yml up -d && sleep 10",
+    "test:db:down": "docker compose -f ../docker-compose.test.yml down -v",
+
     "test": "vitest",
     "test:ci": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
+
     "test:e2e:run": "cucumber-js --import test/e2e/support/setup.mjs --import test/e2e/steps/**/*.mjs test/e2e/features --format progress",
-    "test:e2e": "start-server-and-test start:all http://localhost:5173 test:e2e:run",
+    "test:e2e:ci": "start-server-and-test start:all http://localhost:3000/health test:e2e:run",
+    "test:e2e": "npm run test:db:up && npm run test:e2e:ci; npm run test:db:down",
     "test:e2e:install-browsers": "npx playwright install",
-    "start:all": "concurrently \"npm run dev\" \"npm --prefix ../users run start:prod\""
+
+    "start:all": "concurrently \"npm run dev\" \"cd ../users && npm run start:prod\""
   },
   "dependencies": {
     "react": "^18.3.1",
