@@ -1,0 +1,343 @@
+/* ── Game Screen ── */
+
+.game-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f0edea;
+  color: #2b2d33;
+}
+
+/* ── Top Bar ── */
+
+.game-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  position: relative;
+  z-index: 10;
+}
+
+.game-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.game-logo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #2b2d33;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-logo-icon span {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.game-logo-text {
+  font-size: 26px;
+  font-weight: 700;
+  color: #2b2d33;
+  letter-spacing: 1px;
+}
+
+.game-settings-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #5a5d64;
+  padding: 6px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.game-settings-btn:hover {
+  color: #2b2d33;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* ── Body Layout ── */
+
+.game-body {
+  flex: 1;
+  display: flex;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* ── Board Area ── */
+
+.game-board-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  min-width: 0;
+}
+
+/* ── Hex Board ── */
+
+.hex-board {
+  position: relative;
+  width: 500px;
+  height: 380px;
+}
+
+.hex-tile {
+  position: absolute;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.15s;
+}
+
+.hex-tile:hover {
+  transform: scale(1.08);
+  z-index: 2;
+}
+
+.hex-tile:active {
+  transform: scale(0.96);
+}
+
+.hex-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.hex-tile--white .hex-svg polygon {
+  fill: #e8e5e1;
+  stroke: #d5d2cd;
+  stroke-width: 2;
+}
+
+.hex-tile--copper .hex-svg polygon {
+  fill: #d4a88c;
+  stroke: #c49578;
+  stroke-width: 2;
+}
+
+.hex-tile--silver .hex-svg polygon {
+  fill: #9a9ea6;
+  stroke: #888c94;
+  stroke-width: 2;
+}
+
+.hex-tile--white:hover .hex-svg polygon {
+  fill: #f0ede9;
+}
+
+.hex-tile--copper:hover .hex-svg polygon {
+  fill: #dfb89e;
+}
+
+.hex-tile--silver:hover .hex-svg polygon {
+  fill: #aaaeb6;
+}
+
+/* ── Sidebar ── */
+
+.game-sidebar {
+  width: 380px;
+  min-width: 320px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  border-left: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+/* ── Timers ── */
+
+.game-timers {
+  display: flex;
+  gap: 12px;
+}
+
+.timer-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  padding: 14px 12px 18px;
+}
+
+.timer-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2b2d33;
+  margin-bottom: 6px;
+}
+
+.timer-digits {
+  font-family: "Courier New", "Lucida Console", monospace;
+  font-size: 52px;
+  font-weight: 700;
+  color: #2b2d33;
+  letter-spacing: 2px;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Surrender Button ── */
+
+.game-surrender-btn {
+  width: 100%;
+  height: 60px;
+  border: none;
+  border-radius: 32px;
+  background: #2b2d33;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.game-surrender-btn:hover {
+  background: #3a3d44;
+}
+
+.game-surrender-btn:active {
+  transform: scale(0.98);
+}
+
+/* ── Chat ── */
+
+.chat-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.chat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.chat-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2b2d33;
+  flex: 1;
+}
+
+.chat-menu-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #7a7d84;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.chat-menu-btn:hover {
+  color: #2b2d33;
+}
+
+/* ── Chat Input ── */
+
+.chat-input-area {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-input {
+  flex: 1;
+  min-height: 100px;
+  border: 1px solid #d5d7db;
+  border-radius: 14px;
+  padding: 14px 44px 14px 16px;
+  font-size: 14px;
+  color: #2b2d33;
+  background: rgba(240, 245, 250, 0.5);
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.chat-input::placeholder {
+  color: #9a9da3;
+}
+
+.chat-input:focus {
+  border-color: #a0a4ab;
+  box-shadow: 0 0 0 3px rgba(43, 45, 51, 0.06);
+}
+
+.chat-send-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d5d7db;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5a5d64;
+  transition: color 0.2s, background 0.2s;
+}
+
+.chat-send-btn:hover {
+  color: #2b2d33;
+  background: #f0f0f0;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 860px) {
+  .game-body {
+    flex-direction: column;
+  }
+
+  .game-sidebar {
+    width: 100%;
+    min-width: unset;
+    border-left: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .hex-board {
+    width: 340px;
+    height: 260px;
+  }
+
+  .hex-tile {
+    transform: scale(0.68);
+  }
+}
