@@ -20,13 +20,15 @@ const PORT = process.env.PORT || 3000;
 // CROSS-ORIGIN RESOURCE SHARING
 app.use(cors({
     origin: process.env.NODE_ENV === 'production'
-        ? 'https://yovi-dominio.com' // cambiar por dominio de real
+        ? ['https://micrati.com', 'https://www.micrati.com']
         : true,
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // JSON PARSING
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // SECURITY 
 app.use(helmet({
@@ -38,6 +40,7 @@ app.use(helmet({
             "img-src": ["'self'", "data:", "validator.swagger.io"]
         }
     },
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
     crossOriginEmbedderPolicy: false
 }));
 
@@ -47,7 +50,7 @@ const metricsMiddleware = promBundle({
     includePath: true,
     includeStatusCode: true,
     includeUp: true,
-    customLabels: { project: 'gamey' },
+    customLabels: { project: 'YOVI' },
     promClient: {
         collectDefaultMetrics: {}
     }
@@ -59,7 +62,7 @@ try {
     const swaggerPath = path.join(__dirname, '../openapi.yaml');
     const swaggerDocument = YAML.load(fs.readFileSync(swaggerPath, 'utf8')) as object;
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-    console.log('Swagger available at /api-docs');
+    console.log('Swagger UI available at /api-docs');
 } catch (error) {
     console.warn('Could not load openapi.yaml:', error);
 }
