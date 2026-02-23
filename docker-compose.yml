@@ -93,6 +93,9 @@ services:
       - "9091:3000"
     volumes:
       - ./users/monitoring/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+    - GF_LOG_LEVEL=error
+    - GF_LOG_MODE=console  
     networks:
       - monitor-net
 
