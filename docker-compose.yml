@@ -18,13 +18,14 @@ services:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 15
+      start_period: 60s
     restart: unless-stopped
   
   users:
     build: ./users
     container_name: users
-    image: ghcr.io/arquisoft/yovi_en2b-users:latest
+    image: ghcr.io/losadgm/delete-later-users:latest
     ports:
       - "3000:3000"
     environment:
@@ -41,6 +42,12 @@ services:
         condition: service_healthy
     networks:
       - monitor-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
 
   webapp:
     build:
@@ -48,19 +55,22 @@ services:
       args:
         - VITE_API_URL=http://localhost:3000
     container_name: webapp
-    image: ghcr.io/arquisoft/yovi_en2b-webapp:latest
+    image: ghcr.io/losadgm/delete-later-webapp:latest
     ports:
     - "80:80"
     - "443:443"
     volumes:
     - /etc/nginx/certs:/etc/nginx/certs:ro
     depends_on:
-    - users
+      users:
+        condition: service_healthy
+    networks:
+    - monitor-net
 
   gamey:
     build: ./gamey
     container_name: gamey
-    image: ghcr.io/arquisoft/yovi_en2b-gamey:latest
+    image: ghcr.io/losadgm/delete-later-gamey:latest
     ports:
       - "4000:4000"
     networks:
