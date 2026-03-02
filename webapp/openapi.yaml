@@ -1,0 +1,385 @@
+openapi: 3.0.3
+info:
+  title: YOVI Y Game API
+  version: 1.0.0
+  description: Public REST API for the Y board game. Features polymorphic players, chess-like timers, surrender endpoint, detailed use cases for async/sync play, and JWT Bearer authentication.
+
+# Apply the security scheme globally, or you can apply it per endpoint
+security:
+  - bearerAuth: []
+
+paths:
+  /games/{gameId}:
+    get:
+      summary: Get current game state
+      description: Retrieves the complete game state from the database, including remaining times for each player. Requires valid JWT to access private games.
+      operationId: getGameState
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 145236987
+      responses:
+        '200':
+          description: Game state successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameState'
+              examples:
+                OngoingGame:
+                  summary: "Active game (Human vs Bot)"
+                  description: "An ongoing match where it is currently player B's turn (the human)."
+                  value:
+                    gameId: 145236987
+                    yen: "B/.B/RBB/B..R"
+                    players:
+                      "B":
+                        type: "HUMAN"
+                        id: 987654321
+                      "R":
+                        type: "BOT"
+                        strategy: "HARD"
+                    timers:
+                      "B": 535000
+                      "R": 600000
+                    turn: "B"
+                    status: "ONGOING"
+        '401':
+          description: Unauthorized. The JWT token is missing, invalid, or expired.
+        '403':
+          description: Forbidden. The user does not have permission to view this game.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                NotPlaying:
+                  summary: "The user is not part of this game"
+                  value:
+                    code: "NOT_PLAYING"
+                    message: "You cannot view this game because you are not playing."
+                    gameStatus: null
+        '404':
+          description: Game not found.
+
+  /games/{gameId}/play:
+    post:
+      summary: Execute a move on the board
+      description: Registers a player's move by receiving the proposed new board state (YEN). The user making the move is identified via the JWT token.
+      operationId: playMove
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 145236987
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayRequest'
+      responses:
+        '200':
+          description: Move valid and next move processed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayResult'
+              examples:
+                ImmediateResponse:
+                  summary: "Immediate Response"
+                  description: "The engine replies in less than 2s. The returned YEN includes BOTH moves, and it's the player's turn again."
+                  value:
+                    fastMove: "3,2"
+                    yen: "B/.B/RBB/B.RR"
+                    timers:
+                      "B": 535000
+                      "R": 598000
+                    nextTurn: "B"
+                    status: "ONGOING"
+                GameEndsOnMove:
+                  summary: "Move ends the game"
+                  description: "The player's move completes a winning path. The game ends immediately. fastMove is null."
+                  value:
+                    fastMove: null
+                    yen: "B/BB/RBB/B..R"
+                    timers:
+                      "B": 535000
+                      "R": 600000
+                    nextTurn: null
+                    status: "PLAYER_B_WINS"
+        '202':
+          description: Move valid but next move takes too long.
+          content: 
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayResult'
+              examples:
+                AsyncResponse:
+                  summary: "Async Response"
+                  description: "The move is accepted but the response takes longer than 2s. The fastMove is null. The returned YEN only includes the current player's move. It is now the opponent's turn."
+                  value:
+                    fastMove: null
+                    yen: "B/.B/RBB/B..R"
+                    timers:
+                      "B": 535000
+                      "R": 600000
+                    nextTurn: "R"
+                    status: "ONGOING"
+        '400':
+          description: Request rejected due to illegal move or invalid format.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                IllegalMove:
+                  summary: "Engine rejected the move"
+                  value:
+                    code: "ILLEGAL_MOVE"
+                    message: "The proposed YEN state contains invalid piece placements."
+                    gameStatus: "ONGOING"
+        '401':
+          description: Unauthorized. The JWT token is missing, invalid, or expired.
+        '403':
+          description: Forbidden. Action denied (e.g., the user is not part of this game, or it is not their turn).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                NotYourTurn:
+                  summary: "Not the user's turn"
+                  value:
+                    code: "NOT_YOUR_TURN"
+                    message: "You cannot make a move because it is the opponent's turn."
+                    gameStatus: "ONGOING"
+                NotPlaying:
+                  summary: "The user is not part of this game"
+                  value:
+                    code: "NOT_PLAYING"
+                    message: "You cannot make a move because you are not playing."
+                    gameStatus: null
+        '409':
+          description: Conflict. The game has already finished and cannot accept further moves.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                GameAlreadyFinished:
+                  summary: "Game already finished"
+                  value:
+                    code: "GAME_ALREADY_FINISHED"
+                    message: "Cannot process move. The game already concluded."
+                    gameStatus: "PLAYER_R_WINS"
+        '404':
+          description: Game not found.
+
+  /games/{gameId}/surrender:
+    post:
+      summary: Surrender the game
+      description: Allows the current human player to forfeit the match. The user forfeiting is identified via the JWT token.
+      operationId: surrenderGame
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 145236987
+      responses:
+        '200':
+          description: Surrender accepted. Returns the final game state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameState'
+              examples:
+                SurrenderResult:
+                  summary: "Player B surrenders"
+                  description: "Player B forfeits the match. The board remains the same, but the game ends immediately. turn becomes null, and player R wins."
+                  value:
+                    gameId: 145236987
+                    yen: "B/.B/RBB/B..R"
+                    players:
+                      "B":
+                        type: "HUMAN"
+                        id: 987654321
+                      "R":
+                        type: "BOT"
+                        strategy: "HARD"
+                    timers:
+                      "B": 535000
+                      "R": 600000
+                    turn: null
+                    status: "PLAYER_R_WINS"
+        '401':
+          description: Unauthorized. The JWT token is missing, invalid, or expired.
+        '403':
+          description: Forbidden. Action denied (the user is not part of this game or it's not their turn).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                NotYourTurn:
+                  summary: "Not the user's turn"
+                  value:
+                    code: "NOT_YOUR_TURN"
+                    message: "You cannot surrender because it is the opponent's turn."
+                    gameStatus: "ONGOING"
+                NotPlaying:
+                  summary: "The user is not part of this game"
+                  value:
+                    code: "NOT_PLAYING"
+                    message: "You cannot surrender because you are not playing."
+                    gameStatus: null
+        '409':
+          description: Conflict. The game is already finished.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                GameAlreadyFinished:
+                  summary: "Game already finished"
+                  value:
+                    code: "GAME_ALREADY_FINISHED"
+                    message: "Cannot surrender. The game already concluded."
+                    gameStatus: "PLAYER_R_WINS"
+        '404':
+          description: Game not found.
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Provide the JWT token obtained from the user authentication service."
+
+  schemas:
+    PlayRequest:
+      type: object
+      required: 
+        - yen
+      properties:
+        yen:
+          type: string
+          description: "The proposed new board state in YEN notation after the player places their token."
+          example: "B/.B/RBB/B..R"
+
+    HumanPlayer:
+      type: object
+      required:
+        - type
+        - id
+      properties:
+        type:
+          type: string
+          enum: [HUMAN]
+        id:
+          type: integer
+          format: int64
+          description: "The user ID in the database (BIGINT)."
+
+    BotPlayer:
+      type: object
+      required:
+        - type
+        - strategy
+      properties:
+        type:
+          type: string
+          enum: [BOT]
+        strategy:
+          type: string
+          enum: [EASY, MEDIUM, HARD, EXPERT]
+          description: "The difficulty level defining the strategy used by the bot."
+
+    PlayerInfo:
+      oneOf:
+        - $ref: '#/components/schemas/HumanPlayer'
+        - $ref: '#/components/schemas/BotPlayer'
+      discriminator:
+        propertyName: type
+      description: "Polymorphic player object. Content depends on the 'type' field."
+
+    Timers:
+      type: object
+      description: "Remaining time in milliseconds for each token."
+      additionalProperties:
+        type: integer
+        format: int64
+
+    GameState:
+      type: object
+      description: "The complete snapshot of a Y game at a specific point in time. It includes the game identifier, the board's physical state (YEN notation), polymorphic information about the players (Human or Bot), remaining time on their clocks, whose turn it is, and the current resolution status of the match."
+      properties:
+        gameId:
+          type: integer
+          format: int64
+        yen:
+          type: string
+          description: "Current board state."
+        players:
+          type: object
+          description: "Dictionary mapping YEN characters to polymorphic player data."
+          additionalProperties:
+            $ref: '#/components/schemas/PlayerInfo'
+        timers:
+          $ref: '#/components/schemas/Timers'
+        turn:
+          type: string
+          nullable: true
+          description: "The token ('B' or 'R') of the player whose turn it is. Null if game is finished."
+        status:
+          type: string
+          enum: [ONGOING, PLAYER_B_WINS, PLAYER_R_WINS]
+
+    PlayResult:
+      type: object
+      properties:
+        fastMove:
+          type: string
+          nullable: true
+          description: "The exact coordinate where the player made a move but only if it took less than 2s."
+        yen:
+          type: string
+          description: "New board state. If playing against a fast opponent, this string reflects both the player's move and the opponent's fast response (<2s)."
+        timers:
+          $ref: '#/components/schemas/Timers'
+        nextTurn:
+          type: string
+          nullable: true
+          description: "The token ('B' or 'R') of the player who moves next. Null if the game has ended."
+        status:
+          type: string
+          enum: [ONGOING, PLAYER_B_WINS, PLAYER_R_WINS]
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: "Machine-readable error code."
+        message:
+          type: string
+          description: "Human-readable explanation of the error."
+        gameStatus:
+          type: string
+          nullable: true
+          description: "If the error is tied to a specific game lifecycle state, this field contains the game status at the moment the request was rejected."
+          enum: [ONGOING, PLAYER_B_WINS, PLAYER_R_WINS]
