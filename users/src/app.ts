@@ -17,6 +17,8 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+console.log(`Starting nodejs server with env: ` + process.env.NODE_ENV);
+
 // CROSS-ORIGIN RESOURCE SHARING
 app.use(cors({
     origin: process.env.NODE_ENV === 'production'
@@ -62,7 +64,7 @@ try {
     const swaggerPath = path.join(__dirname, '../openapi.yaml');
     const swaggerDocument = YAML.load(fs.readFileSync(swaggerPath, 'utf8')) as object;
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-    console.log('Swagger UI available at /api-docs');
+    console.log('Swagger UI running');
 } catch (error) {
     console.warn('Could not load openapi.yaml:', error);
 }
@@ -101,10 +103,11 @@ const startServer = async () => {
         console.log('MariaDB database connected');
 
         app.listen(PORT, () => {
-            console.log(`Server running at http://localhost:${PORT}`);
-            console.log(`Prometheus metrics: http://localhost:${PORT}/metrics`);
-            console.log(`Swagger documentation: http://localhost:${PORT}/api-docs`);
-            console.log(`Health check: http://localhost:${PORT}/health`);
+            console.log(`Server running at http://api.localhost/users`);
+            console.log(`Swagger documentation: http://api.localhost/users/api-docs`);
+            console.log(`Health check: http://api.localhost/users/health`);
+            console.log(`Prometheus metrics: http://monitoring.localhost/prometheus`);
+            console.log(`Grafana dashboard: http://monitoring.localhost/grafana`);
         });
     } catch (error) {
         console.error('Error starting server:', error);

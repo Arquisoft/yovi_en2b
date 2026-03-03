@@ -18,7 +18,18 @@ FROM nginx:stable-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx config
-COPY nginx.conf /etc/nginx/conf.d/webapp.conf
+COPY nginx/snippets/ /etc/nginx/snippets/
+COPY nginx/nginx.prod.conf /etc/nginx/prod.conf
+COPY nginx/nginx.dev.conf /etc/nginx/dev.conf
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Copy entrypoint script
+COPY nginx/start-nginx.sh /start-nginx.sh
+RUN chmod +x /start-nginx.sh
+
+# Remove default nginx config and dependant scripts
+RUN rm -f /etc/nginx/conf.d/default.conf
+RUN rm -f /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+
+EXPOSE 80 443
+
+ENTRYPOINT ["/start-nginx.sh"]
