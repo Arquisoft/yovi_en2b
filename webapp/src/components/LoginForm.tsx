@@ -26,7 +26,7 @@ export default function LoginScreen({onLogin, onSignUp, /*onForgotPassword,*/} :
     //TODO -> validación campos
     onLogin?.(username, password); //Funcionalidad del login, se llama a la función onLogin pasada con el username y password actuales
    
-    navigate("/game");
+    navigate("/gameSelection");
   };
 
 
