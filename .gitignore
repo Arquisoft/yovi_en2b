@@ -8,6 +8,7 @@ docs/build/
 webapp/.env
 .vscode/
 dist/
+certs/
 
 personal.md
 flamegraph.svg
