@@ -9,7 +9,7 @@
 This project is developed by the following group members as part of the ASW labs at Uniovi:
 
 - **Marcos Losada García** – GitHub: [@losadgm](https://github.com/losadgm)
-- **Rafael Álvarez Iglesias** – GitHub: [@UO294786](https://github.com/UO294786)
+- **Rafael Álvarez Iglesias** – GitHub: [@XBotYT](https://github.com/XBotYT)
 - **Marcos Rodríguez Fernández** – GitHub: [@Cuitoss](https://github.com/Cuitoss)
 - **Sergio Fernández-Miranda Longo** – GitHub: [@clubserg](https://github.com/clubserg)
 
