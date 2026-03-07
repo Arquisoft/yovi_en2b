@@ -3,16 +3,12 @@ import cors from 'cors';
 import gameRoutes from './routes/gameRoutes';
 
 const app = express();
+app.use(cors());
+app.use(express.json());
 
-// Middleware
-app.use(cors());          // Requirement: Allows Frontend to talk to Backend
-app.use(express.json()); // Requirement: To read JSON in YEN notation
+app.use('/games', gameRoutes);
 
-// Routing - This connects your Routes layer
-app.use('/games', gameRoutes); 
-
-// The Process
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`✅ YOVI Game API is running on http://localhost:${PORT}`);
+  console.log(`YOVI Backend API compliant with OpenAPI running on port ${PORT}`);
 });
