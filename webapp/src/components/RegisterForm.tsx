@@ -1,145 +1,200 @@
-"use client";
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Label } from '@/components/ui/Label'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/Card'
+import { isValidEmail, validatePassword } from '@/utils'
+import { AlertCircle, Hexagon, CheckCircle } from 'lucide-react'
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "../style/LoginForm.css"; 
-
-interface RegisterScreenProps {
-  onRegister?: (username: string, email: string, password: string) => void;
+interface RegisterFormProps {
+  onSubmit: (username: string, email: string, password: string, passwordConfirm: string) => Promise<void>
+  isLoading: boolean
+  error: string | null
+  success: boolean
 }
 
-export default function RegisterScreen({ onRegister }: RegisterScreenProps) {
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [responseMessage, setResponseMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFormProps) {
+  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
+  const [validationErrors, setValidationErrors] = useState<{
+    username?: string
+    email?: string
+    password?: string
+    passwordConfirm?: string
+  }>({})
 
-  const navigate = useNavigate();
+  const validate = (): boolean => {
+    const errors: typeof validationErrors = {}
+    
+    if (!username) {
+      errors.username = 'Username is required'
+    } else if (username.length < 3) {
+      errors.username = 'Username must be at least 3 characters'
+    }
+    
+    if (!email) {
+      errors.email = 'Email is required'
+    } else if (!isValidEmail(email)) {
+      errors.email = 'Invalid email format'
+    }
+    
+    const passwordValidation = validatePassword(password)
+    if (!passwordValidation.valid) {
+      errors.password = passwordValidation.message
+    }
+    
+    if (password !== passwordConfirm) {
+      errors.passwordConfirm = 'Passwords do not match'
+    }
+    
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setResponseMessage(null);
-    setError(null);
+    e.preventDefault()
+    
+    if (!validate()) return
+    
+    await onSubmit(username, email, password, passwordConfirm)
+  }
 
-    if (!username.trim() || !email.trim() || !password.trim()) {
-      setError("All fields are required.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-
-      
-      
-      const res = await fetch(`${API_URL}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-      if (data.error?.includes("exists")) {
-        setError("Username or email already registered.");
-      } else {
-        setError(data.error || "Server error");
-      }
-      return;
-    }
-        setResponseMessage(`Hello ${username}, registration successful!`);
-        setUsername("");
-        setEmail("");
-        setPassword("");
-        onRegister?.(username, email, password);
-        navigate("/game");
-      
-    } catch (err: any) {
-      setError(err.message || "Network error");
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <CheckCircle className="h-12 w-12 text-green-500" />
+            </div>
+            <CardTitle className="text-2xl">Account Created!</CardTitle>
+            <CardDescription>
+              Your account has been created successfully. You can now start playing.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Link to="/games" className="w-full">
+              <Button className="w-full">Start Playing</Button>
+            </Link>
+          </CardFooter>
+        </Card>
+      </div>
+    )
+  }
 
   return (
-    <div className="login-backdrop">
-      <div className="login-card">
-        <div className="login-logo">
-          <div className="login-logo-icon" aria-hidden="true">
-            <span>Y</span>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <Hexagon className="h-12 w-12 text-primary" />
           </div>
-          <span className="login-logo-text">YOVI</span>
-        </div>
-
-        <form className="login-form" onSubmit={handleSubmit}>
-          <div className="login-input-wrapper">
-            <input
-              type="text"
-              className="login-input"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
-              aria-label="Username"
-            />
-          </div>
-
-          <div className="login-input-wrapper">
-            <input
-              type="email"
-              className="login-input"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              aria-label="Email"
-            />
-          </div>
-
-          <div className="login-input-wrapper">
-            <input
-              type={showPassword ? "text" : "password"}
-              className="login-input"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-              aria-label="Password"
-            />
-            <button
-              type="button"
-              className="login-eye-btn"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                </svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
+          <CardTitle className="text-2xl">Create Account</CardTitle>
+          <CardDescription>Join YOVI and start playing strategic games</CardDescription>
+        </CardHeader>
+        
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            {error && (
+              <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="username" error={!!validationErrors.username}>
+                Username
+              </Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="Choose a username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                error={!!validationErrors.username}
+                disabled={isLoading}
+                autoComplete="username"
+              />
+              {validationErrors.username && (
+                <p className="text-sm text-destructive">{validationErrors.username}</p>
               )}
-            </button>
-          </div>
-
-          <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? "Registering..." : "Register"}
-          </button>
-
-          {responseMessage && <div style={{ color: "green", marginTop: 12 }}>{responseMessage}</div>}
-          {error && <div style={{ color: "red", marginTop: 12 }}>{error}</div>}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email" error={!!validationErrors.email}>
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                error={!!validationErrors.email}
+                disabled={isLoading}
+                autoComplete="email"
+              />
+              {validationErrors.email && (
+                <p className="text-sm text-destructive">{validationErrors.email}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password" error={!!validationErrors.password}>
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Create a password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                error={!!validationErrors.password}
+                disabled={isLoading}
+                autoComplete="new-password"
+              />
+              {validationErrors.password && (
+                <p className="text-sm text-destructive">{validationErrors.password}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="passwordConfirm" error={!!validationErrors.passwordConfirm}>
+                Confirm Password
+              </Label>
+              <Input
+                id="passwordConfirm"
+                type="password"
+                placeholder="Confirm your password"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                error={!!validationErrors.passwordConfirm}
+                disabled={isLoading}
+                autoComplete="new-password"
+              />
+              {validationErrors.passwordConfirm && (
+                <p className="text-sm text-destructive">{validationErrors.passwordConfirm}</p>
+              )}
+            </div>
+          </CardContent>
+          
+          <CardFooter className="flex flex-col gap-4">
+            <Button type="submit" className="w-full" isLoading={isLoading}>
+              Create Account
+            </Button>
+            <p className="text-sm text-center text-muted-foreground">
+              Already have an account?{' '}
+              <Link to="/login" className="text-primary hover:underline">
+                Sign in
+              </Link>
+            </p>
+          </CardFooter>
         </form>
-      </div>
+      </Card>
     </div>
-  );
+  )
 }
