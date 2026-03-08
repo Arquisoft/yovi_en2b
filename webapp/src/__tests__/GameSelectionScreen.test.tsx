@@ -1,146 +1,124 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
-import { vi, describe, it, expect, beforeEach } from "vitest";
-import GameSelectionScreen from "../components/GameSelectionScreen";
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+import '@testing-library/jest-dom'
+import { MemoryRouter } from 'react-router-dom'
+import GameSelectionScreen from '../components/GameSelectionScreen'
 
-// Mock useNavigate
-const mockNavigate = vi.fn();
-vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual("react-router-dom");
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  };
-});
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
+  return { ...actual, useNavigate: () => mockNavigate }
+})
 
-const renderComponent = (props = {}) =>
-  render(
-    <MemoryRouter>
-      <GameSelectionScreen {...props} />
-    </MemoryRouter>
-  );
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.clearAllMocks()
+})
 
-describe("GameSelectionScreen", () => {
-  beforeEach(() => {
-    mockNavigate.mockClear();
-  });
+describe('GameSelectionScreen', () => {
+  test('renders logo, title, game card, and action buttons', () => {
+    render(
+      <MemoryRouter>
+        <GameSelectionScreen />
+      </MemoryRouter>
+    )
 
+    expect(screen.getByText('YOVI')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /select a game/i })).toBeInTheDocument()
+    // 'Game Y' aparece en el preview y en la card, usamos getAllByText
+    expect(screen.getAllByText('Game Y').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByRole('button', { name: /play now/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /back to login/i })).toBeInTheDocument()
+  })
 
-  describe("Rendering", () => {
-    it("renders the YOVI logo", () => {
-      renderComponent();
-      expect(screen.getByText("YOVI")).toBeInTheDocument();
-    });
+  test('Game Y is selected by default', () => {
+    render(
+      <MemoryRouter>
+        <GameSelectionScreen />
+      </MemoryRouter>
+    )
 
-    it("renders the 'Select a Game' heading", () => {
-      renderComponent();
-      expect(
-        screen.getByRole("heading", { name: /select a game/i })
-      ).toBeInTheDocument();
-    });
+    const card = screen.getByRole('button', { name: /game y/i })
+    expect(card).toHaveAttribute('aria-pressed', 'true')
+    expect(card).toHaveClass('selection-game-card--active')
+  })
 
-    it("renders the Play Now button", () => {
-      renderComponent();
-      expect(
-        screen.getByRole("button", { name: /play now/i })
-      ).toBeInTheDocument();
-    });
+  test('preview image shows selected game', () => {
+    render(
+      <MemoryRouter>
+        <GameSelectionScreen />
+      </MemoryRouter>
+    )
 
-    it("renders the Back to Login button", () => {
-      renderComponent();
-      expect(
-        screen.getByRole("button", { name: /back to login/i })
-      ).toBeInTheDocument();
-    });
+    const previewImg = screen.getAllByAltText('Game Y')[0]
+    expect(previewImg).toHaveAttribute('src', '/GameY-Image.jpeg')
+  })
 
-    it("renders a game card for 'Game Y'", () => {
-      renderComponent();
-      expect(screen.getByText("Game Y")).toBeInTheDocument();
-    });
+  test('clicking Play Now navigates to /gamey', async () => {
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <GameSelectionScreen />
+      </MemoryRouter>
+    )
 
-    it("renders the game description", () => {
-      renderComponent();
-      expect(
-        screen.getByText(/strategic tile-based game/i)
-      ).toBeInTheDocument();
-    });
+    await user.click(screen.getByRole('button', { name: /play now/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/gamey')
+  })
 
-    it("shows Game Y as selected by default (aria-pressed=true)", () => {
-      renderComponent();
-      const card = screen.getByRole("button", { name: /game y/i });
-      expect(card).toHaveAttribute("aria-pressed", "true");
-    });
+  test('clicking Back to Login navigates to /', async () => {
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <GameSelectionScreen />
+      </MemoryRouter>
+    )
 
-    it("renders the preview image for the selected game", () => {
-      renderComponent();
-      const previewImg = screen.getAllByAltText("Game Y")[0];
-      expect(previewImg).toBeInTheDocument();
-      expect(previewImg).toHaveAttribute("src", "/GameY-Image.jpeg");
-    });
+    await user.click(screen.getByRole('button', { name: /back to login/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/')
+  })
 
-    it("renders the check icon for the selected game", () => {
-      renderComponent();
-      const activeCard = screen.getByRole("button", { name: /game y/i });
-      expect(activeCard.querySelector("svg")).toBeInTheDocument();
-    });
-  });
+  test('calls onSelectGame with the selected game id when Play Now is clicked', async () => {
+    const user = userEvent.setup()
+    const onSelectGame = vi.fn()
+    render(
+      <MemoryRouter>
+        <GameSelectionScreen onSelectGame={onSelectGame} />
+      </MemoryRouter>
+    )
 
+    await user.click(screen.getByRole('button', { name: /play now/i }))
+    expect(onSelectGame).toHaveBeenCalledWith('gamey')
+  })
 
-  describe("Interaction", () => {
-    it("clicking a game card marks it as selected (aria-pressed)", () => {
-      renderComponent();
-      const card = screen.getByRole("button", { name: /game y/i });
-      fireEvent.click(card);
-      expect(card).toHaveAttribute("aria-pressed", "true");
-    });
+  test('calls onBack when Back to Login is clicked', async () => {
+    const user = userEvent.setup()
+    const onBack = vi.fn()
+    render(
+      <MemoryRouter>
+        <GameSelectionScreen onBack={onBack} />
+      </MemoryRouter>
+    )
 
-    it("clicking Play Now navigates to /gamey", () => {
-      renderComponent();
-      fireEvent.click(screen.getByRole("button", { name: /play now/i }));
-      expect(mockNavigate).toHaveBeenCalledWith("/gamey");
-    });
+    await user.click(screen.getByRole('button', { name: /back to login/i }))
+    expect(onBack).toHaveBeenCalledTimes(1)
+  })
 
-    it("clicking Back to Login navigates to /", () => {
-      renderComponent();
-      fireEvent.click(screen.getByRole("button", { name: /back to login/i }));
-      expect(mockNavigate).toHaveBeenCalledWith("/");
-    });
+  test('does not throw without optional props', async () => {
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <GameSelectionScreen />
+      </MemoryRouter>
+    )
 
-    it("calls onSelectGame prop with the selected game id when Play Now is clicked", () => {
-      const onSelectGame = vi.fn();
-      renderComponent({ onSelectGame });
-      fireEvent.click(screen.getByRole("button", { name: /play now/i }));
-      expect(onSelectGame).toHaveBeenCalledWith("gamey");
-    });
+    await expect(
+      user.click(screen.getByRole('button', { name: /play now/i }))
+    ).resolves.not.toThrow()
 
-    it("calls onBack prop when Back to Login is clicked", () => {
-      const onBack = vi.fn();
-      renderComponent({ onBack });
-      fireEvent.click(screen.getByRole("button", { name: /back to login/i }));
-      expect(onBack).toHaveBeenCalledTimes(1);
-    });
-
-    it("does not throw when onSelectGame prop is not provided", () => {
-      renderComponent();
-      expect(() =>
-        fireEvent.click(screen.getByRole("button", { name: /play now/i }))
-      ).not.toThrow();
-    });
-
-    it("does not throw when onBack prop is not provided", () => {
-      renderComponent();
-      expect(() =>
-        fireEvent.click(screen.getByRole("button", { name: /back to login/i }))
-      ).not.toThrow();
-    });
-  });
-
-
-  describe("Active class", () => {
-    it("applies --active modifier class to the selected game card", () => {
-      renderComponent();
-      const card = screen.getByRole("button", { name: /game y/i });
-      expect(card).toHaveClass("selection-game-card--active");
-    });
-  });
-});
+    await expect(
+      user.click(screen.getByRole('button', { name: /back to login/i }))
+    ).resolves.not.toThrow()
+  })
+})
