@@ -94,11 +94,12 @@ export function GameYBoard({
   }, [board, size, cellSize, hoveredCell, isInteractive, handleCellClick, isLastMove])
 
   return (
-    <div className="flex items-center justify-center w-full h-full">
+    <div className="w-full h-full p-4">
       <svg
         viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
-        className="max-w-full max-h-full"
+        className="w-full h-full"
         preserveAspectRatio="xMidYMid meet"
+        style={{ display: 'block' }}
         aria-label="Game Y Board"
         role="grid"
       >

@@ -28,6 +28,7 @@
     --radius: 0.5rem;
     --player1: 221 83% 53%;
     --player2: 0 84% 60%;
+    --cell-stroke: 214 32% 75%;
   }
 
   .dark {
@@ -52,6 +53,7 @@
     --ring: 217 91% 60%;
     --player1: 217 91% 60%;
     --player2: 0 72% 55%;
+    --cell-stroke: 217 33% 30%;
   }
 }
 
@@ -59,6 +61,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }

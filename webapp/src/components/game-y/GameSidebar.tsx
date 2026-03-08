@@ -1,4 +1,4 @@
-import type { GameState, ChatMessage, PlayerColor } from '@/types'
+import type { GameState, ChatMessage, PlayerColor, TimerState } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { TimerPanel } from './TimerPanel'
 import { ChatPanel } from './ChatPanel'
@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom'
 
 interface GameSidebarProps {
   game: GameState
+  liveTimer: TimerState | null
   currentUserId: string
   chatMessages: ChatMessage[]
   onSendMessage: (content: string) => void
@@ -18,6 +19,7 @@ interface GameSidebarProps {
 
 export function GameSidebar({
   game,
+  liveTimer,
   currentUserId,
   chatMessages,
   onSendMessage,
@@ -28,7 +30,6 @@ export function GameSidebar({
   const navigate = useNavigate()
   const showChat = game.config.mode !== 'pvp-local'
 
-  // Determine which player the current user is
   const currentPlayerColor: PlayerColor | null =
     game.players.player1.id === currentUserId
       ? 'player1'
@@ -36,47 +37,45 @@ export function GameSidebar({
         ? 'player2'
         : null
 
-  // For local games, show whose turn it is
   const getTurnLabel = (): string => {
     if (game.status === 'finished') {
       if (game.winner) {
-        const winnerName = game.winner === 'player1'
-          ? game.players.player1.name
-          : game.players.player2.name
+        const winnerName =
+          game.winner === 'player1'
+            ? game.players.player1.name
+            : game.players.player2.name
         return `${winnerName} wins!`
       }
       return 'Game Over'
     }
 
-    const currentPlayer = game.currentTurn === 'player1'
-      ? game.players.player1
-      : game.players.player2
+    const currentPlayer =
+      game.currentTurn === 'player1'
+        ? game.players.player1
+        : game.players.player2
 
     return `${currentPlayer.name}'s turn`
   }
 
   return (
-    <div className={cn(
-      'flex flex-col gap-3 p-4 h-full overflow-y-auto overflow-x-hidden',
-      isMobile && 'max-h-48'
-    )}>
-      {/* Game Info */}
-      <div className="space-y-2">
+    <div className="h-full flex flex-col gap-4 p-4 overflow-y-auto">
+
+      {/* Game info */}
+      <div className="flex-shrink-0 space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-lg">Game Y</h2>
           <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded">
-            {game.config.boardSize}x{game.config.boardSize}
+            {game.config.boardSize}×{game.config.boardSize}
           </span>
         </div>
-
         {game.config.roomName && (
           <p className="text-sm text-muted-foreground">{game.config.roomName}</p>
         )}
       </div>
 
-      {/* Turn Indicator */}
+      {/* Turn indicator */}
       <div className={cn(
-        'text-center py-3 px-4 rounded-lg border',
+        'flex-shrink-0 text-center py-3 px-4 rounded-lg border',
         game.status === 'finished' && game.winner && 'bg-primary/10 border-primary',
         game.status === 'finished' && !game.winner && 'bg-muted',
         game.status === 'playing' && 'bg-card'
@@ -93,17 +92,17 @@ export function GameSidebar({
         )}
       </div>
 
-      {/* Timers */}
-      {game.timer && (
-        <div className="space-y-2">
+      {/* Timers — usa liveTimer para display fluido */}
+      {liveTimer && (
+        <div className="flex-shrink-0 space-y-2">
           <TimerPanel
-            timer={game.timer}
+            timer={liveTimer}
             player="player1"
             playerName={game.players.player1.name}
             isCurrentPlayer={currentPlayerColor === 'player1'}
           />
           <TimerPanel
-            timer={game.timer}
+            timer={liveTimer}
             player="player2"
             playerName={game.players.player2.name}
             isCurrentPlayer={currentPlayerColor === 'player2'}
@@ -111,9 +110,9 @@ export function GameSidebar({
         </div>
       )}
 
-      {/* Player indicators (if no timer) */}
-      {!game.timer && (
-        <div className="space-y-2">
+      {/* Player indicators sin timer */}
+      {!liveTimer && (
+        <div className="flex-shrink-0 space-y-2">
           <div className={cn(
             'flex items-center gap-2 p-3 rounded-lg border',
             game.currentTurn === 'player1' && game.status === 'playing' && 'border-primary bg-primary/5'
@@ -131,34 +130,34 @@ export function GameSidebar({
         </div>
       )}
 
-      {/* Move count */}
-      <p className="text-sm text-muted-foreground text-center">
+      {/* Moves counter */}
+      <p className="flex-shrink-0 text-sm text-muted-foreground text-center">
         Moves: {game.moves.length}
       </p>
 
-      {/* Chat (not for local games) */}
+      {/* Chat — crece para llenar espacio restante */}
       {showChat && (
-        <ChatPanel
-          messages={chatMessages}
-          currentUserId={currentUserId}
-          onSendMessage={onSendMessage}
-          isCollapsible={isMobile}
-        />
+        <div className="flex-1 min-h-0 flex flex-col">
+          <ChatPanel
+            messages={chatMessages}
+            currentUserId={currentUserId}
+            onSendMessage={onSendMessage}
+            isCollapsible={isMobile}
+          />
+        </div>
       )}
 
-      {/* Actions */}
-      <div className="mt-auto space-y-2">
+      {/* Spacer cuando no hay chat */}
+      {!showChat && <div className="flex-1" />}
+
+      {/* Acciones — siempre al fondo */}
+      <div className="flex-shrink-0 space-y-2 border-t border-border pt-4">
         {game.status === 'playing' && (
-          <Button
-            variant="destructive"
-            className="w-full"
-            onClick={onSurrender}
-          >
+          <Button variant="destructive" className="w-full" onClick={onSurrender}>
             <Flag className="w-4 h-4 mr-2" />
             Surrender
           </Button>
         )}
-
         {game.status === 'finished' && (
           <>
             <Button className="w-full" onClick={onPlayAgain}>

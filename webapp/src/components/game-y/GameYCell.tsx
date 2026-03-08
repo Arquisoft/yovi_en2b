@@ -74,7 +74,7 @@ export const GameYCell = memo(function GameYCell({
       <path
         d={cellPath}
         fill={getFillColor()}
-        stroke="hsl(var(--border))"
+        stroke="hsl(var(--cell-stroke))"
         strokeWidth={1}
         style={{ outline: 'none' }}
         className="transition-colors duration-150"

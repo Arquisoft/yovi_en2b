@@ -7,6 +7,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 export function GameYPage() {
   const {
     game,
+    liveTimer,
     chatMessages,
     isLoading,
     error,
@@ -43,9 +44,8 @@ export function GameYPage() {
 
   if (isMobile) {
     return (
-      <div className="flex flex-col h-full overflow-hidden">
-        {/* Board takes most of the space */}
-        <div className="flex-1 min-h-0 flex items-center justify-center p-2">
+      <div className="h-full min-h-0 flex flex-col">
+        <div className="flex-1 min-h-0 overflow-hidden">
           <GameYBoard
             board={game.board}
             size={game.config.boardSize}
@@ -55,11 +55,10 @@ export function GameYPage() {
             onCellClick={handleCellClick}
           />
         </div>
-
-        {/* Sidebar at the bottom - fixed height */}
-        <div className="shrink-0 h-48 border-t border-border bg-card overflow-hidden">
+        <div className="flex-shrink-0 border-t border-border bg-card">
           <GameSidebar
             game={game}
+            liveTimer={liveTimer}
             currentUserId={currentUserId}
             chatMessages={chatMessages}
             onSendMessage={handleSendMessage}
@@ -72,11 +71,9 @@ export function GameYPage() {
     )
   }
 
-  // Desktop layout
   return (
-    <div className="flex h-full overflow-hidden">
-      {/* Board on the left - centered */}
-      <div className="flex-1 min-w-0 flex items-center justify-center p-6">
+    <div className="h-full min-h-0 flex">
+      <div className="flex-1 min-w-0 overflow-hidden">
         <GameYBoard
           board={game.board}
           size={game.config.boardSize}
@@ -86,11 +83,10 @@ export function GameYPage() {
           onCellClick={handleCellClick}
         />
       </div>
-
-      {/* Sidebar on the right */}
-      <aside className="shrink-0 w-80 border-l border-border bg-card">
+      <aside className="w-80 flex-shrink-0 border-l border-border bg-card">
         <GameSidebar
           game={game}
+          liveTimer={liveTimer}
           currentUserId={currentUserId}
           chatMessages={chatMessages}
           onSendMessage={handleSendMessage}

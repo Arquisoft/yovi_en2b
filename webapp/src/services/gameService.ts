@@ -44,10 +44,10 @@ class GameService {
    */
   async createGame(config: GameConfig, currentUser: Player): Promise<GameState> {
     await delay(300)
-    
+
     let player1: Player
     let player2: Player
-    
+
     if (config.mode === 'pve') {
       if (config.playerColor === 'player2') {
         player1 = {
@@ -88,11 +88,11 @@ class GameService {
         color: 'player2',
       }
     }
-    
+
     const game = createMockGameState(config, player1, player2)
     this.games.set(game.id, game)
     this.chatMessages.set(game.id, createMockChatMessages(game.id))
-    
+
     return game
   }
 
@@ -113,54 +113,77 @@ class GameService {
     col: number,
     player: PlayerColor
   ): Promise<GameState> {
-    await delay(100)
-    
     const game = this.games.get(gameId)
     if (!game) throw new Error('Game not found')
     if (game.status !== 'playing') throw new Error('Game is not active')
     if (game.currentTurn !== player) throw new Error('Not your turn')
     if (!isValidMove(game.board, row, col)) throw new Error('Invalid move')
-    
+
+    const now = Date.now()
+
+    // Descuenta el tiempo real transcurrido desde la última jugada
+    // lastSyncTimestamp marca cuándo empezó a correr el turno del jugador activo
+    let updatedTimer = game.timer ? { ...game.timer } : null
+    if (updatedTimer && updatedTimer.activePlayer === player) {
+      const elapsed = now - updatedTimer.lastSyncTimestamp
+
+      if (player === 'player1') {
+        updatedTimer.player1RemainingMs = Math.max(0, updatedTimer.player1RemainingMs - elapsed)
+      } else {
+        updatedTimer.player2RemainingMs = Math.max(0, updatedTimer.player2RemainingMs - elapsed)
+      }
+    }
+
     const move: Move = {
       row,
       col,
       player,
-      timestamp: Date.now(),
+      timestamp: now,
     }
-    
+
     const newBoard = applyMove(game.board, move)
     const winner = checkWinner(newBoard, game.config.boardSize)
-    
+
+    // Comprobar si algún jugador se ha quedado sin tiempo
+    const outOfTime =
+      updatedTimer?.player1RemainingMs === 0
+        ? 'player2'  // player1 se quedó sin tiempo → gana player2
+        : updatedTimer?.player2RemainingMs === 0
+          ? 'player1'
+          : null
+
+    const finalWinner = winner ?? outOfTime ?? null
+
     const updatedGame: GameState = {
       ...game,
       board: newBoard,
       moves: [...game.moves, move],
       currentTurn: getOppositePlayer(player),
-      winner,
-      status: winner ? 'finished' : 'playing',
-      timer: game.timer
+      winner: finalWinner,
+      status: finalWinner ? 'finished' : 'playing',
+      timer: updatedTimer
         ? {
-            ...game.timer,
-            activePlayer: winner ? null : getOppositePlayer(player),
-            lastSyncTimestamp: Date.now(),
-          }
+          ...updatedTimer,
+          activePlayer: finalWinner ? null : getOppositePlayer(player),
+          lastSyncTimestamp: now,  // <-- resetea el reloj para el siguiente turno
+        }
         : null,
       updatedAt: new Date().toISOString(),
     }
-    
+
     this.games.set(gameId, updatedGame)
-    
-    // If PvE and it's bot's turn, schedule bot move
+
     if (
-      !winner &&
+      !finalWinner &&
       updatedGame.config.mode === 'pve' &&
       this.isBotTurn(updatedGame)
     ) {
       this.scheduleBotMove(gameId)
     }
-    
+
     return updatedGame
   }
+
 
   /**
    * Check if it's the bot's turn
@@ -179,7 +202,7 @@ class GameService {
     setTimeout(async () => {
       const game = this.games.get(gameId)
       if (!game || game.status !== 'playing') return
-      
+
       const botMove = calculateBotMove(game.board, game.config.boardSize)
       if (botMove) {
         await this.playMove(gameId, botMove.row, botMove.col, game.currentTurn)
@@ -192,12 +215,12 @@ class GameService {
    */
   async surrender(gameId: string, player: PlayerColor): Promise<GameState> {
     await delay(100)
-    
+
     const game = this.games.get(gameId)
     if (!game) throw new Error('Game not found')
-    
+
     const winner = getOppositePlayer(player)
-    
+
     const updatedGame: GameState = {
       ...game,
       status: 'finished',
@@ -207,7 +230,7 @@ class GameService {
         : null,
       updatedAt: new Date().toISOString(),
     }
-    
+
     this.games.set(gameId, updatedGame)
     return updatedGame
   }
@@ -217,7 +240,7 @@ class GameService {
    */
   async getRooms(): Promise<RoomSummary[]> {
     await delay(200)
-    
+
     // Combine mock rooms with created rooms
     const createdRooms: RoomSummary[] = Array.from(this.rooms.values())
       .filter((r) => !r.isPrivate)
@@ -233,7 +256,7 @@ class GameService {
         status: r.status,
         createdAt: r.createdAt,
       }))
-    
+
     return [...createdRooms, ...this.mockRooms]
   }
 
@@ -250,7 +273,7 @@ class GameService {
    */
   async createRoom(config: GameConfig, host: Player): Promise<Room> {
     await delay(300)
-    
+
     const room = createMockRoom(config, host)
     this.rooms.set(room.id, room)
     return room
@@ -261,18 +284,18 @@ class GameService {
    */
   async joinRoom(roomId: string, player: Player): Promise<Room> {
     await delay(200)
-    
+
     const room = this.rooms.get(roomId)
     if (!room) throw new Error('Room not found')
     if (room.playerCount >= room.maxPlayers) throw new Error('Room is full')
-    
+
     const updatedRoom: Room = {
       ...room,
       playerCount: room.playerCount + 1,
       players: [...room.players, { ...player, color: 'player2' }],
       status: room.playerCount + 1 >= room.maxPlayers ? 'playing' : 'waiting',
     }
-    
+
     this.rooms.set(roomId, updatedRoom)
     return updatedRoom
   }
@@ -282,11 +305,11 @@ class GameService {
    */
   async startGameFromRoom(roomId: string): Promise<GameState> {
     await delay(200)
-    
+
     const room = this.rooms.get(roomId)
     if (!room) throw new Error('Room not found')
     if (room.players.length < 2) throw new Error('Not enough players')
-    
+
     const config: GameConfig = {
       mode: 'pvp-online',
       boardSize: room.boardSize,
@@ -295,19 +318,19 @@ class GameService {
       roomName: room.name,
       isPrivate: room.isPrivate,
     }
-    
+
     const game = createMockGameState(
       config,
       room.players[0],
       room.players[1]
     )
-    
+
     this.games.set(game.id, game)
     this.chatMessages.set(game.id, createMockChatMessages(game.id))
-    
+
     // Update room status
     this.rooms.set(roomId, { ...room, status: 'playing' })
-    
+
     return game
   }
 
@@ -328,8 +351,8 @@ class GameService {
     senderName: string,
     content: string
   ): Promise<ChatMessage> {
-    await delay(100)
-    
+    //await delay(100)
+
     const message: ChatMessage = {
       id: generateId(),
       gameId,
@@ -338,11 +361,11 @@ class GameService {
       content,
       timestamp: new Date().toISOString(),
     }
-    
+
     const messages = this.chatMessages.get(gameId) || []
     messages.push(message)
     this.chatMessages.set(gameId, messages)
-    
+
     return message
   }
 }

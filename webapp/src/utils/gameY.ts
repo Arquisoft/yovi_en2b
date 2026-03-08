@@ -220,14 +220,15 @@ export function getGameYPosition(
   const cellWidth = SQRT3 * cellSize       // pointy-top: w = sqrt(3) * r
   const cellHeight = 2 * cellSize          // pointy-top: h = 2 * r
   const vertSpacing = cellHeight * 0.75    // vertical distance between row centers
-  const padding = cellSize * 1.5
+  const padding = cellSize
 
   // Centering offset: shorter rows (near apex) are shifted right so the
   // triangle is centered, not left-aligned into a parallelogram.
   const centeringOffset = (size - 1 - row) * (cellWidth / 2)
 
-  const x = centeringOffset + col * cellWidth + padding
-  const y = row * vertSpacing + padding
+  // x and y are cell centers, so add half-cell offsets
+  const x = centeringOffset + col * cellWidth + cellWidth / 2 + padding
+  const y = row * vertSpacing + cellSize + padding
 
   return { x, y }
 }
@@ -257,12 +258,12 @@ export function getGameYBoardDimensions(
   const cellWidth = SQRT3 * cellSize
   const cellHeight = 2 * cellSize
   const vertSpacing = cellHeight * 0.75
-  const padding = cellSize * 1.5
+  const padding = cellSize
 
-  // Width: the base row (size cells) spans (size-1) gaps plus one cell width
-  const width = (size - 1) * cellWidth + cellWidth + padding * 2
+  // Width: the base row (size cells) spans size cell widths plus padding on both sides
+  const width = size * cellWidth + padding * 2
 
-  // Height: (size-1) vertical steps plus one full cell height
+  // Height: (size-1) vertical steps plus one full cell height plus padding on both sides
   const height = (size - 1) * vertSpacing + cellHeight + padding * 2
 
   return { width, height }

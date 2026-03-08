@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import type { GameState, ChatMessage, Move, PlayerColor } from '@/types'
+import type { GameState, ChatMessage, Move, PlayerColor, TimerState } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRealtime } from '@/contexts/RealtimeContext'
 import { gameService } from '@/services/gameService'
@@ -10,14 +10,25 @@ export function useGameYController() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const transport = useRealtime()
-  
+
   const [game, setGame] = useState<GameState | null>(null)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
-  // Timer interval ref
-  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // liveTimer: solo para display, se actualiza cada 250ms
+  // No muta game, evita conflictos con setGame del servicio
+  const [liveTimer, setLiveTimer] = useState<TimerState | null>(null)
+
+  // Punto de referencia para el reloj activo:
+  // guarda Date.now() en el momento en que el jugador activo empezó a consumir tiempo
+  const clockStartedAtRef = useRef<number>(Date.now())
+
+  // Valores base del timer en el momento del último sync (tras cada jugada o llegada de estado)
+  const timerBaseRef = useRef<{ player1Ms: number; player2Ms: number }>({
+    player1Ms: 0,
+    player2Ms: 0,
+  })
 
   // Load game state
   useEffect(() => {
@@ -70,46 +81,64 @@ export function useGameYController() {
     }
   }, [gameId, transport])
 
-  // Timer tick effect
+  // --- Sync del reloj cada vez que llega nuevo estado del juego ---
+  // Se dispara en cada jugada (game.moves.length cambia) o cambio de activePlayer
+  // Aquí es donde el reloj "cambia de mano": se guarda el tiempo restante actual
+  // como nueva base y se resetea el punto de referencia
   useEffect(() => {
-    if (!game?.timer || game.status !== 'playing' || !game.timer.activePlayer) {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current)
-        timerIntervalRef.current = null
-      }
+    if (!game?.timer) {
+      setLiveTimer(null)
       return
     }
 
-    timerIntervalRef.current = setInterval(() => {
-      setGame((prev) => {
-        if (!prev?.timer || !prev.timer.activePlayer) return prev
+    // Guardar los valores autoritativos como nueva base
+    timerBaseRef.current = {
+      player1Ms: game.timer.player1RemainingMs,
+      player2Ms: game.timer.player2RemainingMs,
+    }
 
-        const elapsed = Date.now() - prev.timer.lastSyncTimestamp
-        const player1Remaining = prev.timer.activePlayer === 'player1'
-          ? Math.max(0, prev.timer.player1RemainingMs - elapsed)
-          : prev.timer.player1RemainingMs
-        const player2Remaining = prev.timer.activePlayer === 'player2'
-          ? Math.max(0, prev.timer.player2RemainingMs - elapsed)
-          : prev.timer.player2RemainingMs
+    // Resetear el punto de inicio del reloj activo
+    clockStartedAtRef.current = Date.now()
 
+    // Inicializar display con los valores autoritativos
+    setLiveTimer(game.timer)
+  }, [
+    // Solo sincronizamos cuando cambia el turno activo o llega una jugada nueva
+    game?.moves.length,
+    game?.timer?.activePlayer,
+    game?.status,
+  ])
+
+  // --- Tick del reloj: solo actualiza liveTimer, nunca toca game ---
+  useEffect(() => {
+    if (!game?.timer || game.status !== 'playing' || !game.timer.activePlayer) {
+      return
+    }
+
+    const activePlayer = game.timer.activePlayer
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - clockStartedAtRef.current
+
+      setLiveTimer((prev) => {
+        if (!prev) return prev
         return {
           ...prev,
-          timer: {
-            ...prev.timer,
-            player1RemainingMs: player1Remaining,
-            player2RemainingMs: player2Remaining,
-            lastSyncTimestamp: Date.now(),
-          },
+          // Solo descuenta el jugador activo; el otro permanece congelado
+          player1RemainingMs:
+            activePlayer === 'player1'
+              ? Math.max(0, timerBaseRef.current.player1Ms - elapsed)
+              : timerBaseRef.current.player1Ms,
+          player2RemainingMs:
+            activePlayer === 'player2'
+              ? Math.max(0, timerBaseRef.current.player2Ms - elapsed)
+              : timerBaseRef.current.player2Ms,
         }
       })
-    }, 1000)
+    }, 250) // 4 ticks/s para display fluido sin ser costoso
 
-    return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current)
-      }
-    }
-  }, [game?.timer, game?.status])
+    return () => clearInterval(interval)
+  }, [game?.timer?.activePlayer, game?.status])
 
   // Resync timer on visibility change
   useEffect(() => {
@@ -135,15 +164,15 @@ export function useGameYController() {
   // Determine if the current user can play
   const canPlay = useCallback((): boolean => {
     if (!game || game.status !== 'playing') return false
-    
+
     // Local game - anyone can play
     if (game.config.mode === 'pvp-local') return true
-    
+
     // Online or PvE - check if it's the user's turn
     const currentPlayer = game.currentTurn === 'player1'
       ? game.players.player1
       : game.players.player2
-    
+
     return currentPlayer.id === user?.id
   }, [game, user])
 
@@ -192,13 +221,16 @@ export function useGameYController() {
       if (!gameId || !user) return
 
       try {
-        const message = await gameService.sendChatMessage(
+        // Don't add locally - the polling subscription will add it
+        await gameService.sendChatMessage(
           gameId,
           user.id,
           user.username,
           content
         )
-        setChatMessages((prev) => [...prev, message])
+        // Immediately fetch latest messages to avoid delay
+        const messages = await gameService.getChatMessages(gameId)
+        setChatMessages(messages)
       } catch (err) {
         console.error('Failed to send message:', err)
       }
@@ -214,6 +246,7 @@ export function useGameYController() {
 
   return {
     game,
+    liveTimer,
     chatMessages,
     isLoading,
     error,
