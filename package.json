@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10"
+  },
+  "dependencies": {
+    "axios": "^1.13.6",
+    "express": "^5.2.1"
+  }
+}

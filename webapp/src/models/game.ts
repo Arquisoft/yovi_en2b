@@ -5,13 +5,19 @@ export interface Player {
 }
 
 export interface GameState {
+  gameId: string;
   size: number;
-  layout: string; // YEN Notation
-  players: {
-    [key: string]: Player; // Maps 'B' or 'R' to a Player object
-  };
+  layout: string; 
+  players: { [key: string]: { playerId: string; playerType: string } };
   turn: string | null;
-  status: 'ONGOING' | 'PLAYER_B_WINS' | 'PLAYER_A_WINS';
+  status: 'ONGOING' | string;
+}
+
+// This is what Rust sends back to us
+export interface RustMoveResponse {
+  api_version: string;
+  bot_id: string;
+  coords: Coordinates;
 }
 
 export interface PlayRequest {
@@ -22,4 +28,10 @@ export interface ErrorResponse {
   code: 'NOT_PLAYING' | 'NOT_YOUR_TURN';
   message: string;
   status: string | null;
+}
+
+export interface Coordinates {
+  x: number;
+  y: number;
+  z: number;
 }

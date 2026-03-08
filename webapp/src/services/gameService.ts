@@ -1,43 +1,42 @@
 import axios from 'axios';
-import type { GameState } from '../models/game';
+import * as gameStore from './gameStore';
+import type { GameState, RustMoveResponse } from '../models/game';
 
-const RUST_ENGINE_URL = process.env.RUST_ENGINE_URL || 'http://gamey:4000';
+const RUST_URL = process.env.RUST_ENGINE_URL || 'http://localhost:4000';
 
-export const getGameById = async (gameId: string): Promise<GameState> => {
-  // TODO: Implement actual DB query
-  // For now, we return a mock object based on the YEN example
-  return {
-    size: 4,
-    layout: "B/.B/RBB/B..R",
-    players: {
-      "B": { playerId: 1, playerType: "human" },
-      "R": { playerId: 2, playerType: "bot" }
-    },
-    turn: "B",
-    status: "ONGOING"
-  };
+export const playMove = async (gameId: string, proposedLayout: string, botId: string) => {
+  // 1. Get game
+  let game = gameStore.getFromMemory(gameId);
+  if (!game) throw new Error("GAME_NOT_FOUND");
+
+  // 2. Update the local layout with the Human move
+  game.layout = proposedLayout;
+
+  // 3. Ask the Rust for the Bot's move
+  // Note the new path from your Rust mod.rs
+  const response = await axios.post<RustMoveResponse>(
+    `${RUST_URL}/v1/ybot/choose/${botId}`, 
+    { layout: game.layout } // Sending YEN notation
+  );
+
+  const botMove = response.data.coords;
+  
+  // 4. [TODO] Logic to apply botMove coordinates to the game.layout string
+  // For now, let's assume the game is updated...
+  
+  // 5. Update RAM
+  gameStore.saveToMemory(game);
+
+  // 6. IF game is over, save to DB (The Persistence Requirement)
+  if (game.status !== "ONGOING") {
+    await persistToDatabase(game); // TODO: Implement DB Save
+    gameStore.removeFromMemory(gameId); // Clear RAM
+  }
+
+  return game;
 };
 
-export const processMove = async (gameId: string, userId: number, proposedLayout: string): Promise<GameState> => {
-  const currentState = await getGameById(gameId);
-
-  // 1. Validation Logic
-  if (currentState.status !== "ONGOING") throw new Error("FINISHED");
-  
-  const userToken = currentState.players["B"].playerId === userId ? "B" : "R";
-  if (currentState.turn !== userToken) throw new Error("NOT_YOUR_TURN");
-
-  // 2. Call the Rust Engine (The Web Service Interface)
-  // We send the proposed layout to the Rust Mathematician to check if it's legal/a win
-  const response = await axios.post(`${RUST_ENGINE_URL}/verify`, {
-    layout: proposedLayout,
-    size: currentState.size
-  });
-
-  const updatedState: GameState = response.data;
-
-  // 3. Save to Database
-  // TODO: db.games.update({id: gameId}, updatedState);
-
-  return updatedState;
+const persistToDatabase = async (game: GameState) => {
+    console.log(`💾 Match ${game.gameId} ended. Persisting final state to DB...`);
+    // Here goes your Mongoose/TypeORM save() call
 };
