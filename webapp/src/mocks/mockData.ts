@@ -19,11 +19,31 @@ export const AVAILABLE_GAMES: GameInfo[] = [
     id: 'game-y',
     name: 'Game Y',
     description:
-      'A strategic connection game played on a triangular hexagonal board. Be the first to connect all three sides with your stones.',
+      'A strategic connection game played on a triangular hexagonal board.',
     thumbnail: '/game-y-thumbnail.svg',
-    minPlayers: 2,
+    minPlayers: 1,
     maxPlayers: 2,
     isAvailable: true,
+  },
+  {
+    id: 'other-game1',
+    name: 'Other Game 1',
+    description:
+      'A mock game with just to fill the grid display',
+    thumbnail: '/other-game-thumbnail.svg',
+    minPlayers: 1,
+    maxPlayers: 2,
+    isAvailable: false,
+  },
+  {
+    id: 'other-game2',
+    name: 'Other Game 2',
+    description:
+      'A mock game with just to fill the grid display',
+    thumbnail: '/other-game-thumbnail.svg',
+    minPlayers: 1,
+    maxPlayers: 2,
+    isAvailable: false,
   },
 ]
 
@@ -78,7 +98,7 @@ export function createMockGameState(
   player2: Player
 ): GameState {
   const now = new Date().toISOString()
-  
+
   return {
     id: generateId(),
     config,
@@ -93,11 +113,11 @@ export function createMockGameState(
     winner: null,
     timer: config.timerEnabled && config.timerSeconds
       ? {
-          player1RemainingMs: config.timerSeconds * 1000,
-          player2RemainingMs: config.timerSeconds * 1000,
-          activePlayer: 'player1',
-          lastSyncTimestamp: Date.now(),
-        }
+        player1RemainingMs: config.timerSeconds * 1000,
+        player2RemainingMs: config.timerSeconds * 1000,
+        activePlayer: 'player1',
+        lastSyncTimestamp: Date.now(),
+      }
       : null,
     createdAt: now,
     updatedAt: now,
@@ -163,7 +183,7 @@ export function calculateBotMove(
   size: BoardSize
 ): { row: number; col: number } | null {
   const emptyCells: { row: number; col: number }[] = []
-  
+
   for (let row = 0; row < size; row++) {
     for (let col = 0; col <= row; col++) {
       if (board[row][col].owner === null) {
@@ -171,8 +191,8 @@ export function calculateBotMove(
       }
     }
   }
-  
+
   if (emptyCells.length === 0) return null
-  
+
   return emptyCells[Math.floor(Math.random() * emptyCells.length)]
 }

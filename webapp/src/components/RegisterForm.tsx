@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/Card'
 import { isValidEmail, validatePassword } from '@/utils'
-import { AlertCircle, Hexagon, CheckCircle } from 'lucide-react'
+import { AlertCircle, Hexagon, CheckCircle, Eye, EyeOff } from 'lucide-react'
 
 interface RegisterFormProps {
   onSubmit: (username: string, email: string, password: string, passwordConfirm: string) => Promise<void>
@@ -19,6 +19,8 @@ export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFo
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
   const [validationErrors, setValidationErrors] = useState<{
     username?: string
     email?: string
@@ -147,16 +149,31 @@ export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFo
               <Label htmlFor="password" error={!!validationErrors.password}>
                 Password
               </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Create a password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                error={!!validationErrors.password}
-                disabled={isLoading}
-                autoComplete="new-password"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Create a password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  error={!!validationErrors.password}
+                  disabled={isLoading}
+                  autoComplete="new-password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               {validationErrors.password && (
                 <p className="text-sm text-destructive">{validationErrors.password}</p>
               )}
@@ -166,16 +183,31 @@ export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFo
               <Label htmlFor="passwordConfirm" error={!!validationErrors.passwordConfirm}>
                 Confirm Password
               </Label>
-              <Input
-                id="passwordConfirm"
-                type="password"
-                placeholder="Confirm your password"
-                value={passwordConfirm}
-                onChange={(e) => setPasswordConfirm(e.target.value)}
-                error={!!validationErrors.passwordConfirm}
-                disabled={isLoading}
-                autoComplete="new-password"
-              />
+              <div className="relative">
+                <Input
+                  id="passwordConfirm"
+                  type={showPasswordConfirm ? 'text' : 'password'}
+                  placeholder="Confirm your password"
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  error={!!validationErrors.passwordConfirm}
+                  disabled={isLoading}
+                  autoComplete="new-password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showPasswordConfirm ? 'Hide password' : 'Show password'}
+                >
+                  {showPasswordConfirm ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               {validationErrors.passwordConfirm && (
                 <p className="text-sm text-destructive">{validationErrors.passwordConfirm}</p>
               )}

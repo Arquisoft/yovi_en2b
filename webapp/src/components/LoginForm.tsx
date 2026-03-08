@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/Card'
 import { isValidEmail } from '@/utils'
-import { AlertCircle, Hexagon } from 'lucide-react'
+import { AlertCircle, Hexagon, Eye, EyeOff } from 'lucide-react'
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => Promise<void>
@@ -16,6 +16,7 @@ interface LoginFormProps {
 export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [validationErrors, setValidationErrors] = useState<{
     email?: string
     password?: string
@@ -89,16 +90,31 @@ export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
               <Label htmlFor="password" error={!!validationErrors.password}>
                 Password
               </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                error={!!validationErrors.password}
-                disabled={isLoading}
-                autoComplete="current-password"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  error={!!validationErrors.password}
+                  disabled={isLoading}
+                  autoComplete="current-password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               {validationErrors.password && (
                 <p className="text-sm text-destructive">{validationErrors.password}</p>
               )}

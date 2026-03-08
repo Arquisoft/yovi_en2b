@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { GameMode } from '@/types'
 
-const modes: GameMode[] = ['pvp-local', 'pvp-online', 'pve']
+const modes: GameMode[] = ['pvp-local', 'pve', 'pvp-online']
 
 export function GameModePage() {
   const { handleSelectMode } = useGameModeController()

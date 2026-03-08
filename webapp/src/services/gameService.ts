@@ -100,7 +100,7 @@ class GameService {
    * Get current game state
    */
   async getGameState(gameId: string): Promise<GameState | null> {
-    await delay(100)
+    //await delay(100)
     return this.games.get(gameId) || null
   }
 
