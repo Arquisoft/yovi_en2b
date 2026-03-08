@@ -1,95 +1,123 @@
-import { render, screen, act } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import GameScreen from '../components/GameScreen'
-import { afterEach, describe,  expect, test, vi } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom'
 import { MemoryRouter } from 'react-router-dom'
+import GameSelectionScreen from '../components/GameSelectionScreen'
+
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
+  return { ...actual, useNavigate: () => mockNavigate }
+})
 
 afterEach(() => {
   vi.restoreAllMocks()
   vi.clearAllMocks()
-  vi.useRealTimers()
 })
 
-describe('GameScreen', () => {
-  test('renders game board, timers, surrender button and chat', () => {
+describe('GameSelectionScreen', () => {
+  test('renders logo, title, game card, and action buttons', () => {
     render(
       <MemoryRouter>
-        <GameScreen />
+        <GameSelectionScreen />
       </MemoryRouter>
     )
 
-    expect(screen.getByLabelText(/game board/i)).toBeInTheDocument()
-    expect(screen.getByText(/player/i)).toBeInTheDocument()
-    expect(screen.getByText(/opponent/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /surrender/i })).toBeInTheDocument()
-    expect(screen.getByLabelText(/type a message/i)).toBeInTheDocument()
+    expect(screen.getByText('YOVI')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /select a game/i })).toBeInTheDocument()
+    expect(screen.getByText('Game Y')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /play now/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /back to login/i })).toBeInTheDocument()
   })
 
-  test('player timer counts down', async () => {
-    vi.useFakeTimers()
+  test('Game Y is selected by default', () => {
     render(
       <MemoryRouter>
-        <GameScreen />
+        <GameSelectionScreen />
       </MemoryRouter>
     )
 
-    const playerTimer = screen.getByText(/player/i).nextSibling!
-    expect(playerTimer.textContent).toBe('0:20') // Tiempo inicial
-
-    act(() => {
-      vi.advanceTimersByTime(1000) // 1 segundo
-    })
-    expect(playerTimer.textContent).toBe('0:19')
-
-    act(() => {
-      vi.advanceTimersByTime(5000) // +5 segundos
-    })
-    expect(playerTimer.textContent).toBe('0:14')
-
-    act(() => {
-      vi.advanceTimersByTime(15000) // +15 segundos
-    })
-    expect(playerTimer.textContent).toBe('0:00') // Nunca negativo
+    const card = screen.getByRole('button', { name: /game y/i })
+    expect(card).toHaveAttribute('aria-pressed', 'true')
+    expect(card).toHaveClass('selection-game-card--active')
   })
 
-  test('calls onSurrender when surrender button is clicked', async () => {
-    const user = userEvent.setup()
-    const surrenderMock = vi.fn()
-
+  test('preview image shows selected game', () => {
     render(
       <MemoryRouter>
-        <GameScreen onSurrender={surrenderMock} />
+        <GameSelectionScreen />
       </MemoryRouter>
     )
 
-    await user.click(screen.getByRole('button', { name: /surrender/i }))
-    expect(surrenderMock).toHaveBeenCalled()
+    const previewImg = screen.getAllByAltText('Game Y')[0]
+    expect(previewImg).toHaveAttribute('src', '/GameY-Image.jpeg')
   })
 
-  test('updates chat input when user types', async () => {
+  test('clicking Play Now navigates to /gamey', async () => {
     const user = userEvent.setup()
     render(
       <MemoryRouter>
-        <GameScreen />
+        <GameSelectionScreen />
       </MemoryRouter>
     )
 
-    const chatInput = screen.getByLabelText(/type a message/i)
-    await user.type(chatInput, 'Hello world!')
-
-    expect(chatInput).toHaveValue('Hello world!')
+    await user.click(screen.getByRole('button', { name: /play now/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/gamey')
   })
 
-  test('HexBoard renders correct number of tiles', () => {
+  test('clicking Back to Login navigates to /', async () => {
+    const user = userEvent.setup()
     render(
       <MemoryRouter>
-        <GameScreen />
+        <GameSelectionScreen />
       </MemoryRouter>
     )
 
-    const tiles = screen.getAllByRole('button', { name: /Tile row/i })
-    // Generamos 8 filas: 8+7+6+5+4+3+2+1 = 36 tiles
-    expect(tiles.length).toBe(36)
+    await user.click(screen.getByRole('button', { name: /back to login/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/')
+  })
+
+  test('calls onSelectGame with the selected game id when Play Now is clicked', async () => {
+    const user = userEvent.setup()
+    const onSelectGame = vi.fn()
+    render(
+      <MemoryRouter>
+        <GameSelectionScreen onSelectGame={onSelectGame} />
+      </MemoryRouter>
+    )
+
+    await user.click(screen.getByRole('button', { name: /play now/i }))
+    expect(onSelectGame).toHaveBeenCalledWith('gamey')
+  })
+
+  test('calls onBack when Back to Login is clicked', async () => {
+    const user = userEvent.setup()
+    const onBack = vi.fn()
+    render(
+      <MemoryRouter>
+        <GameSelectionScreen onBack={onBack} />
+      </MemoryRouter>
+    )
+
+    await user.click(screen.getByRole('button', { name: /back to login/i }))
+    expect(onBack).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not throw without optional props', async () => {
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <GameSelectionScreen />
+      </MemoryRouter>
+    )
+
+    await expect(
+      user.click(screen.getByRole('button', { name: /play now/i }))
+    ).resolves.not.toThrow()
+
+    await expect(
+      user.click(screen.getByRole('button', { name: /back to login/i }))
+    ).resolves.not.toThrow()
   })
 })
