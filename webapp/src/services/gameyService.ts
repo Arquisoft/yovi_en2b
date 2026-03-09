@@ -21,8 +21,8 @@ import { delay, generateId } from '@/utils'
 import { applyMove, checkWinner, getOppositePlayer, isValidMove } from '@/utils/gameY'
 import { boardToYEN, coordsToRowCol } from '@/utils/yen'
 
-const API_BASE_URL = "http://api.localhost/gamey/v1";
-//const API_BASE_URL =  "https://api.micrati.com/gamey/v1";
+//const API_BASE_URL = "http://api.localhost/gamey/v1";
+const API_BASE_URL =  "https://api.micrati.com/gamey/v1";
 
 /**
  * Mock game service
