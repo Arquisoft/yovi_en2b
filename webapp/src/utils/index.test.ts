@@ -52,7 +52,7 @@ describe('validatePassword', () => {
   it('rejects short passwords', () => {
     const result = validatePassword('short')
     expect(result.valid).toBe(false)
-    expect(result.message).toBe('Password must be at least 8 characters')
+    expect(result.message).toBe('Password must be at least 6 characters')
   })
 })
 
