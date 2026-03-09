@@ -21,16 +21,24 @@ import { delay, generateId } from '@/utils'
 import { applyMove, checkWinner, getOppositePlayer, isValidMove } from '@/utils/gameY'
 import { boardToYEN, coordsToRowCol } from '@/utils/yen'
 
+const API_BASE_URL = "http://api.localhost/gamey/v1";
+//const API_BASE_URL =  "https://api.micrati.com/gamey/v1";
+
 /**
  * Mock game service
  * Simulates API calls with async behavior
  * Ready to be replaced with real API calls later
  */
 class GameService {
+  private baseUrl: string
   private games: Map<string, GameState> = new Map()
   private rooms: Map<string, Room> = new Map()
   private chatMessages: Map<string, ChatMessage[]> = new Map()
   private mockRooms: RoomSummary[] = [...MOCK_ROOMS]
+
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl
+  }
 
   /**
    * Get list of available games
@@ -220,7 +228,7 @@ class GameService {
       try {
         const yen = boardToYEN(game.board, game.config.boardSize, game.currentTurn)
 
-        const response = await fetch('http://api.localhost/gamey/v1/ybot/choose/minimax_bot', {
+        const response = await fetch(`${this.baseUrl}${'/ybot/choose/minimax_bot'}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(yen),
@@ -399,4 +407,4 @@ class GameService {
   }
 }
 
-export const gameService = new GameService()
+export const gameService = new GameService(API_BASE_URL)
