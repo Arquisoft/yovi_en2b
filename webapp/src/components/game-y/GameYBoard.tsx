@@ -1,12 +1,10 @@
 import { useState, useMemo, useCallback } from 'react'
-import type { BoardCell, BoardSize, PlayerColor, Move } from '@/types'
+import type { Move, GameState } from '@/types'
 import { GameYCell } from './GameYCell'
 import { getGameYPosition, getGameYBoardDimensions } from '@/utils/gameY'
 
 interface GameYBoardProps {
-  board: BoardCell[][]
-  size: BoardSize
-  currentTurn: PlayerColor
+  game: GameState
   lastMove: Move | null
   isInteractive: boolean
   onCellClick: (row: number, col: number) => void
@@ -17,13 +15,15 @@ interface GameYBoardProps {
  * Renders a proper triangular arrangement of uniform hexagons
  */
 export function GameYBoard({
-  board,
-  size,
+  game,
   lastMove,
   isInteractive,
   onCellClick,
 }: GameYBoardProps) {
+  const size = game.config.boardSize
+  const board = game.board
   const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null)
+  
 
   // Calculate cell size based on board size for good visual scaling
   // Larger base value ensures better visibility on mobile

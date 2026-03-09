@@ -15,10 +15,11 @@ import {
   createMockGameState,
   createMockRoom,
   createMockChatMessages,
-  calculateBotMove,
+  //calculateBotMove,
 } from '@/mocks/mockData'
 import { delay, generateId } from '@/utils'
 import { applyMove, checkWinner, getOppositePlayer, isValidMove } from '@/utils/gameY'
+import { boardToYEN, coordsToRowCol } from '@/utils/yen'
 
 /**
  * Mock game service
@@ -195,19 +196,47 @@ class GameService {
     return currentPlayer.isBot === true
   }
 
-  /**
-   * Schedule a bot move after a delay
-   */
+  // /**
+  //  * Schedule a bot move after a delay
+  //  */
+  // private scheduleBotMove(gameId: string): void {
+  //   setTimeout(async () => {
+  //     const game = this.games.get(gameId)
+  //     if (!game || game.status !== 'playing') return
+
+  //     const botMove = calculateBotMove(game.board, game.config.boardSize)
+  //     if (botMove) {
+  //       await this.playMove(gameId, botMove.row, botMove.col, game.currentTurn)
+  //     }
+  //   }, 100 + Math.random() * 1000) // Random delay
+  // }
+
+  // En GameService
   private scheduleBotMove(gameId: string): void {
     setTimeout(async () => {
       const game = this.games.get(gameId)
       if (!game || game.status !== 'playing') return
 
-      const botMove = calculateBotMove(game.board, game.config.boardSize)
-      if (botMove) {
-        await this.playMove(gameId, botMove.row, botMove.col, game.currentTurn)
+      try {
+        const yen = boardToYEN(game.board, game.config.boardSize, game.currentTurn)
+
+        const response = await fetch('http://api.localhost/gamey/v1/ybot/choose/minimax_bot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(yen),
+        })
+
+        if (!response.ok) throw new Error(`Bot API error: ${response.status}`)
+
+        const data: { coords: { x: number; y: number; z: number } } = await response.json()
+        const { row, col } = coordsToRowCol(data.coords, game.config.boardSize)
+
+        await this.playMove(gameId, row, col, game.currentTurn)
+
+      } catch (e) {
+        console.error('Bot move failed:', e)
       }
-    }, 500 + Math.random() * 1000) // Random delay 500-1500ms
+    })
   }
 
   /**

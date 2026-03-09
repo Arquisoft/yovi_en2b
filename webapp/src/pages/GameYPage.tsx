@@ -72,9 +72,7 @@ export function GameYPage() {
         {/* Board — ocupa lo que queda */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <GameYBoard
-            board={game.board}
-            size={game.config.boardSize}
-            currentTurn={game.currentTurn}
+            game={game}
             lastMove={lastMove}
             isInteractive={canPlay}
             onCellClick={handleCellClick}
@@ -127,9 +125,7 @@ export function GameYPage() {
       {/* Board */}
       <div className="flex-1 min-w-0 overflow-hidden">
         <GameYBoard
-          board={game.board}
-          size={game.config.boardSize}
-          currentTurn={game.currentTurn}
+          game={game}
           lastMove={lastMove}
           isInteractive={canPlay}
           onCellClick={handleCellClick}
