@@ -52,8 +52,6 @@ services:
   webapp:
     build:
       context: ./webapp
-      args:
-        - VITE_API_URL=http://localhost:3000
     container_name: webapp
     image: ghcr.io/arquisoft/yovi_en2b-webapp:latest
     ports:
@@ -62,7 +60,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-production}
     volumes:
-      - ./webapp/nginx/certs:/etc/nginx/certs:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       users:
         condition: service_healthy

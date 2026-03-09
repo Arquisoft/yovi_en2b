@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import type { GameState, ChatMessage, Move, PlayerColor, TimerState } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRealtime } from '@/contexts/RealtimeContext'
-import { gameService } from '@/services/gameService'
+import { gameService } from '@/services/gameyService'
 
 export function useGameYController() {
   const { gameId } = useParams<{ gameId: string }>()

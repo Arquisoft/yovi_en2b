@@ -3,16 +3,16 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import type { RoomSummary, Room } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRealtime } from '@/contexts/RealtimeContext'
-import { gameService } from '@/services/gameService'
+import { gameService } from '@/services/gameyService'
 
 export function useLobbyController() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { user } = useAuth()
   const transport = useRealtime()
-  
+
   const roomId = searchParams.get('roomId')
-  
+
   const [rooms, setRooms] = useState<RoomSummary[]>([])
   const [currentRoom, setCurrentRoom] = useState<Room | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -43,7 +43,7 @@ export function useLobbyController() {
       try {
         const room = await gameService.getRoom(roomId)
         setCurrentRoom(room)
-        
+
         // If room is full, start the game
         if (room && room.playerCount >= room.maxPlayers) {
           const game = await gameService.startGameFromRoom(roomId)
@@ -62,7 +62,7 @@ export function useLobbyController() {
     const unsubscribe = transport.subscribe('roomUpdated', (event) => {
       const room = event.payload as Room
       setCurrentRoom(room)
-      
+
       if (room.playerCount >= room.maxPlayers) {
         gameService.startGameFromRoom(roomId).then((game) => {
           navigate(`/games/y/play/${game.id}`)
@@ -107,7 +107,7 @@ export function useLobbyController() {
   const handleJoinRoom = useCallback(
     async (roomIdToJoin: string) => {
       if (!user) return
-      
+
       setIsJoining(roomIdToJoin)
       setError(null)
 
@@ -117,7 +117,7 @@ export function useLobbyController() {
           name: user.username,
           color: 'player2',
         })
-        
+
         if (room.playerCount >= room.maxPlayers) {
           const game = await gameService.startGameFromRoom(roomIdToJoin)
           navigate(`/games/y/play/${game.id}`)

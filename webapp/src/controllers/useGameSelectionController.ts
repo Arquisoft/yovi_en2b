@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { GameInfo } from '@/types'
-import { gameService } from '@/services/gameService'
+import { gameService } from '@/services/gameyService'
 
 export function useGameSelectionController() {
   const navigate = useNavigate()

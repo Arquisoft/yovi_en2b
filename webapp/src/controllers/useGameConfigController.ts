@@ -2,13 +2,13 @@ import { useState, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { GameMode, BoardSize, BotLevel, PlayerColor, GameConfig } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
-import { gameService } from '@/services/gameService'
+import { gameService } from '@/services/gameyService'
 
 export function useGameConfigController() {
   const navigate = useNavigate()
   const { mode } = useParams<{ mode: GameMode }>()
   const { user } = useAuth()
-  
+
   const [boardSize, setBoardSize] = useState<BoardSize>(9)
   const [timerEnabled, setTimerEnabled] = useState(false)
   const [timerMinutes, setTimerMinutes] = useState(10)
@@ -21,7 +21,7 @@ export function useGameConfigController() {
 
   const handleStartGame = useCallback(async () => {
     if (!mode || !user) return
-    
+
     setIsLoading(true)
     setError(null)
 

@@ -6,7 +6,7 @@ import type {
   PollingResource,
 } from './RealtimeTransport'
 import { getResourceKey } from './RealtimeTransport'
-import { gameService } from '@/services/gameService'
+import { gameService } from '@/services/gameyService'
 
 interface PollingConfig {
   defaultInterval: number
