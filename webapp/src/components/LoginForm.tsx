@@ -1,132 +1,139 @@
-"use client";
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Label } from '@/components/ui/Label'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/Card'
+import { isValidEmail } from '@/utils'
+import { AlertCircle, Hexagon, Eye, EyeOff } from 'lucide-react'
 
-import { useNavigate } from "react-router-dom";
-import React, { useState } from "react";
-import "../style/LoginForm.css";
-
-
-interface LoginScreenProps { //TODO : Añadir funcionalidades de onLogin, onSignUp y onForgotPassword
-  onLogin?: (username: string, password: string) => void;
-  onSignUp?: () => void;
-  //onForgotPassword?: () => void; //Lo elimino por ahora, no se si se podrá implementar. 
+interface LoginFormProps {
+  onSubmit: (email: string, password: string) => Promise<void>
+  isLoading: boolean
+  error: string | null
 }
 
-export default function LoginScreen({onLogin, onSignUp, /*onForgotPassword,*/} : LoginScreenProps) 
-{
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<{
+    email?: string
+    password?: string
+  }>({})
 
-  const navigate = useNavigate();
+  const validate = (): boolean => {
+    const errors: { email?: string; password?: string } = {}
+    
+    if (!email) {
+      errors.email = 'Email is required'
+    } else if (!isValidEmail(email)) {
+      errors.email = 'Invalid email format'
+    }
+    
+    if (!password) {
+      errors.password = 'Password is required'
+    }
+    
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!validate()) return
+    
+    await onSubmit(email, password)
+  }
 
-  const handleSubmit = (e: React.FormEvent) => {//Al enviar el formulario
-    e.preventDefault(); //Para no recargar la página al hacer submit
-
-    //TODO -> validación campos
-    onLogin?.(username, password); //Funcionalidad del login, se llama a la función onLogin pasada con el username y password actuales
-   
-    navigate("/game");
-  };
-
-
-  const handleSignUp = () => {
-    onSignUp?.(); //Funcionalidad del sign up, se llama a la función onSignUp pasada
-    navigate("/register");  
-  };
-
-
-
-return (
-    <div className="login-backdrop">
-
-    {/*Contenedor formulario */}
-      <div className="login-card">
-
-        {/* Logo de YOVI (Por ahora es texto, podría ser un svg)*/}
-        <div className="login-logo">
-          <div className="login-logo-icon" aria-hidden="true">
-            <span>Y</span>
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <Hexagon className="h-12 w-12 text-primary" />
           </div>
-          <span className="login-logo-text">YOVI</span>
-        </div>
-
-        {/*Formulario*/}
-        <form className="login-form" onSubmit={handleSubmit}>
-          <div className="login-input-wrapper">
-            <input
-              type="text"
-              className="login-input"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
-              aria-label="Username"
-            />
-          </div>
-
-          <div className="login-input-wrapper">
-            <input
-              type={showPassword ? "text" : "password"}
-              className="login-input"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              aria-label="Password"
-            />
-            <button
-              type="button"
-              className="login-eye-btn"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? (
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                </svg>
-              ) : (
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
+          <CardTitle className="text-2xl">Welcome to YOVI</CardTitle>
+          <CardDescription>Sign in to your account to continue</CardDescription>
+        </CardHeader>
+        
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            {error && (
+              <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="email" error={!!validationErrors.email}>
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                error={!!validationErrors.email}
+                disabled={isLoading}
+                autoComplete="email"
+              />
+              {validationErrors.email && (
+                <p className="text-sm text-destructive">{validationErrors.email}</p>
               )}
-            </button>
-          </div>
-
-          <button type="submit" className="login-btn">
-            Login
-          </button>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password" error={!!validationErrors.password}>
+                Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  error={!!validationErrors.password}
+                  disabled={isLoading}
+                  autoComplete="current-password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              {validationErrors.password && (
+                <p className="text-sm text-destructive">{validationErrors.password}</p>
+              )}
+            </div>
+          </CardContent>
+          
+          <CardFooter className="flex flex-col gap-4">
+            <Button type="submit" className="w-full" isLoading={isLoading}>
+              Sign In
+            </Button>
+            <p className="text-sm text-center text-muted-foreground">
+              {"Don't have an account? "}
+              <Link to="/register" className="text-primary hover:underline">
+                Create one
+              </Link>
+            </p>
+          </CardFooter>
         </form>
-
-        {/* <button type="button" className="login-forgot-btn" onClick={onForgotPassword}>
-          Forgot Password?
-        </button> */}
-      </div>
-
-      <button type="button" className="login-signup-btn" onClick={handleSignUp}>
-        Sign Up
-      </button>
+      </Card>
     </div>
-  );
+  )
 }

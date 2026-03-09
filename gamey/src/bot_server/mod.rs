@@ -24,12 +24,12 @@ pub mod error;
 pub mod state;
 pub mod version;
 use axum::response::IntoResponse;
-use std::sync::Arc;
 pub use choose::MoveResponse;
 pub use error::ErrorResponse;
+use std::sync::Arc;
 pub use version::*;
 
-use crate::{GameYError, RandomBot, YBotRegistry, state::AppState};
+use crate::{GameYError, MinimaxBot, RandomBot, YBotRegistry, state::AppState};
 
 /// Creates the Axum router with the given state.
 ///
@@ -48,7 +48,9 @@ pub fn create_router(state: AppState) -> axum::Router {
 ///
 /// The default state includes the `RandomBot` which selects moves randomly.
 pub fn create_default_state() -> AppState {
-    let bots = YBotRegistry::new().with_bot(Arc::new(RandomBot));
+    let bots = YBotRegistry::new()
+        .with_bot(Arc::new(RandomBot))
+        .with_bot(Arc::new(MinimaxBot::new(1000)));
     AppState::new(bots)
 }
 
@@ -68,11 +70,12 @@ pub async fn run_bot_server(port: u16) -> Result<(), GameYError> {
     let app = create_router(state);
 
     let addr = format!("0.0.0.0:{}", port);
-    let listener = tokio::net::TcpListener::bind(&addr)
-        .await
-        .map_err(|e| GameYError::ServerError {
-            message: format!("Failed to bind to {}: {}", addr, e),
-        })?;
+    let listener =
+        tokio::net::TcpListener::bind(&addr)
+            .await
+            .map_err(|e| GameYError::ServerError {
+                message: format!("Failed to bind to {}: {}", addr, e),
+            })?;
 
     println!("Server mode: Listening on http://{}", addr);
     axum::serve(listener, app)
