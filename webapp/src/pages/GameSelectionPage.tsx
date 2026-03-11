@@ -1,9 +1,29 @@
-import { GameCard } from '@/components/GameCard'
+import { useState, useEffect } from 'react'
+//import { GameCard } from '@/components/GameCard'
 import { useGameSelectionController } from '@/controllers/useGameSelectionController'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Users, Gamepad2, Play } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import type { GameInfo } from '@/types'
+
+// Si son iguales: número. Si no: p.ej {2-5}
+const formatPlayers = (game: GameInfo) =>
+  game.minPlayers === game.maxPlayers
+    ? `${game.minPlayers}`
+    : `${game.minPlayers}-${game.maxPlayers}`
+
 
 export function GameSelectionPage() {
   const { games, isLoading, error, handlePlayGame } = useGameSelectionController()
+  const [selectedGame, setSelectedGame] = useState<GameInfo | null>(null)
+
+  useEffect(() => { 
+    if (games.length > 0 && !selectedGame) {
+      setSelectedGame(games[0]) //Selecciono el primer juego al inicio
+    }
+  }, [games])
+
+  const activeGame = selectedGame
+  
 
   if (isLoading) {
     return (
@@ -36,14 +56,103 @@ export function GameSelectionPage() {
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {games.map((game) => (
-            <GameCard
-              key={game.id}
-              game={game}
-              onPlay={() => handlePlayGame(game.id)}
-            />
-          ))}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-6 min-h-[400px]">
+
+          {/* Panel izquierdo */}
+          <div className="order-2 md:order-1 flex flex-col">
+            {activeGame ? (
+              <div className="flex-1 rounded-xl border bg-card overflow-hidden flex flex-col transition-all duration-300">
+
+                {/* Imagen */}
+                <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative">
+                  {activeGame.thumbnail ? (
+                    <img
+                      src={activeGame.thumbnail}
+                      alt={activeGame.name}
+                      className="w-full h-full object-cover transition-all duration-300"
+                    />
+                  ) : (
+                    <Gamepad2 className="w-24 h-24 text-primary/50" />
+                  )}
+
+                  {/* Coming Soon sobre la imagen */}
+                  {!activeGame.isAvailable && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <span className="text-white font-semibold text-lg bg-amber-500/80 px-4 py-1 rounded-full">
+                        Coming Soon
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="p-6 flex-1 flex flex-col">
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-2xl font-bold">{activeGame.name}</h2>
+                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      {formatPlayers(activeGame)} players
+                    </span>
+                  </div>
+                  <p className="text-muted-foreground flex-1">{activeGame.description}</p>
+                  <Button
+                    onClick={() => handlePlayGame(activeGame.id)}
+                    className="w-full mt-4"
+                    size="lg"
+                    disabled={!activeGame.isAvailable}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    {activeGame.isAvailable ? 'Play Now' : 'Coming Soon'}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 rounded-xl border bg-card flex items-center justify-center text-muted-foreground">
+                Select a game from the list
+              </div>
+            )}
+          </div>
+
+          {/* lista de juegos */}
+          <div className="order-1 md:order-2 flex flex-col gap-2">
+            <h3 className="text-sm font-medium text-muted-foreground mb-2 px-1">
+              Available Games
+            </h3>
+            <div className="flex flex-col gap-2">
+              {games.map((game) => (
+                <button
+                  key={game.id}
+                  onClick={() => setSelectedGame(game)}
+                  className={`w-full text-left p-3 rounded-lg border transition-all duration-200 hover:border-primary/50 hover:bg-accent/50 ${
+                    activeGame?.id === game.id
+                      ? 'border-primary bg-accent'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-md bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 overflow-hidden">
+                      {game.thumbnail ? (
+                        <img src={game.thumbnail} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <Gamepad2 className="w-5 h-5 text-primary/50" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{game.name}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        {formatPlayers(game)} players
+                        {!game.isAvailable && (
+                          <span className="ml-2 text-amber-500">Coming Soon</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
