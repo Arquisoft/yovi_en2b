@@ -1,29 +1,31 @@
 import { useState, useEffect } from 'react'
-//import { GameCard } from '@/components/GameCard'
 import { useGameSelectionController } from '@/controllers/useGameSelectionController'
 import { AlertCircle, Users, Gamepad2, Play } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import type { GameInfo } from '@/types'
 
-// Si son iguales: número. Si no: p.ej {2-5}
 const formatPlayers = (game: GameInfo) =>
   game.minPlayers === game.maxPlayers
     ? `${game.minPlayers}`
     : `${game.minPlayers}-${game.maxPlayers}`
 
-
 export function GameSelectionPage() {
   const { games, isLoading, error, handlePlayGame } = useGameSelectionController()
   const [selectedGame, setSelectedGame] = useState<GameInfo | null>(null)
+  const [imgError, setImgError] = useState(false)
 
-  useEffect(() => { 
+  useEffect(() => {
     if (games.length > 0 && !selectedGame) {
-      setSelectedGame(games[0]) //Selecciono el primer juego al inicio
+      setSelectedGame(games[0])
     }
   }, [games])
 
+  // Resetea el error de imagen al cambiar de juego
+  useEffect(() => {
+    setImgError(false)
+  }, [selectedGame?.id])
+
   const activeGame = selectedGame
-  
 
   if (isLoading) {
     return (
@@ -51,9 +53,7 @@ export function GameSelectionPage() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Choose Your Game</h1>
-          <p className="text-muted-foreground">
-            Select a game to start playing
-          </p>
+          <p className="text-muted-foreground">Select a game to start playing</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-[1fr_300px] gap-6 min-h-[400px]">
@@ -65,14 +65,15 @@ export function GameSelectionPage() {
 
                 {/* Imagen */}
                 <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative">
-                  {activeGame.thumbnail ? (
+                  {activeGame.thumbnail && !imgError ? (
                     <img
                       src={activeGame.thumbnail}
                       alt={activeGame.name}
                       className="w-full h-full object-cover transition-all duration-300"
+                      onError={() => setImgError(true)}
                     />
                   ) : (
-                    <Gamepad2 className="w-24 h-24 text-primary/50" />
+                    <Gamepad2 className="w-24 h-24 text-primary/50" /> //Si no tiene foto le pongo el icono
                   )}
 
                   {/* Coming Soon sobre la imagen */}
@@ -113,7 +114,7 @@ export function GameSelectionPage() {
             )}
           </div>
 
-          {/* lista de juegos */}
+          {/* Lista de juegos */}
           <div className="order-1 md:order-2 flex flex-col gap-2">
             <h3 className="text-sm font-medium text-muted-foreground mb-2 px-1">
               Available Games
@@ -132,10 +133,21 @@ export function GameSelectionPage() {
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-md bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 overflow-hidden">
                       {game.thumbnail ? (
-                        <img src={game.thumbnail} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <Gamepad2 className="w-5 h-5 text-primary/50" />
-                      )}
+                        <img
+                          src={game.thumbnail}
+                          alt=""
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                            if (fallback) fallback.style.display = 'block'
+                          }}
+                        />
+                      ) : null}
+                      <Gamepad2
+                        className="w-5 h-5 text-primary/50"
+                        style={{ display: game.thumbnail ? 'none' : 'block' }}
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{game.name}</p>
