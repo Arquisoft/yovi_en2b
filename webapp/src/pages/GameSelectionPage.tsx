@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTheme } from '@/contexts/ThemeContext'
 import { useGameSelectionController } from '@/controllers/useGameSelectionController'
 import { AlertCircle, Users, Gamepad2, Play } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
@@ -13,6 +14,7 @@ export function GameSelectionPage() {
   const { games, isLoading, error, handlePlayGame } = useGameSelectionController()
   const [selectedGame, setSelectedGame] = useState<GameInfo | null>(null)
   const [imgError, setImgError] = useState(false)
+  const { theme } = useTheme()
 
   useEffect(() => {
     if (games.length > 0 && !selectedGame) {
@@ -67,7 +69,11 @@ export function GameSelectionPage() {
                 <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center relative">
                   {activeGame.thumbnail && !imgError ? (
                     <img
-                      src={activeGame.thumbnail}
+                      src={activeGame.thumbnail
+                        ? theme === 'dark'
+                          ? activeGame.thumbnail.replace('.png', '-dark.png')
+                          : activeGame.thumbnail.replace('.png', '-light.png')
+                        : undefined}
                       alt={activeGame.name}
                       className="w-full h-full object-cover transition-all duration-300"
                       onError={() => setImgError(true)}
@@ -134,7 +140,11 @@ export function GameSelectionPage() {
                     <div className="w-10 h-10 rounded-md bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 overflow-hidden">
                       {game.thumbnail ? (
                         <img
-                          src={game.thumbnail}
+                          src={game.thumbnail
+                            ? theme === 'dark'
+                              ? game.thumbnail.replace('.png', '-dark.png')
+                              : game.thumbnail.replace('.png', '-light.png')
+                            : undefined}
                           alt=""
                           className="w-full h-full object-cover"
                           onError={(e) => {
