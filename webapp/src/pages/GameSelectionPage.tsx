@@ -18,7 +18,7 @@ export function GameSelectionPage() {
 
   useEffect(() => {
     if (games.length > 0 && !selectedGame) {
-      setSelectedGame(games[0])
+      setSelectedGame(games[0]) //Selecciono el primer juego inicialmente
     }
   }, [games])
 
