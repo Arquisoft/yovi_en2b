@@ -1,11 +1,20 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
 
 export default defineConfig({
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    coverage: {
-      reporter: ['text', 'lcov'],
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
     },
+  },
+  server: {
+    port: 3000,
+    open: false,
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
   },
 })

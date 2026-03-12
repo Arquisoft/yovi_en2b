@@ -4,10 +4,10 @@ info:
   description: REST API to manage YOVI application users
   version: 1.0.0
 servers:
-  - url: https://api.micrati.com/users
-    description: Production server
-  - url: http://localhost:3000
-    description: Local server
+- url: https://api.micrati.com/users
+  description: Production server
+- url: http://api.localhost/users
+  description: Local server
 
 paths:
   /health:
@@ -30,7 +30,7 @@ paths:
     post:
       summary: Register new user
       tags:
-        - Authentication
+      - Authentication
       requestBody:
         required: true
         content:
@@ -38,9 +38,9 @@ paths:
             schema:
               type: object
               required:
-                - username
-                - email
-                - password
+              - username
+              - email
+              - password
               properties:
                 username:
                   type: string
@@ -80,7 +80,7 @@ paths:
                         example: player1@example.com
                       role:
                         type: string
-                        enum: [player, admin]
+                        enum: [ player, admin ]
                         example: player
                       createdAt:
                         type: string
@@ -112,7 +112,7 @@ paths:
     post:
       summary: User login
       tags:
-        - Authentication
+      - Authentication
       requestBody:
         required: true
         content:
@@ -120,8 +120,8 @@ paths:
             schema:
               type: object
               required:
-                - email
-                - password
+              - email
+              - password
               properties:
                 email:
                   type: string
@@ -160,7 +160,7 @@ paths:
                         example: player1@example.com
                       role:
                         type: string
-                        enum: [player, admin]
+                        enum: [ player, admin ]
                         example: player
         "400":
           description: Missing required fields or invalid JSON
@@ -195,9 +195,9 @@ paths:
     get:
       summary: Get authenticated user profile
       tags:
-        - Authentication
+      - Authentication
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       responses:
         "200":
           description: User profile
@@ -248,9 +248,9 @@ paths:
     put:
       summary: Update user profile
       tags:
-        - Authentication
+      - Authentication
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -291,7 +291,7 @@ paths:
                         example: newemail@example.com
                       role:
                         type: string
-                        enum: [player, admin]
+                        enum: [ player, admin ]
                         example: player
         "400":
           description: Validation error or username/email already exists
@@ -335,9 +335,9 @@ paths:
     put:
       summary: Change user password
       tags:
-        - Authentication
+      - Authentication
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -345,8 +345,8 @@ paths:
             schema:
               type: object
               required:
-                - currentPassword
-                - newPassword
+              - currentPassword
+              - newPassword
               properties:
                 currentPassword:
                   type: string
@@ -409,9 +409,9 @@ paths:
     delete:
       summary: Deactivate user account
       tags:
-        - Authentication
+      - Authentication
       security:
-        - bearerAuth: []
+      - bearerAuth: []
       responses:
         "200":
           description: Account deactivated successfully
@@ -448,7 +448,7 @@ paths:
     get:
       summary: Prometheus metrics
       tags:
-        - Monitoring
+      - Monitoring
       responses:
         "200":
           description: Metrics in Prometheus format
@@ -485,7 +485,7 @@ components:
           example: player1@example.com
         role:
           type: string
-          enum: [player, admin]
+          enum: [ player, admin ]
           example: player
         createdAt:
           type: string

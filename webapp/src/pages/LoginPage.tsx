@@ -1,9 +1,14 @@
-import LoginForm from "../components/LoginForm";
+import { LoginForm } from '@/components/LoginForm'
+import { useLoginController } from '@/controllers/useLoginController'
 
-export default function L() {
+export function LoginPage() {
+  const { isLoading, error, handleLogin } = useLoginController()
+
   return (
-    <div>
-      <LoginForm />
-    </div>
-  );
+    <LoginForm
+      onSubmit={handleLogin}
+      isLoading={isLoading}
+      error={error}
+    />
+  )
 }

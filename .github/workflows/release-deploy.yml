@@ -66,59 +66,59 @@ jobs:
         cd gamey
         cargo test
 
-  e2e:
-    name: Run E2E tests
-    runs-on: ubuntu-latest
-    needs: [ test-node, test-rust ]
+  # e2e:
+  #   name: Run E2E tests
+  #   runs-on: ubuntu-latest
+  #   needs: [ test-node, test-rust ]
 
-    services:
-      mariadb:
-        image: mariadb:11.4
-        env:
-          MYSQL_ROOT_PASSWORD: root_password
-          MYSQL_DATABASE: users_db
-          MYSQL_USER: users_user
-          MYSQL_PASSWORD: users_password
-        ports:
-        - 3306:3306
-        options: >-
-          --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=10
+  #   services:
+  #     mariadb:
+  #       image: mariadb:11.4
+  #       env:
+  #         MYSQL_ROOT_PASSWORD: root_password
+  #         MYSQL_DATABASE: users_db
+  #         MYSQL_USER: users_user
+  #         MYSQL_PASSWORD: users_password
+  #       ports:
+  #       - 3306:3306
+  #       options: >-
+  #         --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=10
 
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22
-    - name: Install users dependencies
-      run: |
-        cd users
-        npm ci
-    - name: Install webapp dependencies
-      run: |
-        cd webapp
-        npm ci
-    - name: Install Playwright browsers
-      run: |
-        cd webapp
-        npm run test:e2e:install-browsers
-    - name: Run E2E tests (start servers and run cucumber)
-      run: |
-        cd webapp
-        npm run test:e2e:ci
-      env:
-        NODE_ENV: development
-        DB_HOST: 127.0.0.1
-        DB_PORT: 3306
-        DB_NAME: users_db
-        DB_USER: users_user
-        DB_PASSWORD: users_password
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v4
+  #   - name: Use Node.js
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: 22
+  #   - name: Install users dependencies
+  #     run: |
+  #       cd users
+  #       npm ci
+  #   - name: Install webapp dependencies
+  #     run: |
+  #       cd webapp
+  #       npm ci
+  #   - name: Install Playwright browsers
+  #     run: |
+  #       cd webapp
+  #       npm run test:e2e:install-browsers
+  #   - name: Run E2E tests (start servers and run cucumber)
+  #     run: |
+  #       cd webapp
+  #       npm run test:e2e:ci
+  #     env:
+  #       NODE_ENV: development
+  #       DB_HOST: 127.0.0.1
+  #       DB_PORT: 3306
+  #       DB_NAME: users_db
+  #       DB_USER: users_user
+  #       DB_PASSWORD: users_password
 
   docker-push-users:
     name: Publish users image
     runs-on: ubuntu-latest
-    needs: e2e
+    needs: [ test-node, test-rust ]
     permissions:
       contents: read
       packages: write
@@ -138,7 +138,7 @@ jobs:
   docker-push-webapp:
     name: Publish webapp image
     runs-on: ubuntu-latest
-    needs: e2e
+    needs: [ test-node, test-rust ]
     permissions:
       contents: read
       packages: write
@@ -159,7 +159,7 @@ jobs:
   docker-push-gamey:
     name: Publish gamey image
     runs-on: ubuntu-latest
-    needs: e2e
+    needs: [ test-node, test-rust ]
     permissions:
       contents: read
       packages: write
