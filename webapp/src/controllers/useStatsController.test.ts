@@ -76,4 +76,16 @@ describe('useStatsController', () => {
     expect(typeof result.current.stats?.overall.wins).toBe('number')
     expect(typeof result.current.stats?.overall.losses).toBe('number')
   })
+
+  it('sets isLoading to false after loading', async () => {
+  const { result } = renderHook(() => useStatsController())
+  await waitFor(() => expect(result.current.isLoading).toBe(false))
+  })
+
+  it('recent winrate has wins and losses', async () => {
+    const { result } = renderHook(() => useStatsController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(typeof result.current.stats?.recent.wins).toBe('number')
+    expect(typeof result.current.stats?.recent.losses).toBe('number')
+  })
 })

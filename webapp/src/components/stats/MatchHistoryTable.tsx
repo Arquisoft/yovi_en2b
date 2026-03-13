@@ -1,7 +1,6 @@
 // webapp/src/components/stats/MatchHistoryTable.tsx
 import type { MatchRecord } from '@/types'
-import { formatTime } from '@/utils'
-import { cn } from '@/utils'
+import { formatTime, cn } from '@/utils'
 
 interface MatchHistoryTableProps {
   history: MatchRecord[]

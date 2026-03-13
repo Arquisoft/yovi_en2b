@@ -34,4 +34,19 @@ describe('WinrateChart', () => {
     render(<WinrateChart data={{ wins: 0, losses: 5 }} title="Overall" />)
     expect(screen.getByText('0%')).toBeDefined()
   })
+
+  it('renders svg when there are wins and losses', () => {
+  const { container } = render(<WinrateChart data={{ wins: 3, losses: 2 }} title="Overall" />)
+  expect(container.querySelector('svg')).not.toBeNull()
+  })
+
+  it('renders correctly when wins is exactly 180 degrees (50%)', () => {
+    render(<WinrateChart data={{ wins: 1, losses: 1 }} title="Overall" />)
+    expect(screen.getByText('50%')).toBeDefined()
+  })
+
+  it('renders correctly when wins > 180 degrees (large arc)', () => {
+    render(<WinrateChart data={{ wins: 3, losses: 1 }} title="Overall" />)
+    expect(screen.getByText('75%')).toBeDefined()
+  })
 })

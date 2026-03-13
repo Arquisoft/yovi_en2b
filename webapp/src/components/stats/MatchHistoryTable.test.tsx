@@ -58,4 +58,10 @@ describe('MatchHistoryTable', () => {
     // 1 header row + 2 data rows
     expect(rows.length).toBe(3)
   })
+  
+  it('renders a single match correctly', () => {
+  const single = [mockHistory[0]]
+  render(<MatchHistoryTable history={single} />)
+  expect(screen.getByText('Bot (medium)')).toBeDefined()
+})
 })
