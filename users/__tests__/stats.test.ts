@@ -13,13 +13,13 @@ describe('Stats API', () => {
 
   let authToken: string;
 
-  beforeEach(async () => {
-    await request(app).post('/api/auth/register').send(testUser);
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: testUser.email, password: testUser.password });
-    authToken = loginRes.body.token;
-  });
+beforeEach(async () => {
+  await request(app).post('/api/auth/register').send(testUser).catch(() => {})
+  const loginRes = await request(app)
+    .post('/api/auth/login')
+    .send({ email: testUser.email, password: testUser.password });
+  authToken = loginRes.body.token;
+});
 
   describe('GET /api/stats/history', () => {
     it('should return match history for authenticated user', async () => {
