@@ -1,7 +1,8 @@
 // webapp/src/services/statsService.ts
 import type { MatchRecord, StatsData } from '@/types'
 
-const API_BASE_URL = 'https://api.micrati.com/users/api'
+const API_BASE_URL = "http://api.localhost/users/api"
+//const API_BASE_URL = 'https://api.micrati.com/users/api'
 
 class StatsService {
   private async request<T>(endpoint: string, token: string): Promise<T> {
