@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from '@/components/ui/Button'
-import { Sun, Moon, LogOut, User, Hexagon } from 'lucide-react'
+import { Sun, Moon, LogOut, User, Hexagon, BarChart2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -43,6 +43,11 @@ export function AppNavbar() {
                 <User className="h-4 w-4" />
                 <span>{user.username}</span>
               </div>
+
+              <Button variant="ghost" size="icon" onClick={() => navigate('/stats')} aria-label="Statistics">
+                <BarChart2 className="h-5 w-5" />
+              </Button>
+              
               <Button
                 variant="ghost"
                 size="icon"
