@@ -1,6 +1,7 @@
 // webapp/src/pages/StatsPage.test.tsx
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { StatsPage } from './StatsPage'
 import { useStatsController } from '@/controllers/useStatsController'
 
@@ -18,6 +19,9 @@ const mockStats = {
   recent: { wins: 3, losses: 2 },
 }
 
+const renderWithRouter = (ui: React.ReactElement) =>
+  render(<MemoryRouter>{ui}</MemoryRouter>)
+
 describe('StatsPage', () => {
   beforeEach(() => {
     vi.mocked(useStatsController).mockReturnValue({
@@ -28,28 +32,28 @@ describe('StatsPage', () => {
   })
 
   it('renders the page title', () => {
-    render(<StatsPage />)
+    renderWithRouter(<StatsPage />)
     expect(screen.getByText('Statistics')).toBeDefined()
   })
 
   it('renders the winrate section', () => {
-    render(<StatsPage />)
+    renderWithRouter(<StatsPage />)
     expect(screen.getByText('Winrate')).toBeDefined()
   })
 
   it('renders both pie chart titles', () => {
-    render(<StatsPage />)
+    renderWithRouter(<StatsPage />)
     expect(screen.getByText('Overall')).toBeDefined()
     expect(screen.getByText('Last 20 games')).toBeDefined()
   })
 
   it('renders match history section', () => {
-    render(<StatsPage />)
+    renderWithRouter(<StatsPage />)
     expect(screen.getByText('Match History')).toBeDefined()
   })
 
   it('renders opponent names from history', () => {
-    render(<StatsPage />)
+    renderWithRouter(<StatsPage />)
     expect(screen.getByText('Bot (medium)')).toBeDefined()
     expect(screen.getByText('PlayerTwo')).toBeDefined()
   })
@@ -60,7 +64,7 @@ describe('StatsPage', () => {
       stats: null,
       isLoading: true,
     })
-    const { container } = render(<StatsPage />)
+    const { container } = renderWithRouter(<StatsPage />)
     expect(container.querySelector('.animate-spin')).not.toBeNull()
   })
 
@@ -70,7 +74,7 @@ describe('StatsPage', () => {
       stats: null,
       isLoading: false,
     })
-    render(<StatsPage />)
+    renderWithRouter(<StatsPage />)
     expect(screen.queryByText('Winrate')).toBeNull()
   })
 
@@ -80,9 +84,14 @@ describe('StatsPage', () => {
       stats: mockStats,
       isLoading: false,
     })
-    render(<StatsPage />)
+    renderWithRouter(<StatsPage />)
     await waitFor(() => {
       expect(screen.getByText('No matches played yet')).toBeDefined()
     })
+  })
+
+  it('renders back button', () => {
+    renderWithRouter(<StatsPage />)
+    expect(screen.getByText('Back')).toBeDefined()
   })
 })
