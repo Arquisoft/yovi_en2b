@@ -56,15 +56,6 @@ export function useStatsController() {
       { id: '1', opponentName: 'Bot (medium)', result: 'win', durationSeconds: 142, playedAt: new Date().toISOString() },
       { id: '2', opponentName: 'PlayerTwo', result: 'loss', durationSeconds: 87, playedAt: new Date().toISOString() },
       { id: '3', opponentName: 'Bot (hard)', result: 'win', durationSeconds: 210, playedAt: new Date().toISOString() },
-      { id: '4', opponentName: 'PlayerThree', result: 'loss', durationSeconds: 65, playedAt: new Date().toISOString() },
-      { id: '5', opponentName: 'Bot (easy)', result: 'win', durationSeconds: 320, playedAt: new Date().toISOString() },
-      { id: '6', opponentName: 'PlayerFour', result: 'win', durationSeconds: 190, playedAt: new Date().toISOString() },
-      { id: '7', opponentName: 'Bot (medium)', result: 'loss', durationSeconds: 110, playedAt: new Date().toISOString() },
-      { id: '8', opponentName: 'PlayerFive', result: 'win', durationSeconds: 245, playedAt: new Date().toISOString() },
-      { id: '9', opponentName: 'Bot (hard)', result: 'loss', durationSeconds: 78, playedAt: new Date().toISOString() },
-      { id: '10', opponentName: 'PlayerSix', result: 'win', durationSeconds: 300, playedAt: new Date().toISOString() },
-      { id: '11', opponentName: 'Bot (easy)', result: 'win', durationSeconds: 155, playedAt: new Date().toISOString() },
-      { id: '12', opponentName: 'PlayerSeven', result: 'loss', durationSeconds: 92, playedAt: new Date().toISOString() },
     ])
     setStats({
       overall: { wins: 8, losses: 4 },
