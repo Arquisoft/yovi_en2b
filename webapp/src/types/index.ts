@@ -204,3 +204,23 @@ export interface GameInfo {
   maxPlayers: number
   isAvailable: boolean
 }
+
+// ==================== Stats ====================
+
+export interface MatchRecord {
+  id: string
+  opponentName: string
+  result: 'win' | 'loss'
+  durationSeconds: number
+  playedAt: string
+}
+
+export interface WinrateStat {
+  wins: number
+  losses: number
+}
+
+export interface StatsData {
+  overall: WinrateStat
+  recent: WinrateStat
+}

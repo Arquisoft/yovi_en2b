@@ -11,6 +11,7 @@ import path from 'path';
 import { AppDataSource } from './config/database';
 import authRoutes from './routes/authRoutes';
 import { jsonErrorHandler, globalErrorHandler } from './middleware/errorHandler';
+import statsRoutes from './routes/statsRoutes';
 
 dotenv.config();
 
@@ -18,6 +19,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 console.log(`Starting nodejs server with env: ` + process.env.NODE_ENV);
+
+
+// STATISTICS
+app.use('/api/stats', statsRoutes);
+
 
 // JSON PARSING
 app.use(express.json({ limit: '10mb' }));
