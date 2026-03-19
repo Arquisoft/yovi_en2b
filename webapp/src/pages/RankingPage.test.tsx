@@ -4,13 +4,15 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RankingPage } from './RankingPage'
 import { useRankingController } from '@/controllers/useRankingController'
+import { useNavigate } from 'react-router-dom'
 
 vi.mock('@/controllers/useRankingController', () => ({
   useRankingController: vi.fn(),
 }))
 
+
 vi.mock('react-router-dom', () => ({
-  useNavigate: () => vi.fn(),
+  useNavigate: vi.fn(),
 }))
 
 const mockEntries = [
@@ -85,4 +87,13 @@ describe('RankingPage', () => {
     await userEvent.click(screen.getByText('Bot difícil'))
     expect(setSelectedMode).toHaveBeenCalledWith('pve-hard')
   })
+
+    it('calls navigate when clicking back button', async () => {
+    const mockNavigate = vi.fn()
+    vi.mocked(useNavigate).mockReturnValue(mockNavigate)
+
+    render(<RankingPage />)
+    await userEvent.click(screen.getByText('Back'))
+    expect(mockNavigate).toHaveBeenCalledWith(-1)
+    })
 })
