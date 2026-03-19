@@ -1,6 +1,6 @@
 // users/tests/stats.test.ts
 import 'reflect-metadata';
-import { describe, it, expect, beforeEach, beforeAll } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '../src/app';
 
@@ -13,23 +13,22 @@ describe('Stats API', () => {
 
   let authToken: string;
 
-  beforeAll(async () => {
-    // Registrar solo una vez
-    await request(app).post('/api/auth/register').send(testUser);
-  });
 
-  beforeEach(async () => {
-    // Login antes de cada test
-    const loginRes = await request(app)
-      .post('/api/auth/login')
-      .send({ email: testUser.email, password: testUser.password });
 
-    if (!loginRes.body.token) {
-      throw new Error(`Login failed in beforeEach: ${JSON.stringify(loginRes.body)}`);
-    }
+ beforeEach(async () => {
+  // Registrar antes de cada test (puede fallar si ya existe, es normal)
+  await request(app).post('/api/auth/register').send(testUser).catch(() => {})
 
-    authToken = loginRes.body.token;
-  });
+  const loginRes = await request(app)
+    .post('/api/auth/login')
+    .send({ email: testUser.email, password: testUser.password });
+
+  if (!loginRes.body.token) {
+    throw new Error(`Login failed in beforeEach: ${JSON.stringify(loginRes.body)}`);
+  }
+
+  authToken = loginRes.body.token;
+});
 
   describe('GET /api/stats/history', () => {
     it('should return match history for authenticated user', async () => {
