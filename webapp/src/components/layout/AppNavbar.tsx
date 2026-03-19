@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from '@/components/ui/Button'
-import { Sun, Moon, LogOut, User, Hexagon, BarChart2 } from 'lucide-react'
+import { Sun, Moon, LogOut, User, Hexagon, BarChart2, Trophy } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/Dialog'
+
+
+
 
 export function AppNavbar() {
   const { user, logout } = useAuth()
@@ -46,6 +49,10 @@ export function AppNavbar() {
 
               <Button variant="ghost" size="icon" onClick={() => navigate('/stats')} aria-label="Statistics">
                 <BarChart2 className="h-5 w-5" />
+              </Button>
+
+              <Button variant="ghost" size="icon" onClick={() => navigate('/ranking')} aria-label="Ranking">
+                <Trophy className="h-5 w-5" />
               </Button>
               
               <Button
