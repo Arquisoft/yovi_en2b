@@ -8,7 +8,7 @@ import { gameService } from '@/services/gameyService'
 export function useGameYController() {
   const { gameId } = useParams<{ gameId: string }>()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const transport = useRealtime()
 
   const [game, setGame] = useState<GameState | null>(null)
@@ -186,7 +186,8 @@ export function useGameYController() {
           gameId,
           row,
           col,
-          game.currentTurn
+          game.currentTurn,
+          token ?? undefined
         )
         setGame(updatedGame)
       } catch (err) {
@@ -208,7 +209,7 @@ export function useGameYController() {
     }
 
     try {
-      const updatedGame = await gameService.surrender(gameId, surrenderingPlayer)
+      const updatedGame = await gameService.surrender(gameId, surrenderingPlayer, token ?? undefined)
       setGame(updatedGame)
     } catch (err) {
       console.error('Failed to surrender:', err)

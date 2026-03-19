@@ -28,6 +28,7 @@ describe('StatsPage', () => {
       history: mockHistory,
       stats: mockStats,
       isLoading: false,
+       error: null,
     })
   })
 
@@ -63,6 +64,7 @@ describe('StatsPage', () => {
       history: [],
       stats: null,
       isLoading: true,
+       error: null,
     })
     const { container } = renderWithRouter(<StatsPage />)
     expect(container.querySelector('.animate-spin')).not.toBeNull()
@@ -73,6 +75,7 @@ describe('StatsPage', () => {
       history: [],
       stats: null,
       isLoading: false,
+       error: null,
     })
     renderWithRouter(<StatsPage />)
     expect(screen.queryByText('Winrate')).toBeNull()
@@ -83,6 +86,7 @@ describe('StatsPage', () => {
       history: [],
       stats: mockStats,
       isLoading: false,
+       error: null,
     })
     renderWithRouter(<StatsPage />)
     await waitFor(() => {

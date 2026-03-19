@@ -21,8 +21,6 @@ const PORT = process.env.PORT || 3000;
 console.log(`Starting nodejs server with env: ` + process.env.NODE_ENV);
 
 
-// STATISTICS
-app.use('/api/stats', statsRoutes);
 
 
 // JSON PARSING
@@ -70,6 +68,9 @@ app.use(jsonErrorHandler);
 
 // API ROUTES
 app.use('/api/auth', authRoutes);
+
+// STATISTICS
+app.use('/api/stats', statsRoutes);
 
 // HEALTH CHECK
 app.get('/health', (_, res) => {

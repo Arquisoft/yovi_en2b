@@ -120,7 +120,8 @@ class GameService {
     gameId: string,
     row: number,
     col: number,
-    player: PlayerColor
+    player: PlayerColor,
+    token?: string
   ): Promise<GameState> {
     const game = this.games.get(gameId)
     if (!game) throw new Error('Game not found')
@@ -190,6 +191,10 @@ class GameService {
       this.scheduleBotMove(gameId)
     }
 
+    if (updatedGame.status === 'finished' && token) {
+      await this.saveMatchRecord(updatedGame, token);
+    }
+
     return updatedGame
   }
 
@@ -250,7 +255,7 @@ class GameService {
   /**
    * Surrender the game
    */
-  async surrender(gameId: string, player: PlayerColor): Promise<GameState> {
+  async surrender(gameId: string, player: PlayerColor, token?:string): Promise<GameState> {
     await delay(100)
 
     const game = this.games.get(gameId)
@@ -269,6 +274,10 @@ class GameService {
     }
 
     this.games.set(gameId, updatedGame)
+
+    if (token) {
+    await this.saveMatchRecord(updatedGame, token);
+  }
     return updatedGame
   }
 
@@ -369,6 +378,38 @@ class GameService {
     this.rooms.set(roomId, { ...room, status: 'playing' })
 
     return game
+  }
+
+  private async saveMatchRecord(game: GameState, token: string): Promise<void> {
+      if (!game.winner) return;
+
+      // Determinar si el jugador autenticado ganó o perdió
+      // Asumimos que el usuario autenticado siempre es player1 en PvE
+      const result = game.winner === 'player1' ? 'win' : 'loss';
+      const opponent = game.players.player2;
+      const durationSeconds = Math.floor(
+        (new Date(game.updatedAt).getTime() - new Date(game.createdAt).getTime()) / 1000
+      );
+
+      try {
+       await fetch(`http://api.localhost/users/api/stats/record`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            opponentName: opponent.name,
+            result,
+            durationSeconds,
+          }),
+        });
+
+        
+
+      } catch (e) {
+        console.error('Failed to save match record:', e);
+      }
   }
 
   /**
