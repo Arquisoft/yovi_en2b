@@ -11,7 +11,7 @@ export class MatchRecord {
   @JoinColumn({ name: 'user_id' })
   user!: User;
 
-  @Column({ name: 'user_id' })
+  @Column({ type: 'int', name: 'user_id' })
   userId!: number;
 
   @Column({ type: 'varchar', length: 50 })
