@@ -36,9 +36,11 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
+  await TestDataSource.query('SET FOREIGN_KEY_CHECKS = 0');
   const entities = TestDataSource.entityMetadatas;
   for (const entity of entities) {
     const repository = TestDataSource.getRepository(entity.name);
     await repository.clear();
   }
+  await TestDataSource.query('SET FOREIGN_KEY_CHECKS = 1');
 });
