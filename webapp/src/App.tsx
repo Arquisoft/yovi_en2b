@@ -13,6 +13,9 @@ import { NotFoundPage } from './pages/NotFoundPage'
 
 import { StatsPage } from './pages/StatsPage'
 
+import { RankingPage } from './pages/RankingPage'
+
+
 function App() {
   const { isLoading } = useAuth()
 
@@ -43,6 +46,7 @@ function App() {
           <Route path="/games/y/lobby" element={<LobbyPage />} />
           <Route path="/games/y/play/:gameId" element={<GameYPage />} />
           <Route path="/stats" element={<StatsPage />} />
+          <Route path="/ranking" element={<RankingPage />} />
         </Route>
       </Route>
 

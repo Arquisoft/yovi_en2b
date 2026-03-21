@@ -224,3 +224,11 @@ export interface StatsData {
   overall: WinrateStat
   recent: WinrateStat
 }
+
+export type RankingMode = 'pve-easy' | 'pve-medium' | 'pve-hard'
+
+export interface RankingEntry {
+  rank: number
+  username: string
+  wins: number
+}
