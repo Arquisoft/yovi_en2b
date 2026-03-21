@@ -25,4 +25,16 @@ export class StatsController {
       res.status(500).json({ error: error.message });
     }
   }
+
+    // POST /api/stats/record
+  static async saveRecord(req: AuthRequest, res: Response) {
+    try {
+      const userId = req.user!.id;
+      const { opponentName, result, durationSeconds } = req.body;
+      const record = await StatsService.saveMatchRecord({ userId, opponentName, result, durationSeconds });
+      res.status(201).json(record);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
