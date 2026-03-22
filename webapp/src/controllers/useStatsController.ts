@@ -1,19 +1,21 @@
-// webapp/src/controllers/useStatsController.ts
 import { useState, useEffect } from 'react'
 import type { MatchRecord, StatsData } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { statsService } from '@/services/statsService'
 
 export function useStatsController() {
-  const { token } = useAuth()
+  const { token, isGuest } = useAuth()
 
   const [history, setHistory] = useState<MatchRecord[]>([])
-  const [stats, setStats] = useState<StatsData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [stats, setStats]     = useState<StatsData | null>(null)
+  const [isLoading, setIsLoading] = useState(!isGuest)
+  const [error, setError]     = useState<string | null>(null)
 
   useEffect(() => {
-    if (!token) return
+    if (!token || isGuest) {
+      setIsLoading(false)
+      return
+    }
 
     const load = async () => {
       setIsLoading(true)
@@ -32,7 +34,7 @@ export function useStatsController() {
       }
     }
     load()
-  }, [token])
+  }, [token, isGuest])
 
-  return { history, stats, isLoading, error }
+  return { history, stats, isLoading, error, isGuest }
 }

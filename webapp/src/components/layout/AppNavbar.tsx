@@ -17,7 +17,7 @@ import {
 
 
 export function AppNavbar() {
-  const { user, logout } = useAuth()
+  const { user, logout, isGuest } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
@@ -45,6 +45,11 @@ export function AppNavbar() {
               <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="h-4 w-4" />
                 <span>{user.username}</span>
+                {isGuest && (
+                  <span className="text-xs px-1.5 py-0.5 rounded-full border border-border bg-muted text-muted-foreground leading-none">
+                    Guest
+                  </span>
+                )}
               </div>
 
               <Button variant="ghost" size="icon" onClick={() => navigate('/stats')} aria-label="Statistics">
