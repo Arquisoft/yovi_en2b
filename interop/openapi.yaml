@@ -1,0 +1,398 @@
+openapi: 3.0.3
+
+info:
+  title: YOVI Bot Interoperability API – play
+  description: |
+    API that bots consume in order to be able to play a Game Y game against an opponent.
+
+    This document describes the `play` method, which allows bots and external
+    clients to interact with the application by submitting a board position and
+    receiving the engine's next move.
+
+    Communication between the TypeScript application and the Rust bot engine is
+    carried out via JSON messages following **YEN (Y Exchange Notation)**.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3001
+    description: Local development server
+
+# ── Paths ─────────────────────────────────────────────────────────────────────
+
+paths:
+
+  /games/play:
+    post:
+      summary: Request the next bot move
+      description: |
+        Exposes the `play` method as defined in the project specification.
+
+        The caller submits the current board state using the **YEN notation**
+        and optionally selects a bot or strategy.
+        The method returns the engine's chosen move together with the updated
+        board layout, also expressed in YEN notation.
+
+        ### Bot resolution order
+        The bot to use is resolved with the following priority:
+
+        1. **`bot_id`** – explicit identifier of a registered Rust bot
+           (e.g. `"random_bot"`, `"minimax_bot"`).
+        2. **`strategy`** – difficulty hint that maps internally to a bot.
+           Consulted only when `bot_id` is absent.
+        3. **Default** – `random_bot` is used when neither field is provided.
+
+        | `strategy` value | Resolved bot   |
+        |------------------|----------------|
+        | `EASY`           | `random_bot`   |
+        | `MEDIUM`         | `random_bot`   |
+        | `HARD`           | `minimax_bot`  |
+        | `EXPERT`         | `minimax_bot`  |
+
+        Strategy matching is case-insensitive. Both fields may be provided
+        simultaneously; `bot_id` always takes precedence over `strategy`.
+
+        ### YEN layout format
+        The `layout` string encodes the board row by row, separated by `/`.
+        Row `r` (0-indexed from the top) contains exactly `r + 1` cells.
+        Valid cell characters are:
+
+        | Character | Meaning |
+        |-----------|---------|
+        | `.`       | Empty cell |
+        | `B`       | Piece belonging to player Blue (`turn = 0`) |
+        | `R`       | Piece belonging to player Red  (`turn = 1`) |
+
+        **Example** – size-4 board mid-game (R's turn):
+        ```json
+        {
+          "size": 4,
+          "turn": 1,
+          "players": ["B", "R"],
+          "layout": "B/.B/RB./B..R"
+        }
+        ```
+
+        ### Coordinates
+        The Rust engine represents board cells using **barycentric coordinates**
+        `(x, y, z)` where `x + y + z = size − 1` and `x, y, z ≥ 0`.
+        The move returned by this endpoint uses the string format `"x,y,z"`.
+
+        For a size-4 board the cell coordinates are:
+
+        ```
+                    (3,0,0)
+                (2,0,1)  (2,1,0)
+            (1,0,2)  (1,1,1)  (1,2,0)
+        (0,0,3)  (0,1,2)  (0,2,1)  (0,3,0)
+        ```
+      operationId: play
+      requestBody:
+        required: true
+        description: |
+          The board position in YEN notation is the only required field.
+          `bot_id` and `strategy` are optional and control which bot is used.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayRequest'
+            examples:
+              position_only:
+                summary: Position only — default bot (random_bot)
+                value:
+                  position:
+                    size: 3
+                    turn: 0
+                    players: ["B", "R"]
+                    layout: "./../..."
+              with_bot_id:
+                summary: Explicit bot selection
+                value:
+                  position:
+                    size: 3
+                    turn: 0
+                    players: ["B", "R"]
+                    layout: "./../..."
+                  bot_id: random_bot
+              with_strategy:
+                summary: Difficulty strategy — maps to minimax_bot
+                value:
+                  position:
+                    size: 4
+                    turn: 1
+                    players: ["B", "R"]
+                    layout: "B/.B/RB./B..R"
+                  strategy: HARD
+              bot_id_and_strategy:
+                summary: Both provided — bot_id takes precedence
+                value:
+                  position:
+                    size: 3
+                    turn: 0
+                    players: ["B", "R"]
+                    layout: "./../..."
+                  bot_id: minimax_bot
+                  strategy: EASY
+      responses:
+        '200':
+          description: |
+            The bot's move was calculated successfully.
+
+            Returns the coordinate of the chosen cell (`move`), the updated
+            board layout after the move is applied (`position`), and the
+            identifier of the bot that was used (`bot_id`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayResponse'
+              examples:
+                random_bot_move:
+                  summary: random_bot plays bottom-left cell on a size-3 board
+                  value:
+                    move: "0,0,2"
+                    position: "B/../..."
+                    bot_id: random_bot
+                minimax_bot_move:
+                  summary: minimax_bot plays a mid-game move on a size-4 board
+                  value:
+                    move: "1,1,1"
+                    position: "B/.B/RBB/B..R"
+                    bot_id: minimax_bot
+        '400':
+          description: |
+            **INVALID_POSITION** — the `position` field is absent or the YEN
+            object is structurally invalid.
+
+            This is returned when any of the following conditions are met:
+            - `position` is missing from the request body.
+            - `position` is not a JSON object (e.g. a plain string).
+            - `position` is missing a required field (`size`, `turn`, `players`,
+              or `layout`).
+            - `size` is not a positive integer.
+            - `turn` is not `0` or `1`.
+            - `players` is an empty array.
+            - `layout` has a number of rows that does not match `size`.
+            - A row in `layout` has the wrong number of cells.
+            - `layout` contains characters other than `.`, `B`, or `R`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              examples:
+                missing_position:
+                  summary: position field is absent
+                  value:
+                    code: INVALID_POSITION
+                    message: 'Request body must contain a "position" field with the board state in YEN notation.'
+                invalid_yen_object:
+                  summary: position is not a valid YEN object
+                  value:
+                    code: INVALID_POSITION
+                    message: 'The "position" field is not a valid YEN object. Expected { size: number, turn: number, players: string[], layout: string }.'
+        '404':
+          description: |
+            **BOT_NOT_FOUND** — the `bot_id` supplied in the request is not
+            registered in the Rust engine.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: BOT_NOT_FOUND
+                message: "Bot 'ghost_bot' is not registered in the engine."
+        '422':
+          description: |
+            **NO_MOVES_AVAILABLE** — the board position has no legal moves.
+            This occurs when the board is full or no valid placement exists
+            for the current player.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: NO_MOVES_AVAILABLE
+                message: No legal moves are available for the given position.
+        '502':
+          description: |
+            **ENGINE_ERROR** — the Rust bot engine returned an unexpected error
+            or an unrecognised failure occurred during communication.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: ENGINE_ERROR
+                message: "Unexpected error from the bot engine: connect ECONNREFUSED"
+        '503':
+          description: |
+            **ENGINE_TIMEOUT** — the Rust bot engine did not respond within the
+            configured timeout window (2 seconds). This may happen when the
+            minimax bot searches deeply on large boards.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: ENGINE_TIMEOUT
+                message: The bot engine did not respond in time.
+
+# ── Components ────────────────────────────────────────────────────────────────
+
+components:
+
+  schemas:
+
+    YEN:
+      type: object
+      description: |
+        **Y Exchange Notation** — the canonical JSON representation of a
+        Game Y board state at a specific point in time.
+
+      required:
+        - size
+        - turn
+        - players
+        - layout
+      properties:
+        size:
+          type: integer
+          minimum: 1
+          description: |
+            Edge length of the triangular board. A board of `size` N contains
+            `N * (N + 1) / 2` cells in total.
+          example: 4
+        turn:
+          type: integer
+          enum: [0, 1]
+          description: |
+            Index of the player whose turn it is to move.
+
+            | Value | Player |
+            |-------|--------|
+            | `0`   | Blue (B) |
+            | `1`   | Red  (R) |
+          example: 1
+        players:
+          type: array
+          description: |
+            Token characters for each player. Always `["B", "R"]` for the
+            classic two-player Game Y.
+          minItems: 1
+          items:
+            type: string
+            maxLength: 1
+          example: ["B", "R"]
+        layout:
+          type: string
+          description: |
+            Compact string encoding of the board. Rows are separated by `/`
+            and grow from 1 cell at the top to `size` cells at the bottom.
+            Row `r` (0-indexed) must contain exactly `r + 1` characters.
+
+            Valid cell characters: `.` (empty), `B` (Blue), `R` (Red).
+          pattern: '^[BR.]+(/[BR.]+)*$'
+          example: "B/.B/RB./B..R"
+
+    PlayRequest:
+      type: object
+      description: |
+        Request body for the `play` method. Only `position` is required.
+        `bot_id` and `strategy` are optional parameters that control which
+        bot strategy is used to generate the next move.
+      required:
+        - position
+      properties:
+        position:
+          $ref: '#/components/schemas/YEN'
+          description: |
+            The current board state in YEN notation. This is the only
+            mandatory parameter as specified by the project requirements.
+        bot_id:
+          type: string
+          description: |
+            Identifier of a specific bot registered in the Rust engine.
+            When provided, this takes priority over `strategy`.
+
+            Available bots:
+            - `random_bot` — selects a random legal move.
+            - `minimax_bot` — uses Minimax with alpha-beta pruning and
+              iterative deepening within a configurable time limit.
+          example: minimax_bot
+        strategy:
+          type: string
+          description: |
+            Difficulty level hint. Consulted only when `bot_id` is absent.
+            Maps to a registered bot internally.
+
+            | Value    | Resolved bot   |
+            |----------|----------------|
+            | `EASY`   | `random_bot`   |
+            | `MEDIUM` | `random_bot`   |
+            | `HARD`   | `minimax_bot`  |
+            | `EXPERT` | `minimax_bot`  |
+
+            Matching is **case-insensitive** (`"hard"` and `"HARD"` are
+            equivalent).
+          enum: [EASY, MEDIUM, HARD, EXPERT]
+          example: HARD
+
+    PlayResponse:
+      type: object
+      description: |
+        Response returned by a successful call to the `play` method.
+
+        As required by the specification, the next move is expressed using
+        YEN notation: `move` contains the barycentric coordinate string of
+        the chosen cell, and `position` contains the updated board layout
+        string after the bot has placed its piece.
+      required:
+        - move
+        - position
+        - bot_id
+      properties:
+        move:
+          type: string
+          description: |
+            Barycentric coordinate of the cell chosen by the bot, encoded as
+            the string `"x,y,z"`. The values satisfy `x + y + z = size − 1`.
+          pattern: '^\d+,\d+,\d+$'
+          example: "1,1,1"
+        position:
+          type: string
+          description: |
+            Updated YEN `layout` string after the bot has applied its move.
+            Has the same format as `YEN.layout` (rows separated by `/`,
+            cells encoded as `.`, `B`, or `R`).
+          example: "B/.B/RBB/B..R"
+        bot_id:
+          type: string
+          description: |
+            Identifier of the bot that was actually used to generate the move.
+            Useful when the caller did not specify `bot_id` explicitly (e.g.
+            when `strategy` was used or the default bot was applied).
+          example: minimax_bot
+
+    ApiError:
+      type: object
+      description: |
+        Structured error body returned on all non-2xx responses. The `code`
+        field is machine-readable and stable; `message` is human-readable and
+        intended for debugging.
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: Machine-readable error identifier.
+          enum:
+            - INVALID_POSITION
+            - BOT_NOT_FOUND
+            - NO_MOVES_AVAILABLE
+            - ENGINE_ERROR
+            - ENGINE_TIMEOUT
+            - INTERNAL_ERROR
+          example: INVALID_POSITION
+        message:
+          type: string
+          description: Human-readable description of what went wrong.
+          example: 'Request body must contain a "position" field with the board state in YEN notation.'
