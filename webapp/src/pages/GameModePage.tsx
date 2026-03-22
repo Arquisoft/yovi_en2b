@@ -5,8 +5,11 @@ import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { GameMode } from '@/types'
 
-const modes: GameMode[] = ['pvp-local', 'pve', 'pvp-online']
-
+const modes: { mode: GameMode; disabled?: boolean }[] = [
+  { mode: 'pvp-local' },
+  { mode: 'pve' },
+  { mode: 'pvp-online', disabled: true },
+]
 export function GameModePage() {
   const { handleSelectMode } = useGameModeController()
   const navigate = useNavigate()
@@ -31,13 +34,14 @@ export function GameModePage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {modes.map((mode) => (
-            <ModeCard
-              key={mode}
-              mode={mode}
-              onSelect={() => handleSelectMode(mode)}
-            />
-          ))}
+          {modes.map(({ mode, disabled }) => (
+        <ModeCard
+          key={mode}
+          mode={mode}
+          disabled={disabled}
+          onSelect={() => !disabled && handleSelectMode(mode)}
+        />
+      ))}
         </div>
       </div>
     </div>

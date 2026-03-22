@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { User } from '../entities/User';
 import { SnakeCaseNamingStrategy } from './SnakeCaseNamingStrategy';
+import { MatchRecord } from '../entities/MatchRecord';
 
 export const AppDataSource = new DataSource({
   type: 'mariadb',
@@ -9,7 +10,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER || 'test_user',
   password: process.env.DB_PASSWORD || 'test_password',
   database: process.env.DB_NAME || 'users_db',
-  entities: [User],
+  entities: [User, MatchRecord],
   synchronize: process.env.NODE_ENV === 'development',
   logging: false,
   namingStrategy: new SnakeCaseNamingStrategy()

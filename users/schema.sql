@@ -12,3 +12,14 @@ CREATE TABLE IF NOT EXISTS users (
   last_login TIMESTAMP NULL,
   is_active BOOLEAN DEFAULT TRUE
 );
+
+CREATE TABLE IF NOT EXISTS match_records (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  opponent_name VARCHAR(50) NOT NULL,
+  result ENUM('win', 'loss') NOT NULL,
+  duration_seconds INT UNSIGNED NOT NULL,
+  played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

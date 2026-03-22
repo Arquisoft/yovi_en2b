@@ -6,6 +6,7 @@ import { cn } from '@/utils'
 interface ModeCardProps {
   mode: GameMode
   onSelect: () => void
+  disabled?: boolean
 }
 
 const modeInfo: Record<GameMode, {
@@ -30,38 +31,49 @@ const modeInfo: Record<GameMode, {
   },
 }
 
-export function ModeCard({ mode, onSelect }: ModeCardProps) {
+export function ModeCard({ mode, onSelect , disabled }: ModeCardProps) {
   const info = modeInfo[mode]
   const Icon = info.icon
 
   return (
     <Card
       className={cn(
-        'cursor-pointer group hover:border-primary/50 transition-all',
-        'hover:shadow-lg hover:shadow-primary/5'
+        'transition-all',
+        disabled 
+        ? 'opacity-50 cursor-not-allowed'
+        : 'cursor-pointer group hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5'
       )}
-      onClick={onSelect}
+      onClick={!disabled ? onSelect : undefined}
       role="button"
-      tabIndex={0}
+      tabIndex={disabled ? -1 : 0}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
+        if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
           onSelect()
         }
       }}
     >
       <CardHeader>
-        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary/20 transition-colors">
+        <div className= {cn(
+          "w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-2 transition-colors",
+          !disabled && 'group-hover:bg-primary/20'
+        )}>
           <Icon className="w-6 h-6 text-primary" />
         </div>
         <CardTitle className="flex items-center justify-between">
           {info.title}
-          <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+          {disabled
+            ? <span className="text-xs font-normal text-muted-foreground">Soon</span>
+            : <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+          }
         </CardTitle>
         <CardDescription>{info.description}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
-          <div className="h-full w-0 bg-primary group-hover:w-full transition-all duration-500" />
+          <div className={cn(
+            "h-full w-0 bg-primary transition-all duration-500",
+            !disabled && "group-hover:w-full"
+            )} />   
         </div>
       </CardContent>
     </Card>

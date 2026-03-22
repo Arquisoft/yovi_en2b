@@ -87,19 +87,21 @@ describe('Authentication API', () => {
       expect(res.body).toHaveProperty('error', 'Username or email already exists');
     });
 
-    it('should return 400 if email already exists', async () => {
-      // Primero crear un usuario
-      await request(app).post('/api/auth/register').send(testUser);
+   it('should return 400 if email already exists', async () => {
+  // Registrar primero con email diferente pero mismo email que vamos a duplicar
+  await request(app)
+    .post('/api/auth/register')
+    .send({ username: 'otheruser', email: testUser.email, password: 'password123' })
+    .catch(() => {})
 
-      // Intentar crear otro con el mismo email
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({ ...testUser, username: 'differentuser' })
-        .set('Accept', 'application/json');
+  const res = await request(app)
+    .post('/api/auth/register')
+    .send({ username: 'anotheruser', email: testUser.email, password: 'password123' })
+    .set('Accept', 'application/json');
 
-      expect(res.status).toBe(400);
-      expect(res.body).toHaveProperty('error', 'Username or email already exists');
-    });
+  expect(res.status).toBe(400);
+  expect(res.body).toHaveProperty('error', 'Username or email already exists');
+});
 
     it('should return 400 for invalid JSON', async () => {
       const res = await request(app)

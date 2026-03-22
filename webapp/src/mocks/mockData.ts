@@ -20,7 +20,7 @@ export const AVAILABLE_GAMES: GameInfo[] = [
     name: 'Game Y',
     description:
       'A strategic connection game played on a triangular hexagonal board.',
-    thumbnail: '/images/game-y-thumbnail-v2.png',
+    thumbnail: '/images/game-y-thumbnail-v1.png',
     minPlayers: 1,
     maxPlayers: 2,
     isAvailable: true,
