@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { User } from '../src/entities/User';
+import { MatchRecord } from '../src/entities/MatchRecord';
 
 export const TestDataSource = new DataSource({
   type: 'mariadb',
@@ -9,7 +10,7 @@ export const TestDataSource = new DataSource({
   username: 'test_user',
   password: process.env.DB_PASSWORD || 'test_password',
   database: 'users_db',
-  entities: [User],
+  entities: [User, MatchRecord],
   synchronize: true,
   logging: false
 });
