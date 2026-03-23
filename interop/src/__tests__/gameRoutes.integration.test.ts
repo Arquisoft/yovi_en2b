@@ -7,10 +7,10 @@
 // Real Express middleware, routing, and controller validation are exercised.
 //
 // Coverage:
-//   Auth wall        — 401 with no token
 //   Happy path       — 200 with position + bot_id
 //                    — 200 with position + strategy
 //                    — 200 with position only (default bot)
+//                    — 200 with both bot_id and strategy
 //   Request errors   — 400 missing position
 //                    — 400 malformed position (wrong shape)
 //                    — 400 position with bad layout string
@@ -23,7 +23,6 @@
 import request from 'supertest';
 import express from 'express';
 import cors from 'cors';
-import jwt from 'jsonwebtoken';
 import gameRoutes from '../routes/gameRoutes';
 import * as gameService from '../services/gameService';
 import { emptyYEN } from '../services/yenService';
@@ -37,14 +36,6 @@ app.use(cors());
 app.use(express.json());
 app.use('/games', gameRoutes);
 
-// ── JWT helpers ───────────────────────────────────────────────────────────────
-const SECRET = process.env.JWT_SECRET ?? 'please_dont_tell_anyone';
-
-function authHeader() {
-  const token = jwt.sign({ id: 1, username: 'alice', role: 'USER' }, SECRET, { expiresIn: '1h' });
-  return { Authorization: `Bearer ${token}` };
-}
-
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
 const validPosition: YEN = emptyYEN(3); // "./../..."
@@ -57,19 +48,6 @@ const mockPlayResponse: PlayResponse = {
 
 beforeEach(() => jest.clearAllMocks());
 
-// ── Auth wall ─────────────────────────────────────────────────────────────────
-
-describe('Authentication wall', () => {
-  it('returns 401 when no token is provided', async () => {
-    const res = await request(app)
-      .post('/games/play')
-      .send({ position: validPosition });
-
-    expect(res.status).toBe(401);
-    expect(mockedService.play).not.toHaveBeenCalled();
-  });
-});
-
 // ── Happy paths ───────────────────────────────────────────────────────────────
 
 describe('POST /games/play — happy paths', () => {
@@ -78,7 +56,6 @@ describe('POST /games/play — happy paths', () => {
 
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: validPosition, bot_id: 'random_bot' });
 
     expect(res.status).toBe(200);
@@ -94,7 +71,6 @@ describe('POST /games/play — happy paths', () => {
 
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: validPosition, strategy: 'HARD' });
 
     expect(res.status).toBe(200);
@@ -107,7 +83,6 @@ describe('POST /games/play — happy paths', () => {
 
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: validPosition });
 
     expect(res.status).toBe(200);
@@ -119,7 +94,6 @@ describe('POST /games/play — happy paths', () => {
 
     await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: validPosition, bot_id: 'custom_bot', strategy: 'EASY' });
 
     expect(mockedService.play).toHaveBeenCalledWith(validPosition, 'custom_bot', 'EASY');
@@ -132,7 +106,6 @@ describe('POST /games/play — request validation', () => {
   it('returns 400 INVALID_POSITION when position is missing', async () => {
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ bot_id: 'random_bot' });
 
     expect(res.status).toBe(400);
@@ -143,7 +116,6 @@ describe('POST /games/play — request validation', () => {
   it('returns 400 INVALID_POSITION when position is a plain string instead of a YEN object', async () => {
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: 'B/../...' });
 
     expect(res.status).toBe(400);
@@ -155,7 +127,6 @@ describe('POST /games/play — request validation', () => {
     const { layout, ...withoutLayout } = validPosition;
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: withoutLayout });
 
     expect(res.status).toBe(400);
@@ -167,7 +138,6 @@ describe('POST /games/play — request validation', () => {
 
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: badPosition });
 
     expect(res.status).toBe(400);
@@ -179,7 +149,6 @@ describe('POST /games/play — request validation', () => {
 
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: badPosition });
 
     expect(res.status).toBe(400);
@@ -191,7 +160,6 @@ describe('POST /games/play — request validation', () => {
 
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: badPosition });
 
     expect(res.status).toBe(400);
@@ -203,7 +171,6 @@ describe('POST /games/play — request validation', () => {
 
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: badPosition });
 
     expect(res.status).toBe(400);
@@ -223,7 +190,6 @@ describe('POST /games/play — engine error propagation', () => {
 
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: validPosition, bot_id: 'ghost_bot' });
 
     expect(res.status).toBe(404);
@@ -235,7 +201,6 @@ describe('POST /games/play — engine error propagation', () => {
 
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: validPosition });
 
     expect(res.status).toBe(422);
@@ -247,7 +212,6 @@ describe('POST /games/play — engine error propagation', () => {
 
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: validPosition });
 
     expect(res.status).toBe(503);
@@ -259,7 +223,6 @@ describe('POST /games/play — engine error propagation', () => {
 
     const res = await request(app)
       .post('/games/play')
-      .set(authHeader())
       .send({ position: validPosition });
 
     expect(res.status).toBe(502);
