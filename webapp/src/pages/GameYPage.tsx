@@ -1,9 +1,11 @@
 import { useGameYController } from '@/controllers/useGameYController'
 import { GameYBoard } from '@/components/game-y/GameYBoard'
 import { GameSidebar } from '@/components/game-y/GameSidebar'
+import { GameOverlay } from '@/components/game-y/GameOverlay'
 import { AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useState, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 export function GameYPage() {
   const {
@@ -12,6 +14,7 @@ export function GameYPage() {
     handlePlayAgain, currentUserId,
   } = useGameYController()
 
+  const navigate = useNavigate()
   const isMobile = useMediaQuery('(max-width: 768px)')
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
@@ -36,7 +39,6 @@ export function GameYPage() {
 
   const onTouchEnd = useCallback(() => {
     dragStartY.current = null
-    // Snap: si está muy pequeño, colapsa del todo
     if (mobileHeight < 100) {
       setMobileHeight(48)
       setSidebarOpen(false)
@@ -68,8 +70,8 @@ export function GameYPage() {
 
   if (isMobile) {
     return (
-      <div className="h-full min-h-0 flex flex-col">
-        {/* Board — ocupa lo que queda */}
+      <div className="h-full min-h-0 flex flex-col relative">
+        {/* Board */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <GameYBoard
             game={game}
@@ -84,14 +86,12 @@ export function GameYPage() {
           className="flex-shrink-0 border-t border-border bg-card overflow-hidden transition-[height] duration-150"
           style={{ height: mobileHeight }}
         >
-          {/* Drag handle */}
           <div
             className="flex items-center justify-center h-8 cursor-ns-resize touch-none select-none"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
             onClick={() => {
-              // Click en desktop fallback
               if (sidebarOpen) { setMobileHeight(48); setSidebarOpen(false) }
               else { setMobileHeight(SIDEBAR_HEIGHT); setSidebarOpen(true) }
             }}
@@ -99,7 +99,6 @@ export function GameYPage() {
             <div className="w-10 h-1 rounded-full bg-muted-foreground/40" />
           </div>
 
-          {/* Contenido del sidebar, oculto si colapsado */}
           <div className={`overflow-y-auto transition-opacity duration-150 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
             style={{ height: mobileHeight - 32 }}
           >
@@ -115,13 +114,21 @@ export function GameYPage() {
             />
           </div>
         </div>
+
+        {/* Game Over Overlay */}
+        <GameOverlay
+          game={game}
+          currentUserId={currentUserId}
+          onPlayAgain={handlePlayAgain}
+          onGoHome={() => navigate('/games')}
+        />
       </div>
     )
   }
 
   // Desktop
   return (
-    <div className="h-full min-h-0 flex">
+    <div className="h-full min-h-0 flex relative">
       {/* Board */}
       <div className="flex-1 min-w-0 overflow-hidden">
         <GameYBoard
@@ -146,7 +153,6 @@ export function GameYPage() {
           {sidebarOpen ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
         </button>
 
-        {/* Sidebar con transición de ancho */}
         <aside
           className="overflow-hidden border-l border-border bg-card transition-[width] duration-300 ease-in-out"
           style={{ width: sidebarOpen ? '20rem' : '0' }}
@@ -164,6 +170,14 @@ export function GameYPage() {
           </div>
         </aside>
       </div>
+
+      {/* Game Over Overlay */}
+      <GameOverlay
+        game={game}
+        currentUserId={currentUserId}
+        onPlayAgain={handlePlayAgain}
+        onGoHome={() => navigate('/games')}
+      />
     </div>
   )
 }
