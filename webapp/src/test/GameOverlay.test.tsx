@@ -623,6 +623,41 @@ describe('getAccentColor — full coverage', () => {
     expect(screen.getByText('DRAW')).toBeDefined()
   })
 })
+// ─── FULL confetti coverage ────────────────────────────────────────────────
 
+describe('ConfettiCanvas — FULL coverage', () => {
+  it('executes draw loop and all particle shapes', () => {
+    const rafCallbacks: FrameRequestCallback[] = []
+
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      rafCallbacks.push(cb)
+      return 1
+    })
+
+    const cancelSpy = vi.spyOn(window, 'cancelAnimationFrame')
+
+    renderOverlay(makeGame({ winner: 'player1' })) // victory → activa confetti
+
+    // trigger overlay
+    act(() => {
+      vi.advanceTimersByTime(400)
+    })
+
+    // ejecutar varios frames manualmente
+    act(() => {
+      for (let i = 0; i < 5; i++) {
+        const cb = rafCallbacks.shift()
+        if (cb) cb(0)
+      }
+    })
+
+    // forzar unmount → cubrir cleanup
+    const { unmount } = renderOverlay(makeGame({ winner: 'player1' }))
+    act(() => vi.advanceTimersByTime(400))
+    unmount()
+
+    expect(cancelSpy).toHaveBeenCalled()
+  })
+})
 
 })
