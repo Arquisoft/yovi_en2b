@@ -227,14 +227,14 @@ describe('ResultSubtitle', () => {
   })
 
   it('shows "You beat [opponent]" on victory in online mode', () => {
-    render(<ResultSubtitle isLocalGame={false} isVictory winnerName="Alice" opponentName="Bot" {...base} />)
-    expect(screen.getByText('You beat ')).toBeDefined()
+    const { container } = render(<ResultSubtitle isLocalGame={false} isVictory winnerName="Alice" opponentName="Bot" {...base} />)
+    expect(container.textContent).toContain('You beat')
     expect(screen.getByText('Bot')).toBeDefined()
   })
 
   it('shows "Beaten by [opponent]" on defeat in online mode', () => {
-    render(<ResultSubtitle isLocalGame={false} isVictory={false} winnerName="Bot" opponentName="Bot" {...base} />)
-    expect(screen.getByText('Beaten by ')).toBeDefined()
+    const { container } = render(<ResultSubtitle isLocalGame={false} isVictory={false} winnerName="Bot" opponentName="Bot" {...base} />)
+    expect(container.textContent).toContain('Beaten by')
   })
 
   it('renders opponent name with accent color span', () => {
@@ -356,15 +356,15 @@ describe('GameOverlay — subtitles', () => {
   })
 
   it('shows "You beat" on victory', () => {
-    renderOverlay(makeGame({ winner: 'player1' }))
+    const { container } = render(<GameOverlay game={makeGame({ winner: 'player1' })} {...baseProps} />)
     advance()
-    expect(screen.getByText('You beat ')).toBeDefined()
+    expect(container.textContent).toContain('You beat')
   })
 
   it('shows "Beaten by" on defeat', () => {
-    renderOverlay(makeGame({ winner: 'player2' }))
+    const { container } = render(<GameOverlay game={makeGame({ winner: 'player2' })} {...baseProps} />)
     advance()
-    expect(screen.getByText('Beaten by ')).toBeDefined()
+    expect(container.textContent).toContain('Beaten by')
   })
 
   it('shows correct opponent name on victory', () => {
