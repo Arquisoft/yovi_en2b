@@ -57,7 +57,7 @@ export function useGameYController() {
             }
         }
 
-        load().then(() => checkBotOpens())
+        load().then(() => checkBotOpens().catch(() => { }))
     }, [gameId])
 
     // --- Realtime subscription (PvP online) ---
