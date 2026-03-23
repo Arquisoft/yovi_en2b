@@ -149,13 +149,15 @@ function ConfettiCanvas({ active }: { active: boolean }) {
 
     const W = canvas.width  = canvas.offsetWidth
     const H = canvas.height = canvas.offsetHeight
+  
+    // Safe: Math.random is used only for visual particle effects (non-cryptographic)
 
     const colors = ['#FFD700', '#4A9EFF', '#FF6B6B', '#4ECDC4', '#96CEB4', '#FFEAA7', '#DDA0DD']
     const shapes: Particle['shape'][] = ['rect', 'circle', 'triangle']
 
     particlesRef.current = Array.from({ length: 90 }, (_, i) => ({
       id: i,
-      x: W * (0.3 + Math.random() * 0.4),
+      x: W * (0.3 + Math.random() * 0.4), 
       y: H * (0.3 + Math.random() * 0.3),
       vx: (Math.random() - 0.5) * 8,
       vy: -Math.random() * 12 - 3,
