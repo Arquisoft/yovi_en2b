@@ -85,29 +85,34 @@ export function useGameYController() {
   // Se dispara en cada jugada (game.moves.length cambia) o cambio de activePlayer
   // Aquí es donde el reloj "cambia de mano": se guarda el tiempo restante actual
   // como nueva base y se resetea el punto de referencia
-  useEffect(() => {
-    if (!game?.timer) {
-      setLiveTimer(null)
-      return
-    }
+useEffect(() => {
+  if (!game?.timer) {
+    setLiveTimer(null)
+    return
+  }
 
-    // Guardar los valores autoritativos como nueva base
-    timerBaseRef.current = {
-      player1Ms: game.timer.player1RemainingMs,
-      player2Ms: game.timer.player2RemainingMs,
-    }
+  let player1Ms = game.timer.player1RemainingMs
+  let player2Ms = game.timer.player2RemainingMs
 
-    // Resetear el punto de inicio del reloj activo
-    clockStartedAtRef.current = Date.now()
+  // Si la partida terminó por timeout, forzar a 0 el jugador que perdió
+  if (game.status === 'finished' && game.winner && game.timer.activePlayer === null) {
+    const loser = game.winner === 'player1' ? 'player2' : 'player1'
+    if (loser === 'player1') player1Ms = 0
+    if (loser === 'player2') player2Ms = 0
+  }
 
-    // Inicializar display con los valores autoritativos
-    setLiveTimer(game.timer)
-  }, [
-    // Solo sincronizamos cuando cambia el turno activo o llega una jugada nueva
-    game?.moves.length,
-    game?.timer?.activePlayer,
-    game?.status,
-  ])
+  timerBaseRef.current = { player1Ms, player2Ms }
+  clockStartedAtRef.current = Date.now()
+  setLiveTimer({
+    ...game.timer,
+    player1RemainingMs: player1Ms,
+    player2RemainingMs: player2Ms,
+  })
+}, [
+  game?.moves.length,
+  game?.timer?.activePlayer,
+  game?.status,
+])
 
   // --- Tick del reloj: solo actualiza liveTimer, nunca toca game ---
   useEffect(() => {

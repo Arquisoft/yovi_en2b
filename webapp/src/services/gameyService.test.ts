@@ -277,4 +277,84 @@ describe('GameService', () => {
       expect(games.length).toBeGreaterThan(0)
     })
   })
+
+  describe('startTimerCheck', () => {
+  it('should finish game when player1 runs out of time', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const config = { ...mockConfig, timerEnabled: true, timerSeconds: 1 }
+    const game = await gameService.createGame(config, mockUser)
+
+    const currentGame = (gameService as any).games.get(game.id)
+    ;(gameService as any).games.set(game.id, {
+      ...currentGame,
+      timer: {
+        ...currentGame.timer,
+        player1RemainingMs: 100,
+        lastSyncTimestamp: Date.now() - 200,
+      }
+    })
+
+    await vi.advanceTimersByTimeAsync(600)
+
+    const updated = await gameService.getGameState(game.id)
+    expect(updated?.status).toBe('finished')
+    expect(updated?.winner).toBe('player2')
+    vi.useRealTimers()
+  })
+
+  it('should finish game when player2 runs out of time', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const config = { ...mockConfig, timerEnabled: true, timerSeconds: 1 }
+    const game = await gameService.createGame(config, mockUser)
+
+    const currentGame = (gameService as any).games.get(game.id)
+    ;(gameService as any).games.set(game.id, {
+      ...currentGame,
+      currentTurn: 'player2',
+      timer: {
+        ...currentGame.timer,
+        activePlayer: 'player2',
+        player2RemainingMs: 100,
+        lastSyncTimestamp: Date.now() - 200,
+      }
+    })
+
+    await vi.advanceTimersByTimeAsync(600)
+
+    const updated = await gameService.getGameState(game.id)
+    expect(updated?.status).toBe('finished')
+    expect(updated?.winner).toBe('player1')
+    vi.useRealTimers()
+  })
+
+  it('should not modify finished games', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const config = { ...mockConfig, timerEnabled: true, timerSeconds: 1 }
+    const game = await gameService.createGame(config, mockUser)
+
+    ;(gameService as any).games.set(game.id, {
+      ...(gameService as any).games.get(game.id),
+      status: 'finished',
+      winner: 'player1',
+    })
+
+    await vi.advanceTimersByTimeAsync(600)
+
+    const updated = await gameService.getGameState(game.id)
+    expect(updated?.winner).toBe('player1')
+    vi.useRealTimers()
+  })
+
+  it('should not run timer check if no timer configured', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const game = await gameService.createGame(mockConfig, mockUser)
+
+    await vi.advanceTimersByTimeAsync(600)
+
+    const updated = await gameService.getGameState(game.id)
+    expect(updated?.status).toBe('playing')
+    vi.useRealTimers()
+  })
+})
+
 })

@@ -102,8 +102,50 @@ class GameService {
     this.games.set(game.id, game)
     this.chatMessages.set(game.id, createMockChatMessages(game.id))
 
+    this.startTimerCheck(game.id)
     return game
   }
+
+
+
+  private startTimerCheck(gameId: string): void {
+  const interval = setInterval(() => {
+    const game = this.games.get(gameId)
+
+    if (!game || game.status !== 'playing' || !game.timer) {
+      clearInterval(interval)
+      return
+    }
+
+    const now = Date.now()
+    const elapsed = now - game.timer.lastSyncTimestamp
+    const active = game.timer.activePlayer
+
+    if (!active) {
+      clearInterval(interval)
+      return
+    }
+
+    const remaining = active === 'player1'
+      ? game.timer.player1RemainingMs - elapsed
+      : game.timer.player2RemainingMs - elapsed
+
+    if (remaining <= 0) {
+      const winner = active === 'player1' ? 'player2' : 'player1'
+      const finished: GameState = {
+        ...game,
+        status: 'finished',
+        winner,
+        timer: { ...game.timer, activePlayer: null },
+        updatedAt: new Date().toISOString(),
+      }
+      this.games.set(gameId, finished)
+      clearInterval(interval)
+    }
+  }, 500)
+  }
+
+
 
   /**
    * Get current game state
@@ -377,6 +419,7 @@ class GameService {
     // Update room status
     this.rooms.set(roomId, { ...room, status: 'playing' })
 
+    this.startTimerCheck(game.id)
     return game
   }
 
