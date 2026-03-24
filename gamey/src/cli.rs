@@ -39,6 +39,10 @@ pub struct CliArgs {
     #[arg(long, default_value_t = false)]
     pub botfirst: bool,
 
+    /// Minimum time in milliseconds for the bot to search (only used with --mode=computer and --bot=minimax_bot)
+    #[arg(long, default_value_t = 1000)]
+    pub minms: u64,
+
     /// Maximum time in milliseconds for the bot to search (only used with --mode=computer and --bot=minimax_bot)
     #[arg(long, default_value_t = 1000)]
     pub maxms: u64,
@@ -80,7 +84,7 @@ pub fn run_cli_game() -> Result<()> {
     let mut rl = DefaultEditor::new()?;
     let bots_registry = YBotRegistry::new()
         .with_bot(Arc::new(RandomBot))
-        .with_bot(Arc::new(MinimaxBot::new(args.maxms)));
+        .with_bot(Arc::new(MinimaxBot::new(args.minms, args.maxms)));
     let bot: Arc<dyn YBot> = match bots_registry.find(&args.bot) {
         Some(b) => b,
         None => {
