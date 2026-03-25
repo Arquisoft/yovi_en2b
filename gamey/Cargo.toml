@@ -7,7 +7,7 @@ authors = [
     "Jose Emilio Labra Gayo",
     "Pablo González González",
     "Diego Martín Fernández",
-    "Celia Melendi Lavandera"
+    "Celia Melendi Lavandera",
 ]
 license = "MIT"
 readme = "./README.md"

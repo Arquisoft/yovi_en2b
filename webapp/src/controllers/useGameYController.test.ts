@@ -19,6 +19,7 @@ vi.mock('@/services/gameyService', () => ({
     playMove: vi.fn(),
     surrender: vi.fn(),
     sendChatMessage: vi.fn(),
+    waitForBotMove: vi.fn(),
   },
 }))
 vi.mock('react-router-dom', () => ({
@@ -64,8 +65,16 @@ beforeEach(() => {
   vi.mocked(useRealtime).mockReturnValue(mockTransport as any)
   vi.mocked(gameService.getGameState).mockResolvedValue(mockGame as any)
   vi.mocked(gameService.getChatMessages).mockResolvedValue([])
-  vi.mocked(gameService.playMove).mockResolvedValue({ ...mockGame, moves: [{ row: 0, col: 0 }] } as any)
-  vi.mocked(gameService.surrender).mockResolvedValue({ ...mockGame, status: 'finished', winner: 'player2' } as any)
+  vi.mocked(gameService.waitForBotMove).mockResolvedValue(null)
+  vi.mocked(gameService.playMove).mockResolvedValue({
+    ...mockGame,
+    moves: [{ row: 0, col: 0 }],
+  } as any)
+  vi.mocked(gameService.surrender).mockResolvedValue({
+    ...mockGame,
+    status: 'finished',
+    winner: 'player2',
+  } as any)
   vi.mocked(gameService.sendChatMessage).mockResolvedValue({ id: '1', content: 'hi' } as any)
 })
 
@@ -86,7 +95,7 @@ describe('useGameYController', () => {
 
   it('loads chat messages on mount', async () => {
     vi.mocked(gameService.getChatMessages).mockResolvedValue([
-      { id: '1', content: 'hello', gameId: 'game-123', senderId: 'u1', senderName: 'A', timestamp: '' }
+      { id: '1', content: 'hello', gameId: 'game-123', senderId: 'u1', senderName: 'A', timestamp: '' },
     ])
     const { result } = renderHook(() => useGameYController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -107,7 +116,7 @@ describe('useGameYController', () => {
 
   it('canPlay is false when game is finished', async () => {
     vi.mocked(gameService.getGameState).mockResolvedValue({
-      ...mockGame, status: 'finished', winner: 'player1'
+      ...mockGame, status: 'finished', winner: 'player1',
     } as any)
     const { result } = renderHook(() => useGameYController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -116,7 +125,7 @@ describe('useGameYController', () => {
 
   it('canPlay is false when it is not user turn', async () => {
     vi.mocked(gameService.getGameState).mockResolvedValue({
-      ...mockGame, currentTurn: 'player2'
+      ...mockGame, currentTurn: 'player2',
     } as any)
     const { result } = renderHook(() => useGameYController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -129,14 +138,12 @@ describe('useGameYController', () => {
     await act(async () => {
       await result.current.handleCellClick(0, 0)
     })
-    expect(gameService.playMove).toHaveBeenCalledWith(
-      'game-123', 0, 0, 'player1', 'mock-token'
-    )
+    expect(gameService.playMove).toHaveBeenCalledWith('game-123', 0, 0, 'player1', 'mock-token')
   })
 
   it('handleCellClick does nothing when canPlay is false', async () => {
     vi.mocked(gameService.getGameState).mockResolvedValue({
-      ...mockGame, currentTurn: 'player2'
+      ...mockGame, currentTurn: 'player2',
     } as any)
     const { result } = renderHook(() => useGameYController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -152,9 +159,7 @@ describe('useGameYController', () => {
     await act(async () => {
       await result.current.handleSurrender()
     })
-    expect(gameService.surrender).toHaveBeenCalledWith(
-      'game-123', 'player1', 'mock-token'
-    )
+    expect(gameService.surrender).toHaveBeenCalledWith('game-123', 'player1', 'mock-token')
   })
 
   it('handleSendMessage calls sendChatMessage', async () => {
@@ -163,9 +168,7 @@ describe('useGameYController', () => {
     await act(async () => {
       await result.current.handleSendMessage('hello')
     })
-    expect(gameService.sendChatMessage).toHaveBeenCalledWith(
-      'game-123', 'user1', 'TestUser', 'hello'
-    )
+    expect(gameService.sendChatMessage).toHaveBeenCalledWith('game-123', 'user1', 'TestUser', 'hello')
   })
 
   it('lastMove is null when no moves', async () => {
@@ -240,4 +243,7 @@ it('liveTimer sets loser to 0 on timeout finish', async () => {
   expect(result.current.liveTimer?.player2RemainingMs).toBe(0)
   expect(result.current.liveTimer?.player1RemainingMs).toBe(60000)
 })
+
 })
+
+

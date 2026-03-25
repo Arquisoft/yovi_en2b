@@ -16,11 +16,11 @@ vi.mock('react-router-dom', () => ({
 }))
 
 const mockEntries = [
-  { rank: 1, username: 'PlayerOne',   wins: 42 },
-  { rank: 2, username: 'PlayerTwo',   wins: 38 },
+  { rank: 1, username: 'PlayerOne', wins: 42 },
+  { rank: 2, username: 'PlayerTwo', wins: 38 },
   { rank: 3, username: 'PlayerThree', wins: 31 },
-  { rank: 4, username: 'PlayerFour',  wins: 27 },
-  { rank: 5, username: 'PlayerFive',  wins: 19 },
+  { rank: 4, username: 'PlayerFour', wins: 27 },
+  { rank: 5, username: 'PlayerFive', wins: 19 },
 ]
 
 describe('RankingPage', () => {
@@ -88,12 +88,12 @@ describe('RankingPage', () => {
     expect(setSelectedMode).toHaveBeenCalledWith('pve-hard')
   })
 
-    it('calls navigate when clicking back button', async () => {
+  it('calls navigate when clicking back button', async () => {
     const mockNavigate = vi.fn()
     vi.mocked(useNavigate).mockReturnValue(mockNavigate)
 
     render(<RankingPage />)
     await userEvent.click(screen.getByText('Back'))
     expect(mockNavigate).toHaveBeenCalledWith(-1)
-    })
+  })
 })
