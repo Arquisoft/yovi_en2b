@@ -357,4 +357,129 @@ describe('GameService', () => {
   })
 })
 
+describe('getRooms', () => {
+  it('should return mock rooms when no rooms created', async () => {
+    const rooms = await gameService.getRooms()
+    expect(Array.isArray(rooms)).toBe(true)
+    expect(rooms.length).toBeGreaterThan(0)
+  })
+
+  it('should include created public rooms', async () => {
+    const config = { mode: 'pvp-online' as const, boardSize: 5 as const, timerEnabled: false, roomName: 'Test Room', isPrivate: false }
+    await gameService.createRoom(config, mockUser)
+    const rooms = await gameService.getRooms()
+    expect(rooms.some(r => r.name === 'Test Room')).toBe(true)
+  })
+
+  it('should not include private rooms', async () => {
+    const config = { mode: 'pvp-online' as const, boardSize: 5 as const, timerEnabled: false, roomName: 'Private', isPrivate: true }
+    await gameService.createRoom(config, mockUser)
+    const rooms = await gameService.getRooms()
+    expect(rooms.some(r => r.name === 'Private')).toBe(false)
+  })
+})
+
+describe('getRoom', () => {
+  it('should return null for unknown room', async () => {
+    const result = await gameService.getRoom('nonexistent')
+    expect(result).toBeNull()
+  })
+
+  it('should return room after creation', async () => {
+    const config = { mode: 'pvp-online' as const, boardSize: 5 as const, timerEnabled: false, roomName: 'Test', isPrivate: false }
+    const room = await gameService.createRoom(config, mockUser)
+    const result = await gameService.getRoom(room.id)
+    expect(result?.id).toBe(room.id)
+  })
+})
+
+describe('createRoom', () => {
+  it('should create a room with correct config', async () => {
+    const config = { mode: 'pvp-online' as const, boardSize: 7 as const, timerEnabled: false, roomName: 'My Room', isPrivate: false }
+    const room = await gameService.createRoom(config, mockUser)
+    expect(room.name).toBe('My Room')
+    expect(room.boardSize).toBe(7)
+    expect(room.playerCount).toBe(1)
+  })
+})
+
+describe('joinRoom', () => {
+  it('should throw if room not found', async () => {
+    await expect(
+      gameService.joinRoom('nonexistent', mockUser)
+    ).rejects.toThrow('Room not found')
+  })
+
+  it('should increment player count', async () => {
+    const config = { mode: 'pvp-online' as const, boardSize: 5 as const, timerEnabled: false, roomName: 'Test', isPrivate: false }
+    const room = await gameService.createRoom(config, mockUser)
+    const joined = await gameService.joinRoom(room.id, { ...mockUser, id: 'user2' })
+    expect(joined.playerCount).toBe(2)
+  })
+
+  it('should throw if room is full', async () => {
+    const config = { mode: 'pvp-online' as const, boardSize: 5 as const, timerEnabled: false, roomName: 'Test', isPrivate: false }
+    const room = await gameService.createRoom(config, mockUser)
+    await gameService.joinRoom(room.id, { ...mockUser, id: 'user2' })
+    await expect(
+      gameService.joinRoom(room.id, { ...mockUser, id: 'user3' })
+    ).rejects.toThrow('Room is full')
+  })
+})
+
+describe('startGameFromRoom', () => {
+  it('should throw if room not found', async () => {
+    await expect(
+      gameService.startGameFromRoom('nonexistent')
+    ).rejects.toThrow('Room not found')
+  })
+
+  it('should throw if not enough players', async () => {
+    const config = { mode: 'pvp-online' as const, boardSize: 5 as const, timerEnabled: false, roomName: 'Test', isPrivate: false }
+    const room = await gameService.createRoom(config, mockUser)
+    await expect(
+      gameService.startGameFromRoom(room.id)
+    ).rejects.toThrow('Not enough players')
+  })
+
+  it('should create game when room has 2 players', async () => {
+    const config = { mode: 'pvp-online' as const, boardSize: 5 as const, timerEnabled: false, roomName: 'Test', isPrivate: false }
+    const room = await gameService.createRoom(config, mockUser)
+    await gameService.joinRoom(room.id, { ...mockUser, id: 'user2', name: 'User2' })
+    const game = await gameService.startGameFromRoom(room.id)
+    expect(game.status).toBe('playing')
+    expect(game.config.mode).toBe('pvp-online')
+  })
+})
+
+describe('playMove with timer', () => {
+  it('should deduct time from active player', async () => {
+    const config = { ...mockConfig, timerEnabled: true, timerSeconds: 300 }
+    const game = await gameService.createGame(config, mockUser)
+    const currentGame = (gameService as any).games.get(game.id)
+    ;(gameService as any).games.set(game.id, {
+      ...currentGame,
+      timer: { ...currentGame.timer, lastSyncTimestamp: Date.now() - 5000 }
+    })
+    const updated = await gameService.playMove(game.id, 0, 0, 'player1')
+    expect(updated.timer?.player1RemainingMs).toBeLessThan(300000)
+  })
+
+  it('should finish game when player runs out of time on move', async () => {
+    const config = { ...mockConfig, timerEnabled: true, timerSeconds: 1 }
+    const game = await gameService.createGame(config, mockUser)
+    ;(gameService as any).games.set(game.id, {
+      ...(gameService as any).games.get(game.id),
+      timer: {
+        ...(gameService as any).games.get(game.id).timer,
+        player1RemainingMs: 0,
+        lastSyncTimestamp: Date.now() - 2000,
+      }
+    })
+    const updated = await gameService.playMove(game.id, 0, 0, 'player1')
+    expect(updated.status).toBe('finished')
+    expect(updated.winner).toBe('player2')
+  })
+})
+
 })
