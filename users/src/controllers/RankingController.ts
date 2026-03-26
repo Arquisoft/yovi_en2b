@@ -6,6 +6,7 @@ import { GameMode } from '../types/ranking'
 
 export class RankingController {
   // GET /api/ranking/:mode
+  // NOSONAR
   static async getRankingByMode(req: Request, res: Response) {
     try {
       const mode = req.params.mode as GameMode

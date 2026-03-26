@@ -24,31 +24,16 @@ export class RankingService {
    *     .getRawMany();
    */
   static async getRankingByMode(mode: GameMode): Promise<RankingEntry[]> {
-    // MOCK — remove when DB is ready
-    const mockData: Record<GameMode, RankingEntry[]> = {
-      'pve-easy': [
-        { rank: 1, username: 'PlayerOne',   wins: 42 },
-        { rank: 2, username: 'PlayerTwo',   wins: 38 },
-        { rank: 3, username: 'PlayerThree', wins: 31 },
-        { rank: 4, username: 'PlayerFour',  wins: 27 },
-        { rank: 5, username: 'PlayerFive',  wins: 19 },
-      ],
-      'pve-medium': [
-        { rank: 1, username: 'PlayerTwo',   wins: 29 },
-        { rank: 2, username: 'PlayerOne',   wins: 24 },
-        { rank: 3, username: 'PlayerFive',  wins: 18 },
-        { rank: 4, username: 'PlayerThree', wins: 12 },
-        { rank: 5, username: 'PlayerFour',  wins: 9  },
-      ],
-      'pve-hard': [
-        { rank: 1, username: 'PlayerFive',  wins: 11 },
-        { rank: 2, username: 'PlayerTwo',   wins: 8  },
-        { rank: 3, username: 'PlayerOne',   wins: 5  },
-        { rank: 4, username: 'PlayerFour',  wins: 3  },
-        { rank: 5, username: 'PlayerThree', wins: 1  },
-      ],
-    }
+    // Helper to avoid repeating the object structure keys
+    const createMock = (data: [string, number][]): RankingEntry[] => 
+      data.map(([username, wins], index) => ({ rank: index + 1, username, wins }));
 
-    return mockData[mode] ?? []
+    const mockData: Record<GameMode, RankingEntry[]> = {
+      'pve-easy': createMock([['PlayerOne', 42], ['PlayerTwo', 38], ['PlayerThree', 31], ['PlayerFour', 27], ['PlayerFive', 19]]),
+      'pve-medium': createMock([['PlayerTwo', 29], ['PlayerOne', 24], ['PlayerFive', 18], ['PlayerThree', 12], ['PlayerFour', 9]]),
+      'pve-hard': createMock([['PlayerFive', 11], ['PlayerTwo', 8], ['PlayerOne', 5], ['PlayerFour', 3], ['PlayerThree', 1]])
+    };
+
+    return mockData[mode] ?? [];
   }
 }
