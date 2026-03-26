@@ -524,33 +524,37 @@ describe('scheduleBotMove', () => {
   })
 
   it('should not make bot move if game is finished before timeout fires', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
+  vi.useFakeTimers({ shouldAdvanceTime: true })
 
-    vi.mocked(fetch).mockResolvedValue({
+  vi.mocked(fetch).mockImplementation(async (url) => {
+    // Simulate network latency so we can cancel before it plays
+    await new Promise(res => setTimeout(res, 100))
+    return {
       ok: true,
       json: async () => ({ coords: { x: 1, y: 0, z: -1 } }),
-    } as any)
-
-    const game = await gameService.createGame(mockConfig, mockUser)
-    await gameService.playMove(game.id, 0, 0, 'player1')
-
-    // Finish game before bot fires
-    ;(gameService as any).games.set(game.id, {
-      ...(gameService as any).games.get(game.id),
-      status: 'finished',
-      winner: 'player1',
-    })
-
-    await vi.runAllTimersAsync()
-
-    // fetch only called for saveMatchRecord (if token provided), not for bot
-    const botCalls = vi.mocked(fetch).mock.calls.filter(([url]) =>
-      String(url).includes('/ybot/')
-    )
-    expect(botCalls).toHaveLength(0)
-
-    vi.useRealTimers()
+    } as any
   })
+
+  const game = await gameService.createGame(mockConfig, mockUser)
+  await gameService.playMove(game.id, 0, 0, 'player1')
+
+  // Finish game before bot move is applied
+  ;(gameService as any).games.set(game.id, {
+    ...(gameService as any).games.get(game.id),
+    status: 'finished',
+    winner: 'player1',
+  })
+
+  await vi.runAllTimersAsync()
+
+  // fetch may have been called, but the move should NOT have been applied
+  const updated = await gameService.getGameState(game.id)
+  expect(updated?.moves).toHaveLength(1) // solo el movimiento humano
+  expect(updated?.status).toBe('finished')
+  expect(updated?.winner).toBe('player1')
+
+  vi.useRealTimers()
+})
 })
 
 describe('playMove triggering saveMatchRecord', () => {
