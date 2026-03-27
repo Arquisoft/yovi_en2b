@@ -1,8 +1,8 @@
 // users/src/controllers/RankingController.test.ts
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { RankingController } from './RankingController'
-import { RankingService } from '../services/RankingService'
+import { RankingController } from '../src/controllers/RankingController'
+import { RankingService } from '../src/services/RankingService'
 
 vi.mock('../services/RankingService', () => ({
   RankingService: {

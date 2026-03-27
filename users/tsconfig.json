@@ -16,6 +16,6 @@
     "emitDecoratorMetadata": true,
     "typeRoots": ["./node_modules/@types"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "__tests__/RankingController.test.ts"],
   "exclude": ["node_modules", "dist"]
 }
