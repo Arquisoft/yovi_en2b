@@ -640,4 +640,170 @@ describe('startGameFromRoom with timer', () => {
   })
 })
 
+describe('computeUpdatedTimer', () => {
+  it('should deduct time from player2 when player2 is active', async () => {
+    const config = { ...mockConfig, timerEnabled: true, timerSeconds: 300 }
+    const game = await gameService.createGame(config, mockUser)
+
+    // Force player2 turn
+    const currentGame = (gameService as any).games.get(game.id)
+    ;(gameService as any).games.set(game.id, {
+      ...currentGame,
+      currentTurn: 'player2',
+      timer: {
+        ...currentGame.timer,
+        activePlayer: 'player2',
+        lastSyncTimestamp: Date.now() - 5000,
+      },
+    })
+
+    const updated = await gameService.playMove(game.id, 0, 0, 'player2')
+    expect(updated.timer?.player2RemainingMs).toBeLessThan(300000)
+  })
+
+  it('should not deduct time when timer activePlayer differs from current player', async () => {
+    const config = { ...mockConfig, timerEnabled: true, timerSeconds: 300 }
+    const game = await gameService.createGame(config, mockUser)
+
+    const currentGame = (gameService as any).games.get(game.id)
+    ;(gameService as any).games.set(game.id, {
+      ...currentGame,
+      timer: {
+        ...currentGame.timer,
+        activePlayer: 'player2', // player2 is active but player1 is moving
+        lastSyncTimestamp: Date.now() - 5000,
+      },
+    })
+
+    const updated = await gameService.playMove(game.id, 0, 0, 'player1')
+    expect(updated.timer?.player1RemainingMs).toBe(300000)
+  })
+})
+
+describe('timedOutPlayer', () => {
+  it('should return player2 when player1 time is 0', async () => {
+    const config = { ...mockConfig, timerEnabled: true, timerSeconds: 1 }
+    const game = await gameService.createGame(config, mockUser)
+
+    ;(gameService as any).games.set(game.id, {
+      ...(gameService as any).games.get(game.id),
+      timer: {
+        ...(gameService as any).games.get(game.id).timer,
+        player1RemainingMs: 0,
+        lastSyncTimestamp: Date.now(),
+      },
+    })
+
+    const updated = await gameService.playMove(game.id, 0, 0, 'player1')
+    expect(updated.winner).toBe('player2')
+  })
+
+  it('should return player1 when player2 time is 0', async () => {
+    const config = { ...mockConfig, timerEnabled: true, timerSeconds: 1 }
+    const game = await gameService.createGame(config, mockUser)
+
+    ;(gameService as any).games.set(game.id, {
+      ...(gameService as any).games.get(game.id),
+      currentTurn: 'player2',
+      timer: {
+        ...(gameService as any).games.get(game.id).timer,
+        activePlayer: 'player2',
+        player2RemainingMs: 0,
+        lastSyncTimestamp: Date.now(),
+      },
+    })
+
+    const updated = await gameService.playMove(game.id, 0, 0, 'player2')
+    expect(updated.winner).toBe('player1')
+  })
+
+  it('should return null when no timer', async () => {
+    const result = (gameService as any).timedOutPlayer(null)
+    expect(result).toBeNull()
+  })
+
+  it('should return null when both players have time remaining', async () => {
+    const result = (gameService as any).timedOutPlayer({
+      player1RemainingMs: 10000,
+      player2RemainingMs: 10000,
+      activePlayer: 'player1',
+      lastSyncTimestamp: Date.now(),
+    })
+    expect(result).toBeNull()
+  })
+})
+
+describe('waitForBotMove', () => {
+  it('should return game when bot has moved', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ coords: { x: 1, y: 0, z: -1 } }),
+    } as any)
+
+    const game = await gameService.createGame(mockConfig, mockUser)
+    const initialMoves = game.moves.length
+
+    // Simulate bot move happening after a delay
+    setTimeout(() => {
+      const current = (gameService as any).games.get(game.id)
+      if (current) {
+        ;(gameService as any).games.set(game.id, {
+          ...current,
+          moves: [...current.moves, { row: 1, col: 0, player: 'player2', timestamp: Date.now() }],
+        })
+      }
+    }, 100)
+
+    const resultPromise = gameService.waitForBotMove(game.id, initialMoves)
+    await vi.advanceTimersByTimeAsync(200)
+    const result = await resultPromise
+
+    expect(result?.moves.length).toBeGreaterThan(initialMoves)
+    vi.useRealTimers()
+  })
+
+  it('should return null for unknown game', async () => {
+    const result = await gameService.waitForBotMove('nonexistent', 0)
+    expect(result).toBeNull()
+  })
+
+  it('should return game when status is finished', async () => {
+    const game = await gameService.createGame(mockConfig, mockUser)
+    ;(gameService as any).games.set(game.id, {
+      ...(gameService as any).games.get(game.id),
+      status: 'finished',
+      winner: 'player1',
+    })
+
+    const result = await gameService.waitForBotMove(game.id, 0)
+    expect(result?.status).toBe('finished')
+  })
+})
+
+describe('executeBotMove opening game', () => {
+  it('should add delay when bot opens the game (0 moves)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ coords: { x: 1, y: 0, z: -1 } }),
+    } as any)
+
+    // Bot plays as player1 (opens the game)
+    const config = { ...mockConfig, playerColor: 'player2' as const }
+    const game = await gameService.createGame(config, mockUser)
+
+    await vi.advanceTimersByTimeAsync(500)
+
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/ybot/choose/minimax_bot'),
+      expect.anything()
+    )
+
+    vi.useRealTimers()
+  })
+})
+
 })
