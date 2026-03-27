@@ -320,6 +320,7 @@ class GameService {
     if (player === 'player1') {
       timer.player1RemainingMs = Math.max(0, timer.player1RemainingMs - elapsed)
     } else {
+      //NOSONAR
       timer.player2RemainingMs = Math.max(0, timer.player2RemainingMs - elapsed)
     }
 
