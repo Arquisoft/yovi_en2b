@@ -4,8 +4,13 @@ import { useGameYController } from './useGameYController'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRealtime } from '@/contexts/RealtimeContext'
 import { gameService } from '@/services/gameyService'
+import { useNavigate } from 'react-router-dom'
 
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: vi.fn() }))
+vi.mock('react-router-dom', () => ({
+  useParams: () => ({ gameId: 'game-123' }),
+  useNavigate: vi.fn(() => vi.fn()),
+}))
 vi.mock('@/contexts/RealtimeContext', () => ({ useRealtime: vi.fn() }))
 vi.mock('@/services/gameyService', () => ({
   gameService: {
@@ -184,4 +189,61 @@ describe('useGameYController', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.error).toBe('Network error')
   })
+
+  
+
+it('handleSurrender uses currentTurn for pvp-local', async () => {
+  vi.mocked(gameService.getGameState).mockResolvedValue({
+    ...mockGame,
+    config: { ...mockGame.config, mode: 'pvp-local' },
+  } as any)
+  const { result } = renderHook(() => useGameYController())
+  await waitFor(() => expect(result.current.isLoading).toBe(false))
+  await act(async () => { await result.current.handleSurrender() })
+  expect(gameService.surrender).toHaveBeenCalledWith(
+    'game-123', 'player1', 'mock-token'
+  )
 })
+
+it('liveTimer is null when game has no timer', async () => {
+  const { result } = renderHook(() => useGameYController())
+  await waitFor(() => expect(result.current.isLoading).toBe(false))
+  expect(result.current.liveTimer).toBeNull()
+})
+
+it('liveTimer is set when game has timer', async () => {
+  vi.mocked(gameService.getGameState).mockResolvedValue({
+    ...mockGame,
+    timer: {
+      player1RemainingMs: 60000,
+      player2RemainingMs: 60000,
+      activePlayer: 'player1',
+      lastSyncTimestamp: Date.now(),
+    }
+  } as any)
+  const { result } = renderHook(() => useGameYController())
+  await waitFor(() => expect(result.current.isLoading).toBe(false))
+  expect(result.current.liveTimer).not.toBeNull()
+})
+
+it('liveTimer sets loser to 0 on timeout finish', async () => {
+  vi.mocked(gameService.getGameState).mockResolvedValue({
+    ...mockGame,
+    status: 'finished',
+    winner: 'player1',
+    timer: {
+      player1RemainingMs: 60000,
+      player2RemainingMs: 5000,
+      activePlayer: null,
+      lastSyncTimestamp: Date.now(),
+    }
+  } as any)
+  const { result } = renderHook(() => useGameYController())
+  await waitFor(() => expect(result.current.isLoading).toBe(false))
+  expect(result.current.liveTimer?.player2RemainingMs).toBe(0)
+  expect(result.current.liveTimer?.player1RemainingMs).toBe(60000)
+})
+
+})
+
+

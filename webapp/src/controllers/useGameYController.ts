@@ -57,10 +57,10 @@ export function useGameYController() {
             }
         }
 
-        load().then(() => checkBotOpens().catch(() => { }))
+        load().then(() => checkBotOpens().catch(() => {}))
     }, [gameId])
 
-    // --- Realtime subscription (PvP online) ---
+    // --- Realtime subscription ---
 
     useEffect(() => {
         if (!gameId) return
@@ -90,12 +90,23 @@ export function useGameYController() {
     useEffect(() => {
         if (!game?.timer) { setLiveTimer(null); return }
 
-        timerBaseRef.current = {
-            player1Ms: game.timer.player1RemainingMs,
-            player2Ms: game.timer.player2RemainingMs,
+        let player1Ms = game.timer.player1RemainingMs
+        let player2Ms = game.timer.player2RemainingMs
+
+        // Si la partida terminó por timeout, forzar a 0 el jugador que perdió
+        if (game.status === 'finished' && game.winner && game.timer.activePlayer === null) {
+            const loser = game.winner === 'player1' ? 'player2' : 'player1'
+            if (loser === 'player1') player1Ms = 0
+            if (loser === 'player2') player2Ms = 0
         }
+
+        timerBaseRef.current = { player1Ms, player2Ms }
         clockStartedAtRef.current = Date.now()
-        setLiveTimer(game.timer)
+        setLiveTimer({
+            ...game.timer,
+            player1RemainingMs: player1Ms,
+            player2RemainingMs: player2Ms,
+        })
     }, [game?.moves.length, game?.timer?.activePlayer, game?.status])
 
     useEffect(() => {
