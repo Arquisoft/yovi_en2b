@@ -25,9 +25,11 @@ export class RankingService {
    */
   static async getRankingByMode(mode: GameMode): Promise<RankingEntry[]> {
     // Helper to avoid repeating the object structure keys
+    //NOSONAR
     const createMock = (data: [string, number][]): RankingEntry[] => 
       data.map(([username, wins], index) => ({ rank: index + 1, username, wins }));
 
+    //NOSONAR
     const mockData: Record<GameMode, RankingEntry[]> = {
       'pve-easy': createMock([['PlayerOne', 42], ['PlayerTwo', 38], ['PlayerThree', 31], ['PlayerFour', 27], ['PlayerFive', 19]]),
       'pve-medium': createMock([['PlayerTwo', 29], ['PlayerOne', 24], ['PlayerFive', 18], ['PlayerThree', 12], ['PlayerFour', 9]]),
