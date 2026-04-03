@@ -4,7 +4,6 @@ import { useGameYController } from './useGameYController'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRealtime } from '@/contexts/RealtimeContext'
 import { gameService } from '@/services/gameyService'
-import { useNavigate } from 'react-router-dom'
 
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: vi.fn() }))
 vi.mock('react-router-dom', () => ({
