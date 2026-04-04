@@ -8,6 +8,7 @@ export function useStatsController() {
 
   const [history, setHistory] = useState<MatchRecord[]>([])
   const [stats, setStats]     = useState<StatsData | null>(null)
+  // Don't start loading if the user is a guest (no stats to fetch)
   const [isLoading, setIsLoading] = useState(!isGuest)
   const [error, setError]     = useState<string | null>(null)
 
