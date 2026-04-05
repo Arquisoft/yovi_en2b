@@ -4,64 +4,72 @@ import { useGameYController } from './useGameYController'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRealtime } from '@/contexts/RealtimeContext'
 import { gameService } from '@/services/gameyService'
-import { useNavigate } from 'react-router-dom'
 
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: vi.fn() }))
 vi.mock('react-router-dom', () => ({
-  useParams: () => ({ gameId: 'game-123' }),
-  useNavigate: vi.fn(() => vi.fn()),
+  useParams:   () => ({ gameId: 'game-123' }),
+  useNavigate: () => vi.fn(),
 }))
 vi.mock('@/contexts/RealtimeContext', () => ({ useRealtime: vi.fn() }))
 vi.mock('@/services/gameyService', () => ({
   gameService: {
-    getGameState: vi.fn(),
+    getGameState:    vi.fn(),
     getChatMessages: vi.fn(),
-    playMove: vi.fn(),
-    surrender: vi.fn(),
+    playMove:        vi.fn(),
+    surrender:       vi.fn(),
     sendChatMessage: vi.fn(),
-    waitForBotMove: vi.fn(),
+    waitForBotMove:  vi.fn(),
   },
 }))
-vi.mock('react-router-dom', () => ({
-  useParams: () => ({ gameId: 'game-123' }),
-  useNavigate: () => vi.fn(),
-}))
+
+// ── Shared fixtures ───────────────────────────────────────────────────────────
 
 const mockTransport = {
   startPolling: vi.fn(),
-  stopPolling: vi.fn(),
-  subscribe: vi.fn(() => vi.fn()),
+  stopPolling:  vi.fn(),
+  subscribe:    vi.fn(() => vi.fn()),
 }
 
 const mockGame = {
-  id: 'game-123',
-  status: 'playing',
+  id:          'game-123',
+  status:      'playing',
   currentTurn: 'player1',
-  winner: null,
-  moves: [],
-  board: [],
-  config: { mode: 'pve', boardSize: 3, timerEnabled: false },
+  winner:      null,
+  moves:       [],
+  board:       [],
+  config:      { mode: 'pve', boardSize: 3, timerEnabled: false },
   players: {
     player1: { id: 'user1', name: 'TestUser', color: 'player1' },
-    player2: { id: 'bot', name: 'Bot', color: 'player2', isBot: true },
+    player2: { id: 'bot',   name: 'Bot',      color: 'player2', isBot: true },
   },
-  timer: null,
+  timer:     null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 }
 
+// ── Helper: build a full AuthContextValue mock ────────────────────────────────
+
+function makeAuthMock(overrides: Record<string, unknown> = {}) {
+  return {
+    user:           { id: 'user1', username: 'TestUser' } as any,
+    token:          'mock-token',
+    isAuthenticated: true,
+    isLoading:       false,
+    isGuest:         false,   // ← required by AuthContextValue
+    login:           vi.fn(),
+    register:        vi.fn(),
+    loginAsGuest:    vi.fn(), // ← required by AuthContextValue
+    logout:          vi.fn(),
+    updateProfile:   vi.fn(),
+    ...overrides,
+  }
+}
+
+// ── Setup ─────────────────────────────────────────────────────────────────────
+
 beforeEach(() => {
   vi.clearAllMocks()
-  vi.mocked(useAuth).mockReturnValue({
-    user: { id: 'user1', username: 'TestUser' } as any,
-    token: 'mock-token',
-    isAuthenticated: true,
-    isLoading: false,
-    login: vi.fn(),
-    register: vi.fn(),
-    logout: vi.fn(),
-    updateProfile: vi.fn(),
-  })
+  vi.mocked(useAuth).mockReturnValue(makeAuthMock() as any)
   vi.mocked(useRealtime).mockReturnValue(mockTransport as any)
   vi.mocked(gameService.getGameState).mockResolvedValue(mockGame as any)
   vi.mocked(gameService.getChatMessages).mockResolvedValue([])
@@ -75,10 +83,14 @@ beforeEach(() => {
     status: 'finished',
     winner: 'player2',
   } as any)
-  vi.mocked(gameService.sendChatMessage).mockResolvedValue({ id: '1', content: 'hi' } as any)
+  vi.mocked(gameService.sendChatMessage).mockResolvedValue({
+    id: '1', content: 'hi',
+  } as any)
 })
 
-describe('useGameYController', () => {
+// ── Original tests (unchanged logic, mocks now include isGuest) ───────────────
+
+describe('useGameYController — core behaviour', () => {
   it('loads game state on mount', async () => {
     const { result } = renderHook(() => useGameYController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -95,7 +107,10 @@ describe('useGameYController', () => {
 
   it('loads chat messages on mount', async () => {
     vi.mocked(gameService.getChatMessages).mockResolvedValue([
-      { id: '1', content: 'hello', gameId: 'game-123', senderId: 'u1', senderName: 'A', timestamp: '' },
+      {
+        id: '1', content: 'hello', gameId: 'game-123',
+        senderId: 'u1', senderName: 'A', timestamp: '',
+      },
     ])
     const { result } = renderHook(() => useGameYController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -132,13 +147,15 @@ describe('useGameYController', () => {
     expect(result.current.canPlay).toBe(false)
   })
 
-  it('handleCellClick calls playMove with token', async () => {
+  it('handleCellClick calls playMove with token for authenticated user', async () => {
     const { result } = renderHook(() => useGameYController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     await act(async () => {
       await result.current.handleCellClick(0, 0)
     })
-    expect(gameService.playMove).toHaveBeenCalledWith('game-123', 0, 0, 'player1', 'mock-token')
+    expect(gameService.playMove).toHaveBeenCalledWith(
+      'game-123', 0, 0, 'player1', 'mock-token',
+    )
   })
 
   it('handleCellClick does nothing when canPlay is false', async () => {
@@ -153,13 +170,15 @@ describe('useGameYController', () => {
     expect(gameService.playMove).not.toHaveBeenCalled()
   })
 
-  it('handleSurrender calls surrender with token', async () => {
+  it('handleSurrender calls surrender with token for authenticated user', async () => {
     const { result } = renderHook(() => useGameYController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     await act(async () => {
       await result.current.handleSurrender()
     })
-    expect(gameService.surrender).toHaveBeenCalledWith('game-123', 'player1', 'mock-token')
+    expect(gameService.surrender).toHaveBeenCalledWith(
+      'game-123', 'player1', 'mock-token',
+    )
   })
 
   it('handleSendMessage calls sendChatMessage', async () => {
@@ -168,7 +187,9 @@ describe('useGameYController', () => {
     await act(async () => {
       await result.current.handleSendMessage('hello')
     })
-    expect(gameService.sendChatMessage).toHaveBeenCalledWith('game-123', 'user1', 'TestUser', 'hello')
+    expect(gameService.sendChatMessage).toHaveBeenCalledWith(
+      'game-123', 'user1', 'TestUser', 'hello',
+    )
   })
 
   it('lastMove is null when no moves', async () => {
@@ -184,66 +205,176 @@ describe('useGameYController', () => {
   })
 
   it('sets error on getGameState failure', async () => {
-    vi.mocked(gameService.getGameState).mockRejectedValue(new Error('Network error'))
+    vi.mocked(gameService.getGameState).mockRejectedValue(
+      new Error('Network error'),
+    )
     const { result } = renderHook(() => useGameYController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.error).toBe('Network error')
   })
 
-  
+  it('handleSurrender uses currentTurn for pvp-local', async () => {
+    vi.mocked(gameService.getGameState).mockResolvedValue({
+      ...mockGame,
+      config: { ...mockGame.config, mode: 'pvp-local' },
+    } as any)
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    await act(async () => { await result.current.handleSurrender() })
+    expect(gameService.surrender).toHaveBeenCalledWith(
+      'game-123', 'player1', 'mock-token',
+    )
+  })
 
-it('handleSurrender uses currentTurn for pvp-local', async () => {
-  vi.mocked(gameService.getGameState).mockResolvedValue({
-    ...mockGame,
-    config: { ...mockGame.config, mode: 'pvp-local' },
-  } as any)
-  const { result } = renderHook(() => useGameYController())
-  await waitFor(() => expect(result.current.isLoading).toBe(false))
-  await act(async () => { await result.current.handleSurrender() })
-  expect(gameService.surrender).toHaveBeenCalledWith(
-    'game-123', 'player1', 'mock-token'
-  )
+  it('liveTimer is null when game has no timer', async () => {
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.liveTimer).toBeNull()
+  })
+
+  it('liveTimer is set when game has timer', async () => {
+    vi.mocked(gameService.getGameState).mockResolvedValue({
+      ...mockGame,
+      timer: {
+        player1RemainingMs: 60000,
+        player2RemainingMs: 60000,
+        activePlayer:       'player1',
+        lastSyncTimestamp:  Date.now(),
+      },
+    } as any)
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.liveTimer).not.toBeNull()
+  })
+
+  it('liveTimer sets loser to 0 on timeout finish', async () => {
+    vi.mocked(gameService.getGameState).mockResolvedValue({
+      ...mockGame,
+      status: 'finished',
+      winner: 'player1',
+      timer: {
+        player1RemainingMs: 60000,
+        player2RemainingMs: 5000,
+        activePlayer:       null,
+        lastSyncTimestamp:  Date.now(),
+      },
+    } as any)
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.liveTimer?.player2RemainingMs).toBe(0)
+    expect(result.current.liveTimer?.player1RemainingMs).toBe(60000)
+  })
 })
 
-it('liveTimer is null when game has no timer', async () => {
-  const { result } = renderHook(() => useGameYController())
-  await waitFor(() => expect(result.current.isLoading).toBe(false))
-  expect(result.current.liveTimer).toBeNull()
+// ── NEW: guest-mode token tests ───────────────────────────────────────────────
+
+describe('useGameYController — guest mode (effectiveToken)', () => {
+  /**
+   * When the user is a guest, AuthContext sets isGuest: true.
+   * The controller computes effectiveToken = undefined so no JWT is forwarded
+   * to the backend.  playMove must receive undefined as the last argument.
+   */
+  it('handleCellClick passes undefined token when user is a guest', async () => {
+    vi.mocked(useAuth).mockReturnValue(
+      makeAuthMock({
+        token:   'guest',
+        isGuest: true,
+        user: {
+          id: 'guest-abc', username: 'Guest',
+          email: '', createdAt: '', updatedAt: '',
+        },
+      }) as any,
+    )
+
+    // Guest plays as player1 in a pve game
+    vi.mocked(gameService.getGameState).mockResolvedValue({
+      ...mockGame,
+      players: {
+        player1: { id: 'guest-abc', name: 'Guest', color: 'player1' },
+        player2: { id: 'bot', name: 'Bot', color: 'player2', isBot: true },
+      },
+    } as any)
+
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.handleCellClick(0, 0)
+    })
+
+    // effectiveToken is undefined for guests — no JWT sent
+    expect(gameService.playMove).toHaveBeenCalledWith(
+      'game-123', 0, 0, 'player1', undefined,
+    )
+  })
+
+  /**
+   * Same contract for surrender: guests must not send a JWT so the backend
+   * does not try to save a match record to a non-existent account.
+   */
+  it('handleSurrender passes undefined token when user is a guest', async () => {
+    vi.mocked(useAuth).mockReturnValue(
+      makeAuthMock({
+        token:   'guest',
+        isGuest: true,
+        user: {
+          id: 'guest-abc', username: 'Guest',
+          email: '', createdAt: '', updatedAt: '',
+        },
+      }) as any,
+    )
+
+    vi.mocked(gameService.getGameState).mockResolvedValue({
+      ...mockGame,
+      players: {
+        player1: { id: 'guest-abc', name: 'Guest', color: 'player1' },
+        player2: { id: 'bot', name: 'Bot', color: 'player2', isBot: true },
+      },
+    } as any)
+
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.handleSurrender()
+    })
+
+    expect(gameService.surrender).toHaveBeenCalledWith(
+      'game-123', 'player1', undefined,
+    )
+  })
+
+  /**
+   * Sanity: the real JWT must still flow through for authenticated users.
+   * (Mirrors the original test but framed as a guest-vs-auth contrast.)
+   */
+  it('handleCellClick still passes the JWT for an authenticated user', async () => {
+    // Default mock has isGuest: false and token: 'mock-token'
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.handleCellClick(0, 0)
+    })
+
+    expect(gameService.playMove).toHaveBeenCalledWith(
+      'game-123', 0, 0, 'player1', 'mock-token',
+    )
+  })
+
+  /**
+   * Sanity: surrender also uses the real JWT for authenticated users.
+   */
+  it('handleSurrender still passes the JWT for an authenticated user', async () => {
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.handleSurrender()
+    })
+
+    expect(gameService.surrender).toHaveBeenCalledWith(
+      'game-123', 'player1', 'mock-token',
+    )
+  })
 })
-
-it('liveTimer is set when game has timer', async () => {
-  vi.mocked(gameService.getGameState).mockResolvedValue({
-    ...mockGame,
-    timer: {
-      player1RemainingMs: 60000,
-      player2RemainingMs: 60000,
-      activePlayer: 'player1',
-      lastSyncTimestamp: Date.now(),
-    }
-  } as any)
-  const { result } = renderHook(() => useGameYController())
-  await waitFor(() => expect(result.current.isLoading).toBe(false))
-  expect(result.current.liveTimer).not.toBeNull()
-})
-
-it('liveTimer sets loser to 0 on timeout finish', async () => {
-  vi.mocked(gameService.getGameState).mockResolvedValue({
-    ...mockGame,
-    status: 'finished',
-    winner: 'player1',
-    timer: {
-      player1RemainingMs: 60000,
-      player2RemainingMs: 5000,
-      activePlayer: null,
-      lastSyncTimestamp: Date.now(),
-    }
-  } as any)
-  const { result } = renderHook(() => useGameYController())
-  await waitFor(() => expect(result.current.isLoading).toBe(false))
-  expect(result.current.liveTimer?.player2RemainingMs).toBe(0)
-  expect(result.current.liveTimer?.player1RemainingMs).toBe(60000)
-})
-
-})
-
-
