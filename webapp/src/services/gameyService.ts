@@ -33,6 +33,10 @@ class GameService {
   private chatMessages = new Map<string, ChatMessage[]>()
   private mockRooms: RoomSummary[] = [...MOCK_ROOMS]
 
+  private gameTokens = new Map<string, string>()
+
+  private humanPlayerColors = new Map<string, PlayerColor>()
+
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl
   }
@@ -51,6 +55,11 @@ class GameService {
     this.games.set(game.id, game)
     this.chatMessages.set(game.id, createMockChatMessages(game.id))
 
+    if (config.mode === 'pve') {
+      const humanColor: PlayerColor = player1.isBot ? 'player2' : 'player1'
+      this.humanPlayerColors.set(game.id, humanColor)
+    }
+
     if (this.isBotTurn(game)) {
       this.executeBotMove(game.id)
     }
@@ -59,46 +68,47 @@ class GameService {
     return game
   }
 
-
-
   private startTimerCheck(gameId: string): void {
-  const interval = setInterval(() => {
-    const game = this.games.get(gameId)
+    const interval = setInterval(() => {
+      const game = this.games.get(gameId)
 
-    if (!game || game.status !== 'playing' || !game.timer) {
-      clearInterval(interval)
-      return
-    }
-
-    const now = Date.now()
-    const elapsed = now - game.timer.lastSyncTimestamp
-    const active = game.timer.activePlayer
-
-    if (!active) {
-      clearInterval(interval)
-      return
-    }
-
-    const remaining = active === 'player1'
-      ? game.timer.player1RemainingMs - elapsed
-      : game.timer.player2RemainingMs - elapsed
-
-    if (remaining <= 0) {
-      const winner = active === 'player1' ? 'player2' : 'player1'
-      const finished: GameState = {
-        ...game,
-        status: 'finished',
-        winner,
-        timer: { ...game.timer, activePlayer: null },
-        updatedAt: new Date().toISOString(),
+      if (!game || game.status !== 'playing' || !game.timer) {
+        clearInterval(interval)
+        return
       }
-      this.games.set(gameId, finished)
-      clearInterval(interval)
-    }
-  }, 500)
+
+      const now = Date.now()
+      const elapsed = now - game.timer.lastSyncTimestamp
+      const active = game.timer.activePlayer
+
+      if (!active) {
+        clearInterval(interval)
+        return
+      }
+
+      const remaining = active === 'player1'
+        ? game.timer.player1RemainingMs - elapsed
+        : game.timer.player2RemainingMs - elapsed
+
+      if (remaining <= 0) {
+        const winner = active === 'player1' ? 'player2' : 'player1'
+        const finished: GameState = {
+          ...game,
+          status: 'finished',
+          winner,
+          timer: { ...game.timer, activePlayer: null },
+          updatedAt: new Date().toISOString(),
+        }
+        this.games.set(gameId, finished)
+        clearInterval(interval)
+
+         const token = this.gameTokens.get(gameId)
+        if (token) {
+          this.saveMatchRecord(finished, token)
+        }
+      }
+    }, 500)
   }
-
-
 
   /**
    * Get current game state
@@ -119,6 +129,11 @@ class GameService {
     if (game.status !== 'playing') throw new Error('Game is not active')
     if (game.currentTurn !== player) throw new Error('Not your turn')
     if (!isValidMove(game.board, row, col)) throw new Error('Invalid move')
+
+    // Persist the token so executeBotMove can use it later
+    if (token) {
+      this.gameTokens.set(gameId, token)
+    }
 
     const now = Date.now()
     const updatedTimer = this.computeUpdatedTimer(game, player, now)
@@ -146,8 +161,11 @@ class GameService {
       this.executeBotMove(gameId)
     }
 
-    if (updatedGame.status === 'finished' && token) {
-      await this.saveMatchRecord(updatedGame, token)
+    if (updatedGame.status === 'finished') {
+      const effectiveToken = token ?? this.gameTokens.get(gameId)
+      if (effectiveToken) {
+        await this.saveMatchRecord(updatedGame, effectiveToken)
+      }
     }
 
     return updatedGame
@@ -341,6 +359,9 @@ class GameService {
     const botOpensGame = game.moves.length === 0 && this.isBotTurn(game)
     if (botOpensGame) await delay(250)
 
+    // Retrieve the stored token so the finishing bot move can save the record
+    const token = this.gameTokens.get(gameId)
+
     try {
       const yen = boardToYEN(game.board, game.config.boardSize, game.currentTurn)
       const response = await fetch(`${this.baseUrl}/ybot/choose/minimax_bot`, {
@@ -354,7 +375,7 @@ class GameService {
       const data: { coords: { x: number; y: number; z: number } } = await response.json()
       const { row, col } = coordsToRowCol(data.coords, game.config.boardSize)
 
-      await this.playMove(gameId, row, col, game.currentTurn)
+      await this.playMove(gameId, row, col, game.currentTurn, token)
     } catch (e) {
       console.error('Bot move failed:', e)
     }
@@ -367,6 +388,12 @@ class GameService {
       (new Date(game.updatedAt).getTime() - new Date(game.createdAt).getTime()) / 1000,
     )
 
+    // Determine which player is the human and which is the opponent.
+    // For pve we stored this when the game was created; fall back to player1 for pvp modes.
+    const humanColor = this.humanPlayerColors.get(game.id) ?? 'player1'
+    const opponentPlayer = humanColor === 'player1' ? game.players.player2 : game.players.player1
+    const result: 'win' | 'loss' = game.winner === humanColor ? 'win' : 'loss'
+
     try {
       await fetch('http://api.localhost/users/api/stats/record', {
         method: 'POST',
@@ -375,8 +402,8 @@ class GameService {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          opponentName: game.players.player2.name,
-          result: game.winner === 'player1' ? 'win' : 'loss',
+          opponentName: opponentPlayer.name,
+          result,
           durationSeconds,
         }),
       })
