@@ -1,19 +1,4 @@
 // webapp/src/controllers/useStatsController.test.ts
-//
-// Changes vs. original:
-//   1. All `useAuth` mocks now include `isGuest: false` and `loginAsGuest: vi.fn()`
-//      because those fields are part of AuthContextValue and are consumed by
-//      the controller. Without them TypeScript (strict) complains and the hook
-//      may behave unexpectedly.
-//
-//   2. Added six new test cases that exercise the guest-mode branch:
-//        • isGuest is false for regular authenticated users
-//        • isGuest is true when the guest token is active
-//        • history is empty and stats is null for guests
-//        • neither getMatchHistory nor getWinrate is called for guests
-//        • isLoading starts as false for guests (no pending request)
-//        • null token path also has the correct shape
-
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { useStatsController } from './useStatsController'
@@ -76,6 +61,11 @@ function makeAuthMock(overrides: Record<string, unknown> = {}) {
 // ── Setup ─────────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
+  // Reset all mock state (call counts, return values) before each test so that
+  // assertions like `not.toHaveBeenCalled()` only observe the current test's
+  // calls and not those accumulated from previous tests in the same file.
+  vi.clearAllMocks()
+
   vi.mocked(useAuth).mockReturnValue(makeAuthMock() as any)
   vi.mocked(statsService.getMatchHistory).mockResolvedValue(mockHistory as any)
   vi.mocked(statsService.getWinrate).mockResolvedValue(mockStats)
