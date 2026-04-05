@@ -13,6 +13,7 @@ services:
       - /var/lib/mysql:size=512M
     volumes:
       - ./users/schema.sql:/docker-entrypoint-initdb.d/1.sql
+      - ./game/schema.sql:/docker-entrypoint-initdb.d/2.sql
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 2s

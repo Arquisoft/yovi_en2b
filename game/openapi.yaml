@@ -1,0 +1,517 @@
+openapi: 3.0.0
+info:
+  title: YOVI Game API
+  description: REST API for game sessions — board state, move validation, bot orchestration and match recording
+  version: 1.0.0
+servers:
+  - url: https://api.micrati.com/game
+    description: Production server
+  - url: http://api.localhost/game
+    description: Local server
+
+tags:
+  - name: Games
+    description: Game session lifecycle
+  - name: Health
+    description: Service health
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Service is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2026-04-05T20:00:00.000Z"
+                  uptime:
+                    type: number
+                    example: 3600.5
+
+  /api/games:
+    post:
+      summary: Create a new game session
+      description: |
+        Creates a new game with the given configuration for the authenticated user.
+        In PvE mode, if the bot is assigned player1 (i.e. `playerColor` is `player2`),
+        the server applies the bot's opening move before returning the initial state.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - config
+              properties:
+                config:
+                  $ref: "#/components/schemas/GameConfig"
+            examples:
+              pve_medium:
+                summary: PvE — user plays as player1 vs medium bot
+                value:
+                  config:
+                    mode: pve
+                    boardSize: 9
+                    timerEnabled: false
+                    botLevel: medium
+                    playerColor: player1
+              pve_hard_timer:
+                summary: PvE — user plays as player2 vs hard bot, 10-minute timer
+                value:
+                  config:
+                    mode: pve
+                    boardSize: 11
+                    timerEnabled: true
+                    timerSeconds: 600
+                    botLevel: hard
+                    playerColor: player2
+              pvp_local:
+                summary: PvP local — two players on the same device
+                value:
+                  config:
+                    mode: pvp-local
+                    boardSize: 9
+                    timerEnabled: false
+      responses:
+        "201":
+          description: Game created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameState"
+              example:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                config:
+                  mode: pve
+                  boardSize: 9
+                  timerEnabled: false
+                  botLevel: medium
+                  playerColor: player1
+                status: playing
+                board: []
+                players:
+                  player1:
+                    id: "42"
+                    name: player1
+                    color: player1
+                  player2:
+                    id: bot
+                    name: Bot (medium)
+                    color: player2
+                    isBot: true
+                currentTurn: player1
+                moves: []
+                winner: null
+                timer: null
+                createdAt: "2026-04-05T20:00:00.000Z"
+                updatedAt: "2026-04-05T20:00:00.000Z"
+        "400":
+          description: Missing or invalid config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: config is required
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/games/{id}:
+    get:
+      summary: Get current game state
+      description: Returns the full board state, turn, moves, timer and status for the given game.
+      tags:
+        - Games
+      parameters:
+        - $ref: "#/components/parameters/GameId"
+      responses:
+        "200":
+          description: Current game state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameState"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Game not found
+
+  /api/games/{id}/move:
+    post:
+      summary: Play a move
+      description: |
+        Validates and applies the human player's move.
+        In PvE mode, the bot move is applied server-side before the response is returned —
+        the client receives the post-bot state in a single round-trip.
+        Timer is decremented server-side on each move.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/GameId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - row
+                - col
+                - player
+              properties:
+                row:
+                  type: integer
+                  minimum: 0
+                  example: 0
+                col:
+                  type: integer
+                  minimum: 0
+                  example: 0
+                player:
+                  $ref: "#/components/schemas/PlayerColor"
+            example:
+              row: 2
+              col: 1
+              player: player1
+      responses:
+        "200":
+          description: Updated game state after the move (and bot response in PvE)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameState"
+        "400":
+          description: Missing fields
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: row, col and player are required
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Game not found
+        "409":
+          description: Move rejected — not your turn, cell occupied, or game already finished
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                notYourTurn:
+                  value:
+                    error: Not your turn
+                invalidMove:
+                  value:
+                    error: Invalid move
+                gameNotActive:
+                  value:
+                    error: Game is not active
+
+  /api/games/{id}/surrender:
+    post:
+      summary: Surrender the game
+      description: |
+        Ends the game immediately, awarding the win to the opponent.
+        The match record is written to the users service server-side.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/GameId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - player
+              properties:
+                player:
+                  $ref: "#/components/schemas/PlayerColor"
+            example:
+              player: player1
+      responses:
+        "200":
+          description: Game finished — surrendering player loses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameState"
+              example:
+                id: 550e8400-e29b-41d4-a716-446655440000
+                status: finished
+                winner: player2
+                currentTurn: player1
+                moves: []
+                timer: null
+        "400":
+          description: Missing player field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: player is required
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Game not found
+        "409":
+          description: Game is already finished
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Game is not active
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from POST /users/api/auth/login
+
+  parameters:
+    GameId:
+      name: id
+      in: path
+      required: true
+      description: UUID of the game session
+      schema:
+        type: string
+        format: uuid
+        example: 550e8400-e29b-41d4-a716-446655440000
+
+  responses:
+    Unauthorized:
+      description: Missing, invalid or expired JWT token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            noToken:
+              value:
+                error: No authentication token provided
+            invalidToken:
+              value:
+                error: Invalid token
+                message: Authentication token is invalid.
+            expiredToken:
+              value:
+                error: Token expired
+                message: Your session has expired. Please login again.
+
+  schemas:
+    PlayerColor:
+      type: string
+      enum: [player1, player2]
+      example: player1
+
+    GameMode:
+      type: string
+      enum: [pve, pvp-local, pvp-online]
+      example: pve
+
+    BotLevel:
+      type: string
+      enum: [easy, medium, hard]
+      example: medium
+
+    GameStatus:
+      type: string
+      enum: [waiting, playing, finished, abandoned]
+      example: playing
+
+    GameConfig:
+      type: object
+      required:
+        - mode
+        - boardSize
+        - timerEnabled
+      properties:
+        mode:
+          $ref: "#/components/schemas/GameMode"
+        boardSize:
+          type: integer
+          minimum: 4
+          maximum: 16
+          example: 9
+        timerEnabled:
+          type: boolean
+          example: false
+        timerSeconds:
+          type: integer
+          minimum: 30
+          description: Total time per player in seconds. Required when timerEnabled is true.
+          example: 600
+        botLevel:
+          $ref: "#/components/schemas/BotLevel"
+          description: Required when mode is pve.
+        playerColor:
+          $ref: "#/components/schemas/PlayerColor"
+          description: Which side the human plays. Required when mode is pve.
+
+    Player:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "42"
+        name:
+          type: string
+          example: player1
+        color:
+          $ref: "#/components/schemas/PlayerColor"
+        isBot:
+          type: boolean
+          example: false
+        isLocal:
+          type: boolean
+          example: false
+
+    BoardCell:
+      type: object
+      properties:
+        row:
+          type: integer
+          example: 0
+        col:
+          type: integer
+          example: 0
+        owner:
+          $ref: "#/components/schemas/PlayerColor"
+          nullable: true
+          example: null
+
+    Move:
+      type: object
+      properties:
+        row:
+          type: integer
+          example: 2
+        col:
+          type: integer
+          example: 1
+        player:
+          $ref: "#/components/schemas/PlayerColor"
+        timestamp:
+          type: integer
+          description: Unix timestamp in milliseconds
+          example: 1743883200000
+
+    TimerState:
+      type: object
+      properties:
+        player1RemainingMs:
+          type: integer
+          example: 597300
+        player2RemainingMs:
+          type: integer
+          example: 600000
+        activePlayer:
+          $ref: "#/components/schemas/PlayerColor"
+          nullable: true
+          example: player1
+        lastSyncTimestamp:
+          type: integer
+          description: Unix timestamp in milliseconds of last timer sync
+          example: 1743883202700
+
+    GameState:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        config:
+          $ref: "#/components/schemas/GameConfig"
+        status:
+          $ref: "#/components/schemas/GameStatus"
+        board:
+          type: array
+          description: Triangular board — row i has i+1 cells
+          items:
+            type: array
+            items:
+              $ref: "#/components/schemas/BoardCell"
+        players:
+          type: object
+          properties:
+            player1:
+              $ref: "#/components/schemas/Player"
+            player2:
+              $ref: "#/components/schemas/Player"
+        currentTurn:
+          $ref: "#/components/schemas/PlayerColor"
+        moves:
+          type: array
+          items:
+            $ref: "#/components/schemas/Move"
+        winner:
+          $ref: "#/components/schemas/PlayerColor"
+          nullable: true
+          example: null
+        timer:
+          $ref: "#/components/schemas/TimerState"
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-04-05T20:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-04-05T20:01:30.000Z"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Error message
+        message:
+          type: string
+          example: Additional error details

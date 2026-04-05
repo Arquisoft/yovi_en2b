@@ -11,7 +11,8 @@ services:
       - "3306:3306"
     volumes:
       - mariadb-data:/var/lib/mysql
-      - ./users/schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./users/schema.sql:/docker-entrypoint-initdb.d/1.sql
+      - ./game/schema.sql:/docker-entrypoint-initdb.d/2.sql
     networks:
       - monitor-net
     healthcheck:
@@ -64,8 +65,41 @@ services:
     depends_on:
       users:
         condition: service_healthy
+      game:
+        condition: service_healthy
     networks:
       - monitor-net
+
+  game:
+    build: ./game
+    container_name: game
+    image: ghcr.io/arquisoft/yovi_en2b-game:latest
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 5000
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_NAME: users_db
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD: ${MARIADB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      RUST_ENGINE_URL: http://gamey:4000
+      USERS_SERVICE_URL: http://users:3000
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      users:
+        condition: service_healthy
+    networks:
+      - monitor-net
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:5000/health || wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
 
   gamey:
     build: ./gamey

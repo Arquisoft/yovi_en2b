@@ -1,157 +1,73 @@
 import { describe, it, expect } from 'vitest'
-import {
-  createEmptyBoard,
-  getTotalCells,
-  getNeighbors,
-  getCellSides,
-  isValidMove,
-  applyMove,
-  checkWinner,
-  getOppositePlayer,
-} from './gameY'
-import type { BoardSize } from '@/types'
+import { getGameYPosition, getGameYPath, getGameYBoardDimensions } from './gameY'
 
-describe('createEmptyBoard', () => {
-  it('creates a triangular board with correct dimensions', () => {
-    const board = createEmptyBoard(4)
-    expect(board.length).toBe(4)
-    expect(board[0].length).toBe(1)
-    expect(board[1].length).toBe(2)
-    expect(board[2].length).toBe(3)
-    expect(board[3].length).toBe(4)
+describe('getGameYPosition', () => {
+  it('apex cell (0,0) is centered horizontally', () => {
+    const size = 4
+    const cellSize = 30
+    const apex = getGameYPosition(0, 0, cellSize, size)
+    const baseLeft = getGameYPosition(size - 1, 0, cellSize, size)
+    const baseRight = getGameYPosition(size - 1, size - 1, cellSize, size)
+
+    // Apex should be horizontally centered between base-left and base-right
+    const baseMidX = (baseLeft.x + baseRight.x) / 2
+    expect(Math.abs(apex.x - baseMidX)).toBeLessThan(1)
   })
 
-  it('initializes all cells as empty', () => {
-    const board = createEmptyBoard(4)
-    for (const row of board) {
-      for (const cell of row) {
-        expect(cell.owner).toBe(null)
-      }
-    }
+  it('cells in the same row have the same y', () => {
+    const size = 5
+    const y0 = getGameYPosition(2, 0, 30, size).y
+    const y1 = getGameYPosition(2, 1, 30, size).y
+    const y2 = getGameYPosition(2, 2, 30, size).y
+    expect(y0).toBe(y1)
+    expect(y1).toBe(y2)
   })
-})
 
-describe('getTotalCells', () => {
-  it('calculates correct number of cells', () => {
-    expect(getTotalCells(4)).toBe(10)
-    expect(getTotalCells(5)).toBe(15)
-    expect(getTotalCells(9)).toBe(45)
+  it('y increases with row (apex at top)', () => {
+    const size = 4
+    const y0 = getGameYPosition(0, 0, 30, size).y
+    const y1 = getGameYPosition(1, 0, 30, size).y
+    const y2 = getGameYPosition(2, 0, 30, size).y
+    expect(y0).toBeLessThan(y1)
+    expect(y1).toBeLessThan(y2)
   })
 })
 
-describe('getNeighbors', () => {
-  const size: BoardSize = 4
-
-  it('returns correct neighbors for corner cell (0,0)', () => {
-    const neighbors = getNeighbors(0, 0, size)
-    expect(neighbors).toHaveLength(2)
-    expect(neighbors).toContainEqual({ row: 1, col: 0 })
-    expect(neighbors).toContainEqual({ row: 1, col: 1 })
+describe('getGameYPath', () => {
+  it('returns a valid SVG path string', () => {
+    const path = getGameYPath(30)
+    expect(path).toMatch(/^M /)
+    expect(path).toMatch(/ Z$/)
+    expect(path.split(' L ').length).toBe(6)
   })
 
-  it('returns correct neighbors for middle cell', () => {
-    const neighbors = getNeighbors(2, 1, size)
-    expect(neighbors.length).toBeGreaterThanOrEqual(4)
-  })
-
-  it('respects board boundaries', () => {
-    const neighbors = getNeighbors(0, 0, size)
-    for (const n of neighbors) {
-      expect(n.row).toBeGreaterThanOrEqual(0)
-      expect(n.row).toBeLessThan(size)
-      expect(n.col).toBeGreaterThanOrEqual(0)
-      expect(n.col).toBeLessThanOrEqual(n.row)
-    }
+  it('produces a larger path for a larger cell size', () => {
+    const small = getGameYPath(10)
+    const large = getGameYPath(40)
+    // Larger cell size → larger coordinate values in the path
+    const firstCoord = (p: string) => parseFloat(p.replace('M ', '').split(',')[0])
+    expect(Math.abs(firstCoord(large))).toBeGreaterThan(Math.abs(firstCoord(small)))
   })
 })
 
-describe('getCellSides', () => {
-  const size: BoardSize = 4
-
-  it('identifies left edge cells', () => {
-    expect(getCellSides(0, 0, size)).toContain(0)
-    expect(getCellSides(1, 0, size)).toContain(0)
-    expect(getCellSides(2, 0, size)).toContain(0)
+describe('getGameYBoardDimensions', () => {
+  it('width and height are positive', () => {
+    const { width, height } = getGameYBoardDimensions(5, 30)
+    expect(width).toBeGreaterThan(0)
+    expect(height).toBeGreaterThan(0)
   })
 
-  it('identifies right edge cells', () => {
-    expect(getCellSides(0, 0, size)).toContain(1)
-    expect(getCellSides(1, 1, size)).toContain(1)
-    expect(getCellSides(2, 2, size)).toContain(1)
+  it('larger board produces larger dimensions', () => {
+    const small = getGameYBoardDimensions(4, 30)
+    const large = getGameYBoardDimensions(9, 30)
+    expect(large.width).toBeGreaterThan(small.width)
+    expect(large.height).toBeGreaterThan(small.height)
   })
 
-  it('identifies bottom edge cells', () => {
-    expect(getCellSides(3, 0, size)).toContain(2)
-    expect(getCellSides(3, 1, size)).toContain(2)
-    expect(getCellSides(3, 3, size)).toContain(2)
+  it('larger cell size produces larger dimensions for the same board', () => {
+    const d1 = getGameYBoardDimensions(5, 20)
+    const d2 = getGameYBoardDimensions(5, 40)
+    expect(d2.width).toBeGreaterThan(d1.width)
+    expect(d2.height).toBeGreaterThan(d1.height)
   })
-
-  it('identifies corners as belonging to multiple sides', () => {
-    // Top corner (0,0) is both left and right
-    expect(getCellSides(0, 0, size)).toContain(0)
-    expect(getCellSides(0, 0, size)).toContain(1)
-    
-    // Bottom-left corner
-    expect(getCellSides(3, 0, size)).toContain(0)
-    expect(getCellSides(3, 0, size)).toContain(2)
-    
-    // Bottom-right corner
-    expect(getCellSides(3, 3, size)).toContain(1)
-    expect(getCellSides(3, 3, size)).toContain(2)
-  })
-})
-
-describe('isValidMove', () => {
-  it('allows moves on empty cells', () => {
-    const board = createEmptyBoard(4)
-    expect(isValidMove(board, 0, 0)).toBe(true)
-    expect(isValidMove(board, 2, 1)).toBe(true)
-  })
-
-  it('rejects moves on occupied cells', () => {
-    const board = createEmptyBoard(4)
-    board[0][0].owner = 'player1'
-    expect(isValidMove(board, 0, 0)).toBe(false)
-  })
-
-  it('rejects out-of-bounds moves', () => {
-    const board = createEmptyBoard(4)
-    expect(isValidMove(board, -1, 0)).toBe(false)
-    expect(isValidMove(board, 0, 1)).toBe(false) // Row 0 only has col 0
-    expect(isValidMove(board, 10, 0)).toBe(false)
-  })
-})
-
-describe('applyMove', () => {
-  it('creates a new board with the move applied', () => {
-    const board = createEmptyBoard(4)
-    const newBoard = applyMove(board, { row: 0, col: 0, player: 'player1', timestamp: 0 })
-    
-    expect(newBoard[0][0].owner).toBe('player1')
-    expect(board[0][0].owner).toBe(null) // Original unchanged
-  })
-})
-
-describe('getOppositePlayer', () => {
-  it('returns the opposite player', () => {
-    expect(getOppositePlayer('player1')).toBe('player2')
-    expect(getOppositePlayer('player2')).toBe('player1')
-  })
-})
-
-describe('checkWinner', () => {
-  it('returns null for empty board', () => {
-    const board = createEmptyBoard(4)
-    expect(checkWinner(board, 4)).toBe(null)
-  })
-
-  it('returns null when no player has connected all sides', () => {
-    const board = createEmptyBoard(4)
-    board[0][0].owner = 'player1'
-    board[1][1].owner = 'player2'
-    expect(checkWinner(board, 4)).toBe(null)
-  })
-
-  // Note: A full winning path test would be more complex
-  // This tests the basic functionality
 })

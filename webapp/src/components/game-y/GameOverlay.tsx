@@ -50,8 +50,8 @@ export function resolveResult(game: GameState, currentUserId: string): OverlayRe
   const isLocalGame = config.mode === 'pvp-local'
 
   const opponentName =
-    players.player1.id === currentUserId ? players.player2.name :
-    players.player2.id === currentUserId ? players.player1.name :
+    String(players.player1.id) === String(currentUserId) ? players.player2.name :
+    String(players.player2.id) === String(currentUserId) ? players.player1.name :
     null
 
   if (!winner) {
@@ -65,8 +65,8 @@ export function resolveResult(game: GameState, currentUserId: string): OverlayRe
   }
 
   const myColor: PlayerColor | null =
-    players.player1.id === currentUserId ? 'player1' :
-    players.player2.id === currentUserId ? 'player2' :
+    String(players.player1.id) === String(currentUserId) ? 'player1' :
+    String(players.player2.id) === String(currentUserId) ? 'player2' :
     null
 
   const isVictory = myColor === winner

@@ -14,6 +14,7 @@ export function useGameYController() {
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [moveError, setMoveError] = useState<string | null>(null)
     const [isBotThinking, setIsBotThinking] = useState(false)
 
     const [liveTimer, setLiveTimer] = useState<TimerState | null>(null)
@@ -111,7 +112,7 @@ export function useGameYController() {
         if (!game || game.status !== 'playing' || isBotThinking) return false
         if (game.config.mode === 'pvp-local') return true
         const currentPlayer = game.currentTurn === 'player1' ? game.players.player1 : game.players.player2
-        return currentPlayer.id === user?.id
+        return String(currentPlayer.id) === String(user?.id)
     }, [game, user, isBotThinking])
 
     // --- Handlers ---
@@ -119,11 +120,24 @@ export function useGameYController() {
     const handleCellClick = useCallback(async (row: number, col: number) => {
         if (!game || !gameId || !canPlay()) return
 
+        // Optimistic update: show the move immediately, revert on error
+        const snapshot = game
+        const optimisticBoard = game.board.map((boardRow, r) =>
+            boardRow.map((cell, c) =>
+                r === row && c === col ? { ...cell, owner: game.currentTurn as PlayerColor } : cell
+            )
+        )
+        setGame({ ...game, board: optimisticBoard })
+
+        setMoveError(null)
         setIsBotThinking(game.config.mode === 'pve')
         try {
             const updated = await gameService.playMove(gameId, row, col, game.currentTurn as PlayerColor, effectiveToken)
             setGame(updated)
         } catch (err) {
+            setGame(snapshot)
+            const msg = err instanceof Error ? err.message : 'Failed to play move'
+            setMoveError(msg)
             console.error('Failed to play move:', err)
         } finally {
             setIsBotThinking(false)
@@ -136,7 +150,7 @@ export function useGameYController() {
         const surrenderingPlayer: PlayerColor =
             game.config.mode === 'pvp-local'
                 ? game.currentTurn
-                : game.players.player1.id === user?.id ? 'player1' : 'player2'
+                : String(game.players.player1.id) === String(user?.id) ? 'player1' : 'player2'
 
         try {
             // feat/guest-mode: use effectiveToken (undefined for guests)
@@ -169,6 +183,7 @@ export function useGameYController() {
         chatMessages,
         isLoading,
         error,
+        moveError,
         lastMove,
         isBotThinking,
         canPlay: canPlay(),

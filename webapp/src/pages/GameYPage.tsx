@@ -2,14 +2,14 @@ import { useGameYController } from '@/controllers/useGameYController'
 import { GameYBoard } from '@/components/game-y/GameYBoard'
 import { GameSidebar } from '@/components/game-y/GameSidebar'
 import { GameOverlay } from '@/components/game-y/GameOverlay'
-import { AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { AlertCircle, ChevronLeft, ChevronRight, XCircle } from 'lucide-react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 export function GameYPage() {
   const {
-    game, liveTimer, chatMessages, isLoading, error, lastMove,
+    game, liveTimer, chatMessages, isLoading, error, moveError, lastMove,
     canPlay, handleCellClick, handleSurrender, handleSendMessage,
     handlePlayAgain, currentUserId,
   } = useGameYController()
@@ -71,6 +71,12 @@ export function GameYPage() {
   if (isMobile) {
     return (
       <div className="h-full min-h-0 flex flex-col relative">
+        {moveError && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-destructive/10 text-destructive text-sm border-b border-destructive/20">
+            <XCircle className="w-4 h-4 shrink-0" />
+            <span>{moveError}</span>
+          </div>
+        )}
         {/* Board */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <GameYBoard
@@ -128,7 +134,14 @@ export function GameYPage() {
 
   // Desktop
   return (
-    <div className="h-full min-h-0 flex relative">
+    <div className="h-full min-h-0 flex flex-col relative">
+      {moveError && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-destructive/10 text-destructive text-sm border-b border-destructive/20">
+          <XCircle className="w-4 h-4 shrink-0" />
+          <span>{moveError}</span>
+        </div>
+      )}
+      <div className="flex-1 min-h-0 flex relative">
       {/* Board */}
       <div className="flex-1 min-w-0 overflow-hidden">
         <GameYBoard
@@ -178,6 +191,7 @@ export function GameYPage() {
         onPlayAgain={handlePlayAgain}
         onGoHome={() => navigate('/games')}
       />
+      </div>
     </div>
   )
 }
