@@ -1,4 +1,3 @@
-// webapp/src/controllers/useRankingController.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { useRankingController } from './useRankingController'
@@ -8,20 +7,36 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: vi.fn(),
 }))
 
-describe('useRankingController', () => {
-  beforeEach(() => {
-    vi.mocked(useAuth).mockReturnValue({
-      token: 'mock-token',
-      user: { id: '1', username: 'PlayerOne', email: 'test@test.com', createdAt: '', updatedAt: '' },
-      isAuthenticated: true,
-      isLoading: false,
-      login: vi.fn(),
-      register: vi.fn(),
-      logout: vi.fn(),
-      updateProfile: vi.fn(),
-    })
-  })
+// ── Helper ────────────────────────────────────────────────────────────────────
 
+function makeAuthMock(overrides: Record<string, unknown> = {}) {
+  return {
+    token:           'mock-token',
+    user: {
+      id: '1', username: 'PlayerOne',
+      email: 'test@test.com', createdAt: '', updatedAt: '',
+    },
+    isAuthenticated:  true,
+    isLoading:        false,
+    isGuest:          false,   // ← required by AuthContextValue
+    login:            vi.fn(),
+    register:         vi.fn(),
+    loginAsGuest:     vi.fn(), // ← required by AuthContextValue
+    logout:           vi.fn(),
+    updateProfile:    vi.fn(),
+    ...overrides,
+  }
+}
+
+// ── Setup ─────────────────────────────────────────────────────────────────────
+
+beforeEach(() => {
+  vi.mocked(useAuth).mockReturnValue(makeAuthMock() as any)
+})
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+describe('useRankingController', () => {
   it('starts with pve-easy mode selected', () => {
     const { result } = renderHook(() => useRankingController())
     expect(result.current.selectedMode).toBe('pve-easy')
@@ -49,16 +64,9 @@ describe('useRankingController', () => {
   })
 
   it('returns null currentUsername when no user', async () => {
-    vi.mocked(useAuth).mockReturnValue({
-      token: 'mock-token',
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      login: vi.fn(),
-      register: vi.fn(),
-      logout: vi.fn(),
-      updateProfile: vi.fn(),
-    })
+    vi.mocked(useAuth).mockReturnValue(
+      makeAuthMock({ user: null, isAuthenticated: false }) as any,
+    )
     const { result } = renderHook(() => useRankingController())
     expect(result.current.currentUsername).toBeNull()
   })
@@ -71,16 +79,9 @@ describe('useRankingController', () => {
   })
 
   it('does not load when token is null', () => {
-    vi.mocked(useAuth).mockReturnValue({
-      token: null,
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      login: vi.fn(),
-      register: vi.fn(),
-      logout: vi.fn(),
-      updateProfile: vi.fn(),
-    })
+    vi.mocked(useAuth).mockReturnValue(
+      makeAuthMock({ token: null, isAuthenticated: false }) as any,
+    )
     const { result } = renderHook(() => useRankingController())
     expect(result.current.entries).toHaveLength(0)
   })

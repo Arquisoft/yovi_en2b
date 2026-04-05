@@ -8,7 +8,9 @@ import { gameService } from '@/services/gameyService'
 export function useGameYController() {
     const { gameId } = useParams<{ gameId: string }>()
     const navigate = useNavigate()
-    const { user, token } = useAuth()
+    // feat/guest-mode: destructure isGuest to build effectiveToken
+    const { user, token, isGuest } = useAuth()
+    const effectiveToken = isGuest ? undefined : (token ?? undefined)
     const transport = useRealtime()
 
     const [game, setGame] = useState<GameState | null>(null)
@@ -173,7 +175,8 @@ export function useGameYController() {
         if (!game || !gameId || !canPlay()) return
 
         try {
-            const updated = await gameService.playMove(gameId, row, col, game.currentTurn, token ?? undefined)
+            // feat/guest-mode: use effectiveToken (undefined for guests)
+            const updated = await gameService.playMove(gameId, row, col, game.currentTurn, effectiveToken)
             setGame(updated)
 
             if (updated.config.mode === 'pve' && updated.status === 'playing') {
@@ -182,7 +185,7 @@ export function useGameYController() {
         } catch (err) {
             console.error('Failed to play move:', err)
         }
-    }, [game, gameId, canPlay, token])
+    }, [game, gameId, canPlay, effectiveToken])
 
     const handleSurrender = useCallback(async () => {
         if (!game || !gameId) return
@@ -193,12 +196,13 @@ export function useGameYController() {
                 : game.players.player1.id === user?.id ? 'player1' : 'player2'
 
         try {
-            const updated = await gameService.surrender(gameId, surrenderingPlayer, token ?? undefined)
+            // feat/guest-mode: use effectiveToken (undefined for guests)
+            const updated = await gameService.surrender(gameId, surrenderingPlayer, effectiveToken)
             setGame(updated)
         } catch (err) {
             console.error('Failed to surrender:', err)
         }
-    }, [game, gameId, user, token])
+    }, [game, gameId, user, effectiveToken])
 
     const handleSendMessage = useCallback(async (content: string) => {
         if (!gameId || !user) return
