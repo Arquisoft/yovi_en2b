@@ -1,31 +1,46 @@
 Bot API: {
-        style: {
-        font-size: 40
+    style: {
+        font-size: 36
         bold: true
-    }    
+    }
     shape: sequence_diagram
 
-    # Participants
-    Bot: External Bot
-    Backend: Web Application (TS)
-    Engine: Game Engine
+    Bot: External Bot {
+        shape: person
+        style: {
+            fill: "#FFF3CD"
+            stroke: "#E6A817"
+            font-color: "#664D03"
+        }
+    }
+    Backend: Web Application (TS) {
+        style: {
+            fill: "#CCE5FF"
+            stroke: "#0D6EFD"
+            font-color: "#002752"
+        }
+    }
+    Engine: Game Engine {
+        style: {
+            fill: "#E2D9F3"
+            stroke: "#6F42C1"
+            font-color: "#3B1F6E"
+        }
+    }
 
-    # Scenario: Computer calculates its turn
-    Bot."YEN notation used for board state"
+    Bot."Board state encoded in YEN notation"
 
     Bot -> Backend: play(boardState)
-
     Backend -> Engine: Request next move
-    Engine -> Engine: Calculate the next move
-    Engine -> Backend: Return the next move {
-            style: {
-                stroke-dash: 3
-            }
+    Engine -> Engine: Calculate next move
+    Engine -> Backend: Return next move {
+        style: {
+            stroke-dash: 3
         }
-
-    Backend -> Bot: Next move {
-            style: {
-                stroke-dash: 3
-            }
+    }
+    Backend -> Bot: Next move (YEN notation) {
+        style: {
+            stroke-dash: 3
         }
+    }
 }

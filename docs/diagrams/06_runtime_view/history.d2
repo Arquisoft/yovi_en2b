@@ -1,28 +1,51 @@
-# Introducing a title
-History consultation: {
-        style: {
-        font-size: 40
+History Consultation: {
+    style: {
+        font-size: 36
         bold: true
     }
     shape: sequence_diagram
 
-    # Define participants
-    User: Registered User
-    Frontend: Web Frontend (TS)
-    Backend: Web Application (TS)
-    DB: Database
+    User: Registered User {
+        shape: person
+        style: {
+            fill: "#FFF3CD"
+            stroke: "#E6A817"
+            font-color: "#664D03"
+        }
+    }
+    Frontend: Web Frontend (TS) {
+        style: {
+            fill: "#D4EDDA"
+            stroke: "#28A745"
+            font-color: "#155724"
+        }
+    }
+    Backend: Web Application (TS) {
+        style: {
+            fill: "#CCE5FF"
+            stroke: "#0D6EFD"
+            font-color: "#002752"
+        }
+    }
+    DB: Database {
+        shape: cylinder
+        style: {
+            fill: "#F8D7DA"
+            stroke: "#DC3545"
+            font-color: "#721C24"
+        }
+    }
 
-    # Scenario: History Consultation
     User -> Frontend: Request history
     Frontend -> Backend: Get history
-    Backend -> DB: Get match data
+    Backend -> DB: Query match data
     DB -> Backend: Raw match data {
         style: {
             stroke-dash: 3
         }
     }
     Backend -> Backend: Compute metrics
-    Backend -> Frontend: History {
+    Backend -> Frontend: History metrics {
         style: {
             stroke-dash: 3
         }

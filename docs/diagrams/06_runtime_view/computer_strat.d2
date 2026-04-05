@@ -1,22 +1,32 @@
-Computer strategy: {
-        style: {
-        font-size: 40
+Computer Strategy: {
+    style: {
+        font-size: 36
         bold: true
     }
     shape: sequence_diagram
 
-    # Participants
-    Backend: Web Application (TS)
-    Engine: Game Engine
+    Backend: Web Application (TS) {
+        style: {
+            fill: "#CCE5FF"
+            stroke: "#0D6EFD"
+            font-color: "#002752"
+        }
+    }
+    Engine: Game Engine {
+        style: {
+            fill: "#E2D9F3"
+            stroke: "#6F42C1"
+            font-color: "#3B1F6E"
+        }
+    }
 
-    # Scenario: Computer calculates its turn
-    Backend."YEN notation used for board state"
+    Backend."Board state encoded in YEN notation"
 
     Backend -> Engine: Fetch current board state
-    Engine -> Engine: Calculate the next move
-    Engine -> Backend: Return the next move {
-            style: {
-                stroke-dash: 3
-            }
+    Engine -> Engine: Calculate next move
+    Engine -> Backend: Return next move {
+        style: {
+            stroke-dash: 3
         }
+    }
 }
