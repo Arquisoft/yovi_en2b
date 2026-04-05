@@ -32,10 +32,8 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }));
 
-
 app.use(jsonErrorHandler);
 
-// SWAGGER DOCUMENTATION
 try {
   const swaggerPath = path.join(__dirname, '../openapi.yaml');
   const swaggerDocument = YAML.load(fs.readFileSync(swaggerPath, 'utf8')) as object;
