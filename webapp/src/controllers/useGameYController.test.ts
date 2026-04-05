@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useGameYController } from './useGameYController'
 import { useAuth } from '@/contexts/AuthContext'
-import { useRealtime } from '@/contexts/RealtimeContext'
 import { gameService } from '@/services/gameyService'
 
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: vi.fn() }))
@@ -10,7 +9,6 @@ vi.mock('react-router-dom', () => ({
   useParams:   () => ({ gameId: 'game-123' }),
   useNavigate: () => vi.fn(),
 }))
-vi.mock('@/contexts/RealtimeContext', () => ({ useRealtime: vi.fn() }))
 vi.mock('@/services/gameyService', () => ({
   gameService: {
     getGameState:    vi.fn(),
@@ -18,17 +16,10 @@ vi.mock('@/services/gameyService', () => ({
     playMove:        vi.fn(),
     surrender:       vi.fn(),
     sendChatMessage: vi.fn(),
-    waitForBotMove:  vi.fn(),
   },
 }))
 
 // ── Shared fixtures ───────────────────────────────────────────────────────────
-
-const mockTransport = {
-  startPolling: vi.fn(),
-  stopPolling:  vi.fn(),
-  subscribe:    vi.fn(() => vi.fn()),
-}
 
 const mockGame = {
   id:          'game-123',
@@ -55,10 +46,10 @@ function makeAuthMock(overrides: Record<string, unknown> = {}) {
     token:          'mock-token',
     isAuthenticated: true,
     isLoading:       false,
-    isGuest:         false,   // ← required by AuthContextValue
+    isGuest:         false,
     login:           vi.fn(),
     register:        vi.fn(),
-    loginAsGuest:    vi.fn(), // ← required by AuthContextValue
+    loginAsGuest:    vi.fn(),
     logout:          vi.fn(),
     updateProfile:   vi.fn(),
     ...overrides,
@@ -70,10 +61,8 @@ function makeAuthMock(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(useAuth).mockReturnValue(makeAuthMock() as any)
-  vi.mocked(useRealtime).mockReturnValue(mockTransport as any)
   vi.mocked(gameService.getGameState).mockResolvedValue(mockGame as any)
   vi.mocked(gameService.getChatMessages).mockResolvedValue([])
-  vi.mocked(gameService.waitForBotMove).mockResolvedValue(null)
   vi.mocked(gameService.playMove).mockResolvedValue({
     ...mockGame,
     moves: [{ row: 0, col: 0 }],
@@ -88,7 +77,7 @@ beforeEach(() => {
   } as any)
 })
 
-// ── Original tests (unchanged logic, mocks now include isGuest) ───────────────
+// ── Core behaviour tests ──────────────────────────────────────────────────────
 
 describe('useGameYController — core behaviour', () => {
   it('loads game state on mount', async () => {
@@ -115,12 +104,6 @@ describe('useGameYController — core behaviour', () => {
     const { result } = renderHook(() => useGameYController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.chatMessages).toHaveLength(1)
-  })
-
-  it('starts polling on mount', async () => {
-    renderHook(() => useGameYController())
-    await waitFor(() => expect(mockTransport.startPolling).toHaveBeenCalled())
-    expect(mockTransport.subscribe).toHaveBeenCalled()
   })
 
   it('canPlay is true when it is user turn', async () => {
@@ -266,14 +249,9 @@ describe('useGameYController — core behaviour', () => {
   })
 })
 
-// ── NEW: guest-mode token tests ───────────────────────────────────────────────
+// ── Guest mode token tests ────────────────────────────────────────────────────
 
 describe('useGameYController — guest mode (effectiveToken)', () => {
-  /**
-   * When the user is a guest, AuthContext sets isGuest: true.
-   * The controller computes effectiveToken = undefined so no JWT is forwarded
-   * to the backend.  playMove must receive undefined as the last argument.
-   */
   it('handleCellClick passes undefined token when user is a guest', async () => {
     vi.mocked(useAuth).mockReturnValue(
       makeAuthMock({
@@ -286,7 +264,6 @@ describe('useGameYController — guest mode (effectiveToken)', () => {
       }) as any,
     )
 
-    // Guest plays as player1 in a pve game
     vi.mocked(gameService.getGameState).mockResolvedValue({
       ...mockGame,
       players: {
@@ -302,16 +279,11 @@ describe('useGameYController — guest mode (effectiveToken)', () => {
       await result.current.handleCellClick(0, 0)
     })
 
-    // effectiveToken is undefined for guests — no JWT sent
     expect(gameService.playMove).toHaveBeenCalledWith(
       'game-123', 0, 0, 'player1', undefined,
     )
   })
 
-  /**
-   * Same contract for surrender: guests must not send a JWT so the backend
-   * does not try to save a match record to a non-existent account.
-   */
   it('handleSurrender passes undefined token when user is a guest', async () => {
     vi.mocked(useAuth).mockReturnValue(
       makeAuthMock({
@@ -344,12 +316,7 @@ describe('useGameYController — guest mode (effectiveToken)', () => {
     )
   })
 
-  /**
-   * Sanity: the real JWT must still flow through for authenticated users.
-   * (Mirrors the original test but framed as a guest-vs-auth contrast.)
-   */
   it('handleCellClick still passes the JWT for an authenticated user', async () => {
-    // Default mock has isGuest: false and token: 'mock-token'
     const { result } = renderHook(() => useGameYController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -362,9 +329,6 @@ describe('useGameYController — guest mode (effectiveToken)', () => {
     )
   })
 
-  /**
-   * Sanity: surrender also uses the real JWT for authenticated users.
-   */
   it('handleSurrender still passes the JWT for an authenticated user', async () => {
     const { result } = renderHook(() => useGameYController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

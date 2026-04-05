@@ -8,7 +8,6 @@ import { GameSelectionPage } from './pages/GameSelectionPage'
 import { GameModePage } from './pages/GameModePage'
 import { GameConfigPage } from './pages/GameConfigPage'
 import { GameYPage } from './pages/GameYPage'
-import { LobbyPage } from './pages/LobbyPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
 import { StatsPage } from './pages/StatsPage'
@@ -43,7 +42,6 @@ function App() {
           <Route path="/games" element={<GameSelectionPage />} />
           <Route path="/games/y" element={<GameModePage />} />
           <Route path="/games/y/config/:mode" element={<GameConfigPage />} />
-          <Route path="/games/y/lobby" element={<LobbyPage />} />
           <Route path="/games/y/play/:gameId" element={<GameYPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/ranking" element={<RankingPage />} />

@@ -68,9 +68,6 @@ export function GameSidebar({
             {game.config.boardSize}×{game.config.boardSize}
           </span>
         </div>
-        {game.config.roomName && (
-          <p className="text-sm text-muted-foreground">{game.config.roomName}</p>
-        )}
       </div>
 
       {/* Turn indicator */}

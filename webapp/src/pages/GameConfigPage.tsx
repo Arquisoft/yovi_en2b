@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useGameConfigController } from '@/controllers/useGameConfigController'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { Select } from '@/components/ui/Select'
 import { Switch } from '@/components/ui/Switch'
@@ -34,10 +33,6 @@ export function GameConfigPage() {
     setBotLevel,
     playerColor,
     setPlayerColor,
-    roomName,
-    setRoomName,
-    isPrivate,
-    setIsPrivate,
     isLoading,
     error,
     handleStartGame,
@@ -47,8 +42,6 @@ export function GameConfigPage() {
     switch (mode) {
       case 'pvp-local':
         return 'Local Match'
-      case 'pvp-online':
-        return 'Online Match'
       case 'pve':
         return 'vs Computer'
       default:
@@ -138,35 +131,6 @@ export function GameConfigPage() {
               </>
             )}
 
-            {/* PvP Online specific options */}
-            {mode === 'pvp-online' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="roomName">Room Name</Label>
-                  <Input
-                    id="roomName"
-                    placeholder="Enter a room name"
-                    value={roomName}
-                    onChange={(e) => setRoomName(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="private">Private Room</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Only players with invite link can join
-                    </p>
-                  </div>
-                  <Switch
-                    id="private"
-                    checked={isPrivate}
-                    onCheckedChange={setIsPrivate}
-                  />
-                </div>
-              </>
-            )}
-
             {/* Timer settings */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -206,7 +170,7 @@ export function GameConfigPage() {
               onClick={handleStartGame}
               isLoading={isLoading}
             >
-              {mode === 'pvp-online' ? 'Create Room' : 'Start Game'}
+              Start Game
             </Button>
           </CardContent>
         </Card>

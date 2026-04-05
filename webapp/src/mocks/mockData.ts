@@ -1,8 +1,6 @@
 import type {
   GameInfo,
   GameState,
-  RoomSummary,
-  Room,
   ChatMessage,
   BoardSize,
   GameConfig,
@@ -48,48 +46,6 @@ export const AVAILABLE_GAMES: GameInfo[] = [
 ]
 
 /**
- * Mock room data for lobby
- */
-export const MOCK_ROOMS: RoomSummary[] = [
-  {
-    id: 'room-1',
-    name: 'Casual Match',
-    host: { id: 'user-1', username: 'StrategyMaster' },
-    boardSize: 9,
-    timerSeconds: 600,
-    isPrivate: false,
-    playerCount: 1,
-    maxPlayers: 2,
-    status: 'waiting',
-    createdAt: new Date(Date.now() - 120000).toISOString(),
-  },
-  {
-    id: 'room-2',
-    name: 'Quick Game',
-    host: { id: 'user-2', username: 'HexChampion' },
-    boardSize: 7,
-    timerSeconds: 300,
-    isPrivate: false,
-    playerCount: 1,
-    maxPlayers: 2,
-    status: 'waiting',
-    createdAt: new Date(Date.now() - 60000).toISOString(),
-  },
-  {
-    id: 'room-3',
-    name: 'Pro Match',
-    host: { id: 'user-3', username: 'YoviPro' },
-    boardSize: 12,
-    timerSeconds: 900,
-    isPrivate: false,
-    playerCount: 2,
-    maxPlayers: 2,
-    status: 'playing',
-    createdAt: new Date(Date.now() - 300000).toISOString(),
-  },
-]
-
-/**
  * Create a mock game state
  */
 export function createMockGameState(
@@ -122,41 +78,6 @@ export function createMockGameState(
     createdAt: now,
     updatedAt: now,
   }
-}
-
-/**
- * Create a mock room
- */
-export function createMockRoom(
-  config: GameConfig,
-  host: Player
-): Room {
-  return {
-    id: generateId(),
-    name: config.roomName || 'Game Room',
-    host: { id: host.id, username: host.name },
-    boardSize: config.boardSize,
-    timerSeconds: config.timerSeconds,
-    isPrivate: config.isPrivate || false,
-    playerCount: 1,
-    maxPlayers: 2,
-    status: 'waiting',
-    createdAt: new Date().toISOString(),
-    players: [host],
-    inviteCode: config.isPrivate ? generateInviteCode() : undefined,
-  }
-}
-
-/**
- * Generate a random invite code
- */
-function generateInviteCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  let code = ''
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)]
-  }
-  return code
 }
 
 /**

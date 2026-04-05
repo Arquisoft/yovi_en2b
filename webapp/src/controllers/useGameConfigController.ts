@@ -7,15 +7,13 @@ import { gameService } from '@/services/gameyService'
 export function useGameConfigController() {
   const navigate = useNavigate()
   const { mode } = useParams<{ mode: GameMode }>()
-  const { user } = useAuth()
+  const { user, token } = useAuth()
 
   const [boardSize, setBoardSize] = useState<BoardSize>(9)
   const [timerEnabled, setTimerEnabled] = useState(false)
   const [timerMinutes, setTimerMinutes] = useState(10)
   const [botLevel, setBotLevel] = useState<BotLevel>('medium')
   const [playerColor, setPlayerColor] = useState<PlayerColor>('player1')
-  const [roomName, setRoomName] = useState('')
-  const [isPrivate, setIsPrivate] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -33,27 +31,10 @@ export function useGameConfigController() {
         timerSeconds: timerEnabled ? timerMinutes * 60 : undefined,
         botLevel: mode === 'pve' ? botLevel : undefined,
         playerColor: mode === 'pve' ? playerColor : undefined,
-        roomName: mode === 'pvp-online' ? roomName : undefined,
-        isPrivate: mode === 'pvp-online' ? isPrivate : undefined,
       }
 
-      if (mode === 'pvp-online') {
-        // Create a room and go to lobby
-        const room = await gameService.createRoom(config, {
-          id: user.id,
-          name: user.username,
-          color: 'player1',
-        })
-        navigate(`/games/y/lobby?roomId=${room.id}`)
-      } else {
-        // Start game directly
-        const game = await gameService.createGame(config, {
-          id: user.id,
-          name: user.username,
-          color: 'player1',
-        })
-        navigate(`/games/y/play/${game.id}`)
-      }
+      const game = await gameService.createGame(config, token ?? '')
+      navigate(`/games/y/play/${game.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start game')
     } finally {
@@ -62,13 +43,12 @@ export function useGameConfigController() {
   }, [
     mode,
     user,
+    token,
     boardSize,
     timerEnabled,
     timerMinutes,
     botLevel,
     playerColor,
-    roomName,
-    isPrivate,
     navigate,
   ])
 
@@ -84,10 +64,6 @@ export function useGameConfigController() {
     setBotLevel,
     playerColor,
     setPlayerColor,
-    roomName,
-    setRoomName,
-    isPrivate,
-    setIsPrivate,
     isLoading,
     error,
     handleStartGame,

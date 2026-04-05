@@ -43,8 +43,6 @@ export interface GameConfig {
   timerSeconds?: number
   botLevel?: BotLevel
   playerColor?: PlayerColor
-  roomName?: string
-  isPrivate?: boolean
 }
 
 // ==================== Game State ====================
@@ -96,29 +94,6 @@ export interface GameState {
   updatedAt: string
 }
 
-// ==================== Lobby & Rooms ====================
-
-export interface RoomSummary {
-  id: string
-  name: string
-  host: {
-    id: string
-    username: string
-  }
-  boardSize: BoardSize
-  timerSeconds?: number
-  isPrivate: boolean
-  playerCount: number
-  maxPlayers: number
-  status: 'waiting' | 'playing'
-  createdAt: string
-}
-
-export interface Room extends RoomSummary {
-  players: Player[]
-  inviteCode?: string
-}
-
 // ==================== Chat ====================
 
 export interface ChatMessage {
@@ -134,8 +109,6 @@ export interface ChatMessage {
 
 export type RealtimeEventType =
   | 'gameUpdated'
-  | 'roomUpdated'
-  | 'lobbyUpdated'
   | 'chatMessageReceived'
   | 'opponentDisconnected'
   | 'timerSync'
@@ -149,14 +122,6 @@ export interface RealtimeEvent<T = unknown> {
 
 export interface GameUpdatedPayload {
   game: GameState
-}
-
-export interface RoomUpdatedPayload {
-  room: Room
-}
-
-export interface LobbyUpdatedPayload {
-  rooms: RoomSummary[]
 }
 
 export interface ChatMessageReceivedPayload {
