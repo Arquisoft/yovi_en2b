@@ -4,7 +4,9 @@ import type { BoardCell, BoardSize, BotLevel, PlayerColor } from '../types/game'
 const RUST_ENGINE_URL = process.env.RUST_ENGINE_URL || 'http://localhost:4000';
 
 function botIdFromLevel(level: BotLevel): string {
-  return level === 'hard' ? 'minimax_bot' : 'random_bot';
+  if (level === 'hard') return 'smart_bot';
+  if (level === 'medium') return 'fast_bot';
+  return 'random_bot';
 }
 
 export async function getBotMove(

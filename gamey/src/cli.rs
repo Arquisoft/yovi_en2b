@@ -7,8 +7,8 @@
 //! - Server: Run as an HTTP server for bot API
 
 use crate::{
-    Coordinates, GameAction, MinimaxBot, Movement, RandomBot, RenderOptions, YBot, YBotRegistry,
-    game,
+    Coordinates, FastBot, GameAction, Movement, RandomBot, RenderOptions, SmartBot, YBot,
+    YBotRegistry, game,
 };
 use crate::{GameStatus, GameY, PlayerId};
 use anyhow::Result;
@@ -38,14 +38,6 @@ pub struct CliArgs {
     /// Whether the bot should play first (only used with --mode=computer)
     #[arg(long, default_value_t = false)]
     pub botfirst: bool,
-
-    /// Minimum time in milliseconds for the bot to search (only used with --mode=computer and --bot=minimax_bot)
-    #[arg(long, default_value_t = 1000)]
-    pub minms: u64,
-
-    /// Maximum time in milliseconds for the bot to search (only used with --mode=computer and --bot=minimax_bot)
-    #[arg(long, default_value_t = 1000)]
-    pub maxms: u64,
 
     /// Port to run the server on (only used with --mode=server)
     #[arg(short, long, default_value_t = 3000)]
@@ -84,7 +76,8 @@ pub fn run_cli_game() -> Result<()> {
     let mut rl = DefaultEditor::new()?;
     let bots_registry = YBotRegistry::new()
         .with_bot(Arc::new(RandomBot))
-        .with_bot(Arc::new(MinimaxBot::new(args.minms, args.maxms)));
+        .with_bot(Arc::new(FastBot))
+        .with_bot(Arc::new(SmartBot));
     let bot: Arc<dyn YBot> = match bots_registry.find(&args.bot) {
         Some(b) => b,
         None => {
