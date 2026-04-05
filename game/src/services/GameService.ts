@@ -32,7 +32,7 @@ export class GameService {
     this.moveRepo = AppDataSource.getRepository(GameMove);
   }
 
-  async createGame(config: GameConfig, userId: number, username: string): Promise<GameState> {
+  async createGame(config: GameConfig, userId: number, username: string, token?: string): Promise<GameState> {
     const [player1, player2] = this.buildPlayers(config, userId, username);
     const board = createEmptyBoard(config.boardSize);
     const timerState = config.timerEnabled && config.timerSeconds
@@ -53,7 +53,7 @@ export class GameService {
 
     // If bot goes first (PvE with bot as player1)
     if (config.mode === 'pve' && player1.isBot) {
-      return this.applyBotMove(game, [], config.botLevel ?? 'medium');
+      return this.applyBotMove(game, [], config.botLevel ?? 'medium', token);
     }
 
     return this.toGameState(game, []);
@@ -127,7 +127,7 @@ export class GameService {
     if (!winner && game.config.mode === 'pve') {
       const botPlayer = game.players.player1.isBot ? game.players.player1 : game.players.player2;
       if (botPlayer.color === nextTurn) {
-        return this.applyBotMove(game, allMoves, game.config.botLevel ?? 'medium');
+        return this.applyBotMove(game, allMoves, game.config.botLevel ?? 'medium', token);
       }
     }
 
@@ -166,7 +166,8 @@ export class GameService {
   private async applyBotMove(
     game: Game,
     existingMoves: GameMove[],
-    botLevel: BotLevel
+    botLevel: BotLevel,
+    token?: string
   ): Promise<GameState> {
     try {
       const { row, col } = await getBotMove(
@@ -210,6 +211,13 @@ export class GameService {
       await this.gameRepo.save(game);
 
       const allMoves = [...existingMoves, moveRecord];
+
+      if (game.status === 'finished' && token) {
+        await this.recordMatch(game, token).catch((e) =>
+          console.error('Failed to record match:', e)
+        );
+      }
+
       return this.toGameState(game, allMoves);
     } catch (e) {
       console.error('Bot move failed:', e);

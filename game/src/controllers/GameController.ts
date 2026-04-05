@@ -24,7 +24,8 @@ export const createGame = async (req: AuthRequest, res: Response) => {
 
     const userId = req.user!.id;
     const username = req.user!.username;
-    const game = await gameService.createGame(config, userId, username);
+    const token = req.headers.authorization?.split(' ')[1];
+    const game = await gameService.createGame(config, userId, username, token);
     return res.status(201).json(game);
   } catch (err: any) {
     return res.status(err.status || 500).json({ error: err.message });
