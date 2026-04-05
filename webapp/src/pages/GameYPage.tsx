@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom'
 export function GameYPage() {
   const {
     game, liveTimer, chatMessages, isLoading, error, moveError, lastMove,
-    canPlay, handleCellClick, handleSurrender, handleSendMessage,
+    isBotThinking, canPlay, handleCellClick, handleSurrender, handleSendMessage,
     handlePlayAgain, currentUserId,
   } = useGameYController()
 
@@ -116,6 +116,7 @@ export function GameYPage() {
               onSendMessage={handleSendMessage}
               onSurrender={handleSurrender}
               onPlayAgain={handlePlayAgain}
+              isBotThinking={isBotThinking}
               isMobile
             />
           </div>
@@ -179,6 +180,7 @@ export function GameYPage() {
               onSendMessage={handleSendMessage}
               onSurrender={handleSurrender}
               onPlayAgain={handlePlayAgain}
+              isBotThinking={isBotThinking}
             />
           </div>
         </aside>

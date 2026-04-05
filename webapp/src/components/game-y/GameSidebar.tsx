@@ -14,6 +14,7 @@ interface GameSidebarProps {
   onSendMessage: (content: string) => void
   onSurrender: () => void
   onPlayAgain: () => void
+  isBotThinking?: boolean
   isMobile?: boolean
 }
 
@@ -25,6 +26,7 @@ export function GameSidebar({
   onSendMessage,
   onSurrender,
   onPlayAgain,
+  isBotThinking = false,
   isMobile = false,
 }: GameSidebarProps) {
   const navigate = useNavigate()
@@ -36,6 +38,15 @@ export function GameSidebar({
       : game.players.player2.id === currentUserId
         ? 'player2'
         : null
+
+  // In PvE while the bot is thinking, show the bot as the active player so
+  // the sidebar behaves the same as in local two-player mode.
+  const botColor: PlayerColor | null =
+    game.config.mode === 'pve'
+      ? (game.players.player1.isBot ? 'player1' : 'player2')
+      : null
+  const effectiveCurrentTurn: PlayerColor =
+    isBotThinking && botColor ? botColor : game.currentTurn
 
   const getTurnLabel = (): string => {
     if (game.status === 'finished') {
@@ -50,7 +61,7 @@ export function GameSidebar({
     }
 
     const currentPlayer =
-      game.currentTurn === 'player1'
+      effectiveCurrentTurn === 'player1'
         ? game.players.player1
         : game.players.player2
 
@@ -84,7 +95,7 @@ export function GameSidebar({
         {game.status === 'playing' && (
           <div className={cn(
             'w-3 h-3 rounded-full mx-auto mt-2',
-            game.currentTurn === 'player1' ? 'bg-player1' : 'bg-player2'
+            effectiveCurrentTurn === 'player1' ? 'bg-player1' : 'bg-player2'
           )} />
         )}
       </div>
@@ -112,14 +123,14 @@ export function GameSidebar({
         <div className="flex-shrink-0 space-y-2">
           <div className={cn(
             'flex items-center gap-2 p-3 rounded-lg border',
-            game.currentTurn === 'player1' && game.status === 'playing' && 'border-primary bg-primary/5'
+            effectiveCurrentTurn === 'player1' && game.status === 'playing' && 'border-primary bg-primary/5'
           )}>
             <div className="w-3 h-3 rounded-full bg-player1" />
             <span className="font-medium text-sm">{game.players.player1.name}</span>
           </div>
           <div className={cn(
             'flex items-center gap-2 p-3 rounded-lg border',
-            game.currentTurn === 'player2' && game.status === 'playing' && 'border-primary bg-primary/5'
+            effectiveCurrentTurn === 'player2' && game.status === 'playing' && 'border-primary bg-primary/5'
           )}>
             <div className="w-3 h-3 rounded-full bg-player2" />
             <span className="font-medium text-sm">{game.players.player2.name}</span>

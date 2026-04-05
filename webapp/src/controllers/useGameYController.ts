@@ -70,13 +70,22 @@ export function useGameYController() {
     useEffect(() => {
         if (!game?.timer || game.status !== 'playing' || !game.timer.activePlayer) return
 
-        const activePlayer = game.timer.activePlayer
+        // While the bot is thinking, the server is running both the human's move
+        // and the bot's response before returning. Count down the bot's clock in
+        // the frontend instead of the human's so the display stays accurate.
+        const botColor: PlayerColor | null =
+            game.config.mode === 'pve'
+                ? (game.players.player1.isBot ? 'player1' : 'player2')
+                : null
+        const activePlayer = isBotThinking && botColor ? botColor : game.timer.activePlayer
+
         const interval = setInterval(() => {
             const elapsed = Date.now() - clockStartedAtRef.current
             setLiveTimer((prev) => {
                 if (!prev) return prev
                 return {
                     ...prev,
+                    activePlayer,
                     player1RemainingMs:
                         activePlayer === 'player1'
                             ? Math.max(0, timerBaseRef.current.player1Ms - elapsed)
@@ -90,7 +99,7 @@ export function useGameYController() {
         }, 250)
 
         return () => clearInterval(interval)
-    }, [game?.timer?.activePlayer, game?.status])
+    }, [game?.timer?.activePlayer, game?.status, isBotThinking])
 
     // --- Resync on tab focus ---
 
@@ -130,6 +139,18 @@ export function useGameYController() {
         setGame({ ...game, board: optimisticBoard })
 
         setMoveError(null)
+
+        // In PvE the server processes the human move + bot response in one round-
+        // trip, returning only when both are done. Reset the clock reference to
+        // right now so the bot's countdown interval starts from the correct base.
+        if (game.config.mode === 'pve' && game.timer) {
+            timerBaseRef.current = {
+                player1Ms: liveTimer?.player1RemainingMs ?? game.timer.player1RemainingMs,
+                player2Ms: liveTimer?.player2RemainingMs ?? game.timer.player2RemainingMs,
+            }
+            clockStartedAtRef.current = Date.now()
+        }
+
         setIsBotThinking(game.config.mode === 'pve')
         try {
             const updated = await gameService.playMove(gameId, row, col, game.currentTurn as PlayerColor, effectiveToken)
@@ -142,7 +163,7 @@ export function useGameYController() {
         } finally {
             setIsBotThinking(false)
         }
-    }, [game, gameId, canPlay, effectiveToken])
+    }, [game, gameId, canPlay, effectiveToken, liveTimer])
 
     const handleSurrender = useCallback(async () => {
         if (!game || !gameId) return
