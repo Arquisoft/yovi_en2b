@@ -526,7 +526,7 @@ describe('scheduleBotMove', () => {
   it('should not make bot move if game is finished before timeout fires', async () => {
   vi.useFakeTimers({ shouldAdvanceTime: true })
 
-  vi.mocked(fetch).mockImplementation(async (url) => {
+  vi.mocked(fetch).mockImplementation(async () => {
     // Simulate network latency so we can cancel before it plays
     await new Promise(res => setTimeout(res, 100))
     return {
@@ -793,7 +793,7 @@ describe('executeBotMove opening game', () => {
 
     // Bot plays as player1 (opens the game)
     const config = { ...mockConfig, playerColor: 'player2' as const }
-    const game = await gameService.createGame(config, mockUser)
+    await gameService.createGame(config, mockUser)
 
     await vi.advanceTimersByTimeAsync(500)
 
