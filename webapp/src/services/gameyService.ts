@@ -8,7 +8,7 @@ import type {
 import { AVAILABLE_GAMES } from '@/mocks/mockData'
 import { generateId } from '@/utils'
 
-const GAME_API_BASE = 'http://api.localhost/game'
+const GAME_API_BASE = 'http://api.localhost/game/api'
 
 class GameService {
   private baseUrl: string
@@ -23,7 +23,7 @@ class GameService {
   }
 
   async createGame(config: GameConfig, token: string): Promise<GameState> {
-    const response = await fetch(`${this.baseUrl}/api/games`, {
+    const response = await fetch(`${this.baseUrl}/games`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -39,7 +39,7 @@ class GameService {
   }
 
   async getGameState(gameId: string): Promise<GameState | null> {
-    const response = await fetch(`${this.baseUrl}/api/games/${gameId}`)
+    const response = await fetch(`${this.baseUrl}/games/${gameId}`)
     if (response.status === 404) return null
     if (!response.ok) throw new Error(`Failed to get game state: ${response.status}`)
     return response.json()
@@ -52,7 +52,7 @@ class GameService {
     player: PlayerColor,
     token?: string,
   ): Promise<GameState> {
-    const response = await fetch(`${this.baseUrl}/api/games/${gameId}/move`, {
+    const response = await fetch(`${this.baseUrl}/games/${gameId}/move`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -68,7 +68,7 @@ class GameService {
   }
 
   async surrender(gameId: string, player: PlayerColor, token?: string): Promise<GameState> {
-    const response = await fetch(`${this.baseUrl}/api/games/${gameId}/surrender`, {
+    const response = await fetch(`${this.baseUrl}/games/${gameId}/surrender`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
