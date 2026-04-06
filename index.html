@@ -3620,28 +3620,27 @@ Thus it contains the white box description of selected building blocks of level 
 left to right direction
 skinparam componentStyle rectangle
 
-actor "Player\n(Browser)" as player
+actor "Player" as player
 actor "External client\n(Public API consumer)" as ext
 
-rectangle "Web Frontend\n(React/TypeScript SPA)\n[Vite]" as fe
-rectangle "webapp-backend\n(Game API / BFF)\n[Node.js / Express]" as webapp
-rectangle "users service\n(User API / Auth)\n[Node.js / Express]" as users
-rectangle "gamey\n(Rust engine)\n[Axum]" as gamey
+rectangle "Web Frontend\n(TypeScript SPA)" as fe
+rectangle "webapp-backend\n(Game API / BFF)" as webapp
+rectangle "users service\n(User API / Auth)" as users
+rectangle "gamey\n(Rust engine)" as gamey
 database "MariaDB" as db
 
-player --&gt; fe : Browser UI
+player --&gt; fe : UI
 
-fe --&gt; users  : REST (register/login/profile/stats/ranking)
-fe --&gt; webapp : REST (create game, play move, surrender)
+fe --&gt; users : REST (login/profile)
+fe --&gt; webapp : REST/WebSocket (game)
 
-ext --&gt; users  : REST (User API)
+ext --&gt; users : REST (User API)
 ext --&gt; webapp : REST (Game API)
 
-webapp --&gt; users  : REST (auth verification)
-webapp --&gt; gamey  : HTTP POST /v1/ybot/choose/{botId}\n(JSON/YEN)
+webapp --&gt; users : REST (auth + profile)
+webapp --&gt; gamey : HTTP (JSON/YEN)
 
-users --&gt; db : read/write\n(users, match_records)
-webapp --&gt; db : read/write\n(games, game_moves)
+users --&gt; db : read/write
 @enduml</pre>
 </div>
 </div>
@@ -3687,7 +3686,7 @@ In the best case you will get away with examples or simple signatures.</p>
 <dl>
 <dt class="hdlist1">Rationale</dt>
 <dd>
-<p>The system applies <strong>functional decomposition</strong> across four independently deployable services. Clear client/server boundaries are maintained: the React SPA is the only browser-facing component; <code>webapp-backend</code> acts as a Backend-for-Frontend (BFF) that proxies game and auth operations; <code>users</code> owns all identity and statistics concerns; and <code>gamey</code> provides a stateless Rust engine for bot move computation. Both <code>webapp-backend</code> and <code>users</code> persist their own data to a shared MariaDB instance, each owning their respective tables.</p>
+<p>We applied <strong>functional decomposition</strong> to separate responsibilities within the YOVI system and keep clear client/server boundaries.</p>
 </dd>
 <dt class="hdlist1">Contained Blackboxes</dt>
 </dl>
@@ -3706,31 +3705,31 @@ In the best case you will get away with examples or simple signatures.</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Web Frontend</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Browser-based React/TypeScript SPA built with Vite. Renders the triangular Game Y board as an SVG, handles game configuration (board size, bot difficulty, timers, player color), and manages a local timer countdown. Communicates with <code>users</code> for authentication and stats, and with <code>webapp-backend</code> for all game lifecycle operations. Supports guest play (no account required) and authenticated sessions via JWT stored in <code>localStorage</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Browser-based TypeScript application. Renders the Y game board, handles user interaction, and communicates with the public APIs via REST (and WebSockets when realtime gameplay is enabled).</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">webapp-backend (Game API / BFF)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Node.js/Express service exposing the public Game API. Manages game sessions and moves, persists game state and move history to MariaDB (<code>games</code> and <code>game_moves</code> tables), orchestrates bot move requests to <code>gamey</code> over HTTP using YEN/JSON, and posts match results back to <code>users</code> upon game completion. Accepts optional JWT for authenticated users; guest requests carry a client-generated <code>guestId</code> instead.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node/TypeScript service exposing the public Game API (match flow, play actions, game-related statistics). Orchestrates calls to <code>gamey</code> using JSON/YEN and calls <code>users</code> when authentication/profile data is required.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">users service (User API / Auth)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Node.js/Express service exposing the public User API. Handles registration, login (bcrypt + HS256 JWT), profile management, password changes, account deactivation, match record persistence (<code>match_records</code> table), winrate calculation, and a mock ranking endpoint. The only component that issues and verifies JWTs; all protected routes in other services re-verify the same token.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service exposing the public User API (register/login/profile). Issues and verifies JWTs, applies basic authorization (roles), and is the only component that accesses MariaDB.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gamey (Rust engine)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Stateless Axum-based HTTP service. Exposes <code>GET /status</code> (health check) and <code>POST /v1/ybot/choose/{botId}</code> (bot move selection). Accepts the current board state in YEN notation and returns the chosen move coordinates as JSON. Implements three bot strategies: <code>random_bot</code> (random legal move), <code>fast_bot</code> (minimax + alpha-beta + iterative deepening, 500 ms budget), and <code>smart_bot</code> (same algorithm, 1 000–3 000 ms budget). Performs YEN parsing and validation internally.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rust service responsible for validating game states and computing the next move. Uses YEN notation for board representation and exposes a minimal JSON-based web service interface to <code>webapp-backend</code>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Database (MariaDB)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Shared relational database. The <code>users</code> service owns the <code>users</code> and <code>match_records</code> tables. The <code>webapp-backend</code> owns the <code>games</code> and <code>game_moves</code> tables. Each service accesses only its own tables via TypeORM.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistent storage for user accounts and credentials/roles. Accessed exclusively by the <code>users</code> service.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Player (external)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Human user interacting through the Web Frontend to play matches and manage their account. May play as a guest (no registration) or as an authenticated user.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Human user interacting through the Web Frontend to play matches and manage their account.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">External client (external)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Any third-party HTTP client consuming the public Game API or User API, e.g., automated bots or integration test harnesses.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Any third-party client consuming the public APIs (User API and/or Game API) over HTTP, e.g., automated gameplay clients.</p></td>
 </tr>
 </tbody>
 </table>
@@ -3744,72 +3743,37 @@ In the best case you will get away with examples or simple signatures.</p>
 left to right direction
 skinparam componentStyle rectangle
 
-package "Web Frontend (React SPA)" as PFrontend {
-  [AuthContext\n+ AuthService] as AuthCtx
-  [GameYController\n+ GameYPage] as GameCtrl
-  [StatsController\n+ StatsPage] as StatsCtrl
-  [RankingController\n+ RankingPage] as RankCtrl
-  [GameYBoard\n(SVG renderer)] as Board
-  [GameOverlay\n+ GameSidebar\n+ TimerPanel] as UI
-}
-
 package "webapp-backend (Game API / BFF)" as PWebapp {
-  [gameRoutes\n(Express Router)] as WebappRoutes
-  [GameController] as GameCtrl2
-  [GameService] as GameSvc
-  [BotService] as BotSvc
-  [Game / GameMove\n(TypeORM Entities)] as GameEntities
+  [Routes] as WebappRoutes
+  [MatchService] as MatchService
+  [RustClient] as RustClient
 }
 
 package "users service (User API / Auth)" as PUsers {
-  [authRoutes\nstatsRoutes\nrankingRoutes] as UsersRoutes
-  [AuthController\nStatsController\nRankingController] as UsersCtrls
-  [AuthService\nStatsService\nRankingService] as UsersSvcs
-  [User / MatchRecord\n(TypeORM Entities)] as UserEntities
+  [Routes] as UsersRoutes
+  [UserService] as UserService
+  [UserRepository] as UserRepo
 }
 
 package "gamey (Rust engine)" as PGamey {
-  [Axum Router\n/status\n/v1/ybot/choose/{botId}] as GameyApi
-  [YENAdapter\n(parse/serialize)] as YENAdp
-  [RandomBot\nFastBot (minimax)\nSmartBot (minimax)] as Bots
-  [MinimaxState\n(board, TT, killers, history)] as MiniState
+  [Axum API] as GameyApi
+  [YENAdapter] as YENAdapter
+  [Validator + Bot] as BotCore
 }
 
 database "MariaDB" as db
 
-' Frontend internal
-AuthCtx --&gt; GameCtrl
-AuthCtx --&gt; StatsCtrl
-GameCtrl --&gt; Board
-GameCtrl --&gt; UI
+WebappRoutes --&gt; MatchService
+MatchService --&gt; RustClient
+RustClient --&gt; GameyApi : HTTP (JSON/YEN)
 
-' Frontend → backends
-AuthCtx --&gt; UsersRoutes : REST /api/auth/*\n/api/stats/*\n/api/ranking/*
-GameCtrl --&gt; WebappRoutes : REST /api/games/*
+BotCore --&gt; YENAdapter
+GameyApi --&gt; BotCore
 
-' webapp-backend internals
-WebappRoutes --&gt; GameCtrl2
-GameCtrl2 --&gt; GameSvc
-GameSvc --&gt; BotSvc
-GameSvc --&gt; GameEntities
-BotSvc --&gt; GameyApi : POST /v1/ybot/choose/{botId}\n(JSON/YEN)
-
-' users internals
-UsersRoutes --&gt; UsersCtrls
-UsersCtrls --&gt; UsersSvcs
-UsersSvcs --&gt; UserEntities
-
-' gamey internals
-GameyApi --&gt; YENAdp
-GameyApi --&gt; Bots
-Bots --&gt; MiniState
-
-' DB access
-GameEntities --&gt; db : games\ngame_moves
-UserEntities --&gt; db : users\nmatch_records
-
-' cross-service: record match result
-GameSvc --&gt; UsersRoutes : POST /api/stats/record\n(Bearer JWT)
+WebappRoutes --&gt; UserService : REST (auth + profile)
+UsersRoutes --&gt; UserService
+UserService --&gt; UserRepo
+UserRepo --&gt; db
 @enduml</pre>
 </div>
 </div>
@@ -3826,7 +3790,7 @@ Leave out normal, simple, boring or standardized parts of your system</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_level_2_web_frontend_react_spa">5.2.1. Level 2 — Web Frontend (React SPA)</h4>
+<h4 id="_level_2_webapp_backend_game_api_bff">5.2.1. Level 2 - webapp-backend (Game API / BFF)</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -3840,34 +3804,22 @@ Leave out normal, simple, boring or standardized parts of your system</p>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">AuthContext + AuthService</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">React context that holds the current session (JWT, user object, guest flag). <code>AuthService</code> encapsulates all HTTP calls to the <code>users</code> service (<code>/api/auth/<strong></code>, <code>/api/stats/</strong></code>, <code>/api/ranking/*</code>). Persists the token and user profile in <code>localStorage</code>; restores the session on page load by re-validating the token with <code>GET /api/auth/profile</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Routes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Single entry point for the public APIs exposed by <code>webapp-backend</code>. Delegates game requests to <strong>MatchService</strong> and forwards authentication/profile operations to the <code>users</code> service.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">GameYController + GameYPage</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Controller hook (<code>useGameYController</code>) that owns all game session state: loading the <code>GameState</code> from <code>webapp-backend</code>, dispatching moves and surrenders, running a client-side countdown timer (<code>liveTimer</code>) interpolated between server responses, handling bot-thinking state, and managing chat messages in memory. <code>GameYPage</code> renders the layout (board + collapsible sidebar) for both desktop and mobile.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MatchService</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Encapsulates game workflow logic: creating matches/rooms, updating board states, and coordinating validation and next-move computations. Calls <code>users</code> only for authentication/profile data when required.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">StatsController + StatsPage</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>useStatsController</code> fetches match history and winrate from <code>users</code>. <code>StatsPage</code> renders pie charts (<code>WinrateChart</code>) and a paginated table (<code>MatchHistoryTable</code>). Shows an upsell card for guest users instead of empty charts.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">RankingController + RankingPage</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>useRankingController</code> selects the ranking mode (<code>pve-easy</code>, <code>pve-medium</code>, <code>pve-hard</code>) and fetches entries. Currently backed by mock data; designed to be replaced with a real call to <code>GET /api/ranking/:mode</code>.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">GameYBoard (SVG renderer)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Pure rendering component. Converts the <code>BoardCell[][]</code> board state from the API into pointy-top hexagonal SVG cells on a triangular grid. Handles hover and click events, delegating cell selection back to the controller via <code>onCellClick</code>.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">GameOverlay + GameSidebar + TimerPanel</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Post-game result overlay (confetti animation, VICTORY/DEFEAT/DRAW label, stats summary). <code>GameSidebar</code> shows turn indicator, player info, live timers, chat, and action buttons (Surrender/Play Again). <code>TimerPanel</code> displays per-player remaining time with color-coded urgency states.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RustClient</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP client responsible for invoking the <code>gamey</code> service. Sends board state in JSON/YEN format to request validation or next-move suggestions.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect3">
-<h4 id="_level_2_webapp_backend_game_api_bff">5.2.2. Level 2 — webapp-backend (Game API / BFF)</h4>
+<h4 id="_level_2_users_service_user_api_auth">5.2.2. Level 2 - users service (User API / Auth)</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -3881,30 +3833,22 @@ Leave out normal, simple, boring or standardized parts of your system</p>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">gameRoutes (Express Router)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Single router mounted at <code>/api/games</code>. Applies <code>optionalAuthMiddleware</code> (accepts guests or validates JWT; rejects present-but-invalid tokens with 401). Delegates to <code>GameController</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Routes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles HTTP requests entering the User API. Delegates to <strong>UserService</strong>.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">GameController</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Thin HTTP adapter. Validates request parameters (board size 4–16, timer range 60–1200 s, required fields), extracts <code>userId</code> / <code>guestId</code> from the request context, and calls <code>GameService</code>. Maps service errors to appropriate HTTP status codes.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">UserService</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Business logic for authentication and user operations (issue/verify JWTs, profile management, role checks). Coordinates persistence via <strong>UserRepository</strong>.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">GameService</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Core orchestration layer. Creates game sessions, applies human moves (turn validation, cell occupancy check, board mutation, win detection via BFS), triggers bot moves via <code>BotService</code> in PvE mode, manages the per-player countdown timer, and calls <code>recordMatch</code> (posting to <code>users /api/stats/record</code>) on game completion. Persists all state changes through TypeORM repositories.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">BotService</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP client for <code>gamey</code>. Converts the current <code>BoardCell[][]</code> board into YEN notation (<code>boardToYEN</code>), posts to <code>POST /v1/ybot/choose/{botId}</code>, and converts the returned cube coordinates back to <code>{row, col}</code> via <code>coordsToRowCol</code>.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Game / GameMove (TypeORM Entities)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Game</code> stores config, board state (JSON), players (JSON), current turn, winner, timer state, and status in the <code>games</code> table. <code>GameMove</code> records each placed stone (player, row, col, timestamp) in <code>game_moves</code> with a cascade-delete foreign key to <code>Game</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">UserRepository</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistence component managing user accounts and credentials/roles (create, read, update, delete). Accessed exclusively via <strong>UserService</strong>.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect3">
-<h4 id="_level_2_users_service_user_api_auth">5.2.3. Level 2 — users service (User API / Auth)</h4>
+<h4 id="_level_2_gamey_rust_engine">5.2.3. Level 2 - gamey (Rust engine)</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -3918,53 +3862,16 @@ Leave out normal, simple, boring or standardized parts of your system</p>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">authRoutes / statsRoutes / rankingRoutes</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Three Express routers. <code>authRoutes</code> exposes public endpoints (<code>POST /register</code>, <code>POST /login</code>) and protected endpoints (profile, password change, account deactivation). <code>statsRoutes</code> and <code>rankingRoutes</code> are fully protected and require a valid JWT via <code>authMiddleware</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axum API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Minimal internal HTTP interface invoked by <code>webapp-backend</code> for validation and choose-move requests.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">AuthController / StatsController / RankingController</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Thin HTTP adapters per domain. Validate required fields and delegate to the corresponding service. Return structured JSON error responses on failure.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">YENAdapter</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Parses and serializes YEN/JSON game states and converts them to/from internal board representation.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">AuthService / StatsService / RankingService</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Business logic layer. <code>AuthService</code> handles bcrypt password hashing (10 rounds), HS256 JWT issuance (24 h expiry), token verification, and profile/password management. <code>StatsService</code> queries <code>match_records</code> for full history and computes overall and recent (last 20) winrate using TypeORM query builder. <code>RankingService</code> currently returns mock data grouped by game mode; intended to be replaced with a real aggregation query.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">User / MatchRecord (TypeORM Entities)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>User</code> stores username, email, bcrypt-hashed password, role (<code>player</code>/<code>admin</code>), activity flag, and timestamps in the <code>users</code> table. <code>MatchRecord</code> stores opponent name, result (<code>win</code>/<code>loss</code>), duration in seconds, and timestamp in <code>match_records</code> with a cascade-delete foreign key to <code>User</code>.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect3">
-<h4 id="_level_2_gamey_rust_engine">5.2.4. Level 2 — gamey (Rust engine)</h4>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 25%;">
-<col style="width: 75%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Building Block</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Axum Router</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Minimal HTTP interface. <code>GET /status</code> returns <code>"OK"</code> for health checks. <code>POST /v1/ybot/choose/{botId}</code> accepts a JSON body in YEN notation, deserialises it into a <code>GameY</code> board state, looks up the requested bot in the <code>YBotRegistry</code>, and returns the chosen move as <code>{ api_version, bot_id, coords: {x, y, z} }</code>.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">YENAdapter (parse/serialize)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Implements <code>TryFrom&lt;YEN&gt;</code> for <code>GameY</code> and <code>From&lt;&amp;GameY&gt;</code> for <code>YEN</code>. Parses the YEN <code>layout</code> string row by row, placing pieces on the internal triangular board. Validates row counts, cell counts, and character set (<code>B</code>, <code>R</code>, <code>.</code>). The <code>BotService</code> in <code>webapp-backend</code> performs the inverse coordinate conversion (<code>coordsToRowCol</code>) to map cube coordinates back to <code>{row, col}</code>.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">RandomBot / FastBot / SmartBot</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Three implementations of the <code>YBot</code> trait registered in <code>YBotRegistry</code>. <code>RandomBot</code> selects a random available cell. <code>FastBot</code> and <code>SmartBot</code> both delegate to <code>choose_move_with_minimax</code> with different time budgets: 500 ms for <code>fast_bot</code>, 1 000–3 000 ms for <code>smart_bot</code>. The selection is preceded by a greedy pass that immediately returns a winning move or blocks an immediate opponent win.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">MinimaxState (board, TT, killers, history)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Internal mutable state for the minimax search. Maintains the board as a flat <code>Vec&lt;u8&gt;</code>, an available-cells <code>FixedBitSet</code>, and incremental evaluation scores (edge connectivity, center weight, well-connected bonus). Implements <code>make_move</code> / <code>undo_move</code> with Zobrist hashing for the transposition table. The search uses iterative deepening with aspiration windows, Principal Variation Search (PVS / null-window re-search), killer move and history heuristic tables, and a BFS-based connection-cost evaluation function.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Validator + Bot</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Enforces game rules and computes next moves.</p></td>
 </tr>
 </tbody>
 </table>
