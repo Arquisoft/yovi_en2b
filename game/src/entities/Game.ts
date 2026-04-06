@@ -15,8 +15,8 @@ export class Game {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'int', name: 'player1_id' })
-  player1Id!: number;
+  @Column({ type: 'int', name: 'player1_id', nullable: true })
+  player1Id!: number | null;
 
   @Column({ type: 'simple-json' })
   config!: GameConfig;

@@ -2,7 +2,7 @@ USE users_db;
 
 CREATE TABLE IF NOT EXISTS games (
   id VARCHAR(36) PRIMARY KEY,
-  player1_id INT NOT NULL,
+  player1_id INT NULL,
   config JSON NOT NULL,
   status ENUM('waiting', 'playing', 'finished', 'abandoned') NOT NULL DEFAULT 'playing',
   board_state JSON NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS games (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (player1_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (player1_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS game_moves (

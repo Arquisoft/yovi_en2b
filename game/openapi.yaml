@@ -44,12 +44,23 @@ paths:
     post:
       summary: Create a new game session
       description: |
-        Creates a new game with the given configuration for the authenticated user.
+        Creates a new game with the given configuration.
+
+        **Authentication is optional.** Authenticated users have their JWT identity
+        stored against the game and receive match records when the game ends.
+        Guest users (no JWT) may omit the `Authorization` header and must supply a
+        `guestId` in the request body — the server embeds this ID in the `players`
+        JSON so the client can identify the human player without a real account.
+
         In PvE mode, if the bot is assigned player1 (i.e. `playerColor` is `player2`),
         the server applies the bot's opening move before returning the initial state.
+
+        A **401** is returned only when an `Authorization` header is present but the
+        token is invalid or expired — missing tokens are accepted as guest play.
       tags:
         - Games
       security:
+        - {}
         - bearerAuth: []
       requestBody:
         required: true
@@ -62,9 +73,17 @@ paths:
               properties:
                 config:
                   $ref: "#/components/schemas/GameConfig"
+                guestId:
+                  type: string
+                  description: |
+                    Client-generated identifier for the guest player. Only used when
+                    no `Authorization` header is sent. The server stores this value
+                    as the human player's `id` in the `players` JSON so the frontend
+                    can match it for turn and surrender logic.
+                  example: guest-a1b2c3d4
             examples:
               pve_medium:
-                summary: PvE — user plays as player1 vs medium bot
+                summary: PvE — authenticated user plays as player1 vs medium bot
                 value:
                   config:
                     mode: pve
@@ -73,7 +92,7 @@ paths:
                     botLevel: medium
                     playerColor: player1
               pve_hard_timer:
-                summary: PvE — user plays as player2 vs hard bot, 10-minute timer
+                summary: PvE — authenticated user plays as player2 vs hard bot, 10-minute timer
                 value:
                   config:
                     mode: pve
@@ -89,6 +108,16 @@ paths:
                     mode: pvp-local
                     boardSize: 9
                     timerEnabled: false
+              pve_guest:
+                summary: PvE — guest user (no JWT) with client-generated ID
+                value:
+                  config:
+                    mode: pve
+                    boardSize: 9
+                    timerEnabled: false
+                    botLevel: easy
+                    playerColor: player1
+                  guestId: guest-a1b2c3d4
       responses:
         "201":
           description: Game created successfully
@@ -165,9 +194,13 @@ paths:
         In PvE mode, the bot move is applied server-side before the response is returned —
         the client receives the post-bot state in a single round-trip.
         Timer is decremented server-side on each move.
+
+        **Authentication is optional for guest players.** A **401** is returned only when
+        an `Authorization` header is present but the token is invalid or expired.
       tags:
         - Games
       security:
+        - {}
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/GameId"
@@ -244,9 +277,13 @@ paths:
       description: |
         Ends the game immediately, awarding the win to the opponent.
         The match record is written to the users service server-side.
+
+        **Authentication is optional for guest players.** A **401** is returned only when
+        an `Authorization` header is present but the token is invalid or expired.
       tags:
         - Games
       security:
+        - {}
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/GameId"
@@ -325,15 +362,12 @@ components:
 
   responses:
     Unauthorized:
-      description: Missing, invalid or expired JWT token
+      description: Invalid or expired JWT token (only returned when a token is present but rejected)
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
           examples:
-            noToken:
-              value:
-                error: No authentication token provided
             invalidToken:
               value:
                 error: Invalid token
@@ -357,6 +391,11 @@ components:
     BotLevel:
       type: string
       enum: [easy, medium, hard]
+      description: |
+        Bot difficulty level. Maps to the following strategies in the Rust engine:
+        - `easy` → `random_bot` (random legal move)
+        - `medium` → `fast_bot` (minimax, 500 ms budget)
+        - `hard` → `smart_bot` (minimax, up to 3 000 ms budget)
       example: medium
 
     GameStatus:
@@ -383,8 +422,9 @@ components:
           example: false
         timerSeconds:
           type: integer
-          minimum: 30
-          description: Total time per player in seconds. Required when timerEnabled is true.
+          minimum: 60
+          maximum: 1200
+          description: Total time per player in seconds (1–20 minutes). Required when timerEnabled is true.
           example: 600
         botLevel:
           $ref: "#/components/schemas/BotLevel"

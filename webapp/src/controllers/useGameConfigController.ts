@@ -51,7 +51,8 @@ function saveConfig(mode: string, cfg: SavedConfig) {
 export function useGameConfigController() {
   const navigate = useNavigate()
   const { mode } = useParams<{ mode: GameMode }>()
-  const { user, token } = useAuth()
+  const { user, token, isGuest } = useAuth()
+  const effectiveToken = isGuest ? undefined : (token ?? undefined)
 
   const saved = mode ? loadSaved(mode) : null
 
@@ -121,14 +122,15 @@ export function useGameConfigController() {
 
       saveConfig(mode, { boardSizeInput, timerInput, timerEnabled, botLevel, playerColor })
 
-      const game = await gameService.createGame(config, token ?? '')
+      const guestId = isGuest ? user?.id : undefined
+      const game = await gameService.createGame(config, effectiveToken, guestId)
       navigate(`/games/y/play/${game.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start game')
     } finally {
       setIsLoading(false)
     }
-  }, [mode, user, token, boardSizeInput, timerEnabled, timerInput, botLevel, playerColor, navigate])
+  }, [mode, user, effectiveToken, isGuest, boardSizeInput, timerEnabled, timerInput, botLevel, playerColor, navigate])
 
   return {
     mode: mode as GameMode,

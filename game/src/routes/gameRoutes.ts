@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { authMiddleware } from '../middleware/auth';
+import { optionalAuthMiddleware } from '../middleware/auth';
 import { createGame, getGame, playMove, surrender } from '../controllers/GameController';
 
 const router = Router();
 
-router.post('/', authMiddleware, createGame);
+router.post('/', optionalAuthMiddleware, createGame);
 router.get('/:id', getGame);
-router.post('/:id/move', authMiddleware, playMove);
-router.post('/:id/surrender', authMiddleware, surrender);
+router.post('/:id/move', optionalAuthMiddleware, playMove);
+router.post('/:id/surrender', optionalAuthMiddleware, surrender);
 
 export default router;

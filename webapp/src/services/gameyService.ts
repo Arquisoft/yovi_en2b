@@ -22,14 +22,14 @@ class GameService {
     return AVAILABLE_GAMES
   }
 
-  async createGame(config: GameConfig, token: string): Promise<GameState> {
+  async createGame(config: GameConfig, token?: string, guestId?: string): Promise<GameState> {
     const response = await fetch(`${this.baseUrl}/games`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ config }),
+      body: JSON.stringify({ config, ...(guestId ? { guestId } : {}) }),
     })
     if (!response.ok) {
       const err = await response.json().catch(() => ({ error: 'Failed to create game' }))

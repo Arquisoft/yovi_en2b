@@ -32,8 +32,8 @@ export class GameService {
     this.moveRepo = AppDataSource.getRepository(GameMove);
   }
 
-  async createGame(config: GameConfig, userId: number, username: string, token?: string): Promise<GameState> {
-    const [player1, player2] = this.buildPlayers(config, userId, username);
+  async createGame(config: GameConfig, userId: number | null, username: string, token?: string, guestId?: string): Promise<GameState> {
+    const [player1, player2] = this.buildPlayers(config, userId, username, guestId);
     const board = createEmptyBoard(config.boardSize);
     const timerState = config.timerEnabled && config.timerSeconds
       ? this.buildTimerState(config.timerSeconds)
@@ -225,9 +225,9 @@ export class GameService {
     }
   }
 
-  private buildPlayers(config: GameConfig, userId: number, username: string): [Player, Player] {
+  private buildPlayers(config: GameConfig, userId: number | null, username: string, guestId?: string): [Player, Player] {
     const botName = `Bot (${config.botLevel ?? 'medium'})`;
-    const humanId = String(userId);
+    const humanId = guestId ?? (userId !== null ? String(userId) : 'guest');
 
     if (config.mode === 'pve') {
       const bot: Player = { id: 'bot', name: botName, color: 'player1', isBot: true };

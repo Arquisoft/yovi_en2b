@@ -22,10 +22,11 @@ export const createGame = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    const userId = req.user!.id;
-    const username = req.user!.username;
+    const userId = req.user?.id ?? null;
+    const username = req.user?.username ?? 'Guest';
+    const guestId = !req.user ? (req.body.guestId as string | undefined) : undefined;
     const token = req.headers.authorization?.split(' ')[1];
-    const game = await gameService.createGame(config, userId, username, token);
+    const game = await gameService.createGame(config, userId, username, token, guestId);
     return res.status(201).json(game);
   } catch (err: any) {
     return res.status(err.status || 500).json({ error: err.message });
