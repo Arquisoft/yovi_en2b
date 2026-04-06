@@ -11,7 +11,7 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD || 'test_password',
   database: process.env.DB_NAME || 'users_db',
   entities: [Game, GameMove],
-  synchronize: process.env.NODE_ENV === 'development',
+  synchronize: process.env.APP_ENV === 'development',
   logging: false,
   namingStrategy: new SnakeCaseNamingStrategy(),
 });

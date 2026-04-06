@@ -15,7 +15,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-console.log(`Starting game service with env: ${process.env.NODE_ENV}`);
+console.log(`Starting game service with env: ${process.env.APP_ENV}`);
 
 app.use(express.json({ limit: '10mb' }));
 
