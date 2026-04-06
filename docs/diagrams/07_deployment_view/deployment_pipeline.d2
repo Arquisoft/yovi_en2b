@@ -1,4 +1,4 @@
-Deployment pipeline:{
+Deployment pipeline: {
     style: {
         font-size: 40
         bold: true
@@ -12,11 +12,11 @@ Deployment pipeline:{
     Azure: Azure VM
 
     Developer -> GitHub: 1. Push Tag / Create Release
-    GitHub -> Actions: 2. Trigger Workflow
-    Actions -> Actions: 3. Build Docker Images
-    Actions -> Actions: 4. Run Tests & SonarCloud
-    Actions -> GHCR: 5. Push Images
-    Actions -> Azure: 6. SSH: docker-compose pull & up
+    GitHub -> Actions: 2. Trigger Release Workflow
+    Actions -> Actions: 3. Build Docker images\n(webapp, users, game, gamey)
+    Actions -> Actions: 4. Run tests (Vitest / cargo test)\n+ SonarCloud quality gate
+    Actions -> GHCR: 5. Push images\n(ghcr.io/arquisoft/yovi_en2b-*)
+    Actions -> Azure: 6. SSH: docker compose pull && up -d
     Azure -> GHCR: 7. Pull latest images
-    Azure -> Azure: 8. Restart Containers
+    Azure -> Azure: 8. Restart containers\n(zero-downtime where possible)
 }
