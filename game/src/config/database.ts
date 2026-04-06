@@ -8,7 +8,7 @@ export const AppDataSource = new DataSource({
   host: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT) || 3306,
   username: process.env.DB_USER || 'test_user',
-  password: process.env.DB_PASSWORD || 'test_password',
+  password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME || 'users_db',
   entities: [Game, GameMove],
   synchronize: process.env.APP_ENV === 'development',

@@ -25,7 +25,7 @@ import { applyMove } from './yenService';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
-const RUST_URL = process.env.RUST_ENGINE_URL ?? 'http://localhost:4000';
+const RUST_URL = process.env.RUST_INTERNAL_URL ?? 'http://localhost:4000';
 const RUST_API_VERSION = 'v1';
 const RUST_TIMEOUT_MS = 2_000;
 

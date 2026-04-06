@@ -6,8 +6,10 @@ mkdir -p "$APP_DIR"
 cd "$APP_DIR"
 
 # Create .env file
+wget -q "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/master/.env.shared" -O .env.shared
 cat > .env << EOF
 APP_ENV=production
+$(cat .env.shared)
 MARIADB_ROOT_PASSWORD="$MARIADB_ROOT_PASSWORD"
 MARIADB_USER="$MARIADB_USER"
 MARIADB_PASSWORD="$MARIADB_PASSWORD"
@@ -29,6 +31,19 @@ wget -q "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/master/users/m
 wget -q "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/master/users/monitoring/grafana/provisioning/datasources/datasource.yml" -O users/monitoring/grafana/provisioning/datasources/datasource.yml
 wget -q "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/master/users/monitoring/grafana/provisioning/dashboards/dashboard.yml" -O users/monitoring/grafana/provisioning/dashboards/dashboard.yml
 wget -q "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/master/users/monitoring/grafana/provisioning/dashboards/dashboard.json" -O users/monitoring/grafana/provisioning/dashboards/dashboard.json
+
+# Create certbot deploy hook for nginx in Docker
+sudo mkdir -p /etc/letsencrypt/renewal-hooks/deploy
+sudo tee /etc/letsencrypt/renewal-hooks/deploy/reload-webapp-nginx.sh > /dev/null <<'EOF'
+#!/bin/bash
+set -e
+
+if docker ps --format "{{.Names}}" | grep -qx webapp; then
+  docker exec webapp nginx -t
+  docker exec webapp nginx -s reload
+fi
+EOF
+sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/reload-webapp-nginx.sh
 
 # Deploy
 docker compose down

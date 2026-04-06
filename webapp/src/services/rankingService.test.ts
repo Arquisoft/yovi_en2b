@@ -36,7 +36,7 @@ describe('rankingService', () => {
     )
   })
 
-  it('throws when response is not ok', async () => {
+  it('throws using data.error when response is not ok', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: false,
       json: async () => ({ error: 'Unauthorized' }),
@@ -44,5 +44,25 @@ describe('rankingService', () => {
 
     await expect(rankingService.getRankingByMode('bad-token', 'pve-easy'))
       .rejects.toThrow('Unauthorized')
+  })
+
+  it('throws using data.message as preferred field when present', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ message: 'Token expired' }),
+    } as Response)
+
+    await expect(rankingService.getRankingByMode('bad-token', 'pve-easy'))
+      .rejects.toThrow('Token expired')
+  })
+
+  it('throws generic message when body has no known error field', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({}),
+    } as Response)
+
+    await expect(rankingService.getRankingByMode('bad-token', 'pve-easy'))
+      .rejects.toThrow('Request failed')
   })
 })

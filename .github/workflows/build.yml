@@ -10,6 +10,12 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_NAME: users_db
+      DB_USER: test_user
+      DB_PASSWORD: test_password
 
     services:
       mariadb:
@@ -45,24 +51,12 @@ jobs:
 
     - name: Run users tests with coverage
       run: npm --prefix users run test:coverage:ci
-      env:
-        DB_HOST: 127.0.0.1
-        DB_PORT: 3306
-        DB_NAME: users_db
-        DB_USER: test_user
-        DB_PASSWORD: test_password
 
     - name: Run webapp tests with coverage
       run: npm --prefix webapp run test:coverage:ci
 
     - name: Run game tests with coverage
       run: npm --prefix game run test:coverage:ci
-      env:
-        DB_HOST: 127.0.0.1
-        DB_PORT: 3306
-        DB_NAME: users_db
-        DB_USER: test_user
-        DB_PASSWORD: test_password
 
     - name: Run interop tests with coverage
       run: npm --prefix interop run test:coverage:ci

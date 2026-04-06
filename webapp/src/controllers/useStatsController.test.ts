@@ -201,3 +201,36 @@ describe('useStatsController — isGuest flag', () => {
     expect(result.current.isLoading).toBe(false)
   })
 })
+
+describe('useStatsController — error handling', () => {
+  it('sets error message when services throw an Error', async () => {
+    vi.mocked(statsService.getMatchHistory).mockRejectedValue(new Error('Network timeout'))
+    vi.mocked(statsService.getWinrate).mockRejectedValue(new Error('Network timeout'))
+
+    const { result } = renderHook(() => useStatsController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.error).toBe('Network timeout')
+  })
+
+  it('sets generic error message when services throw a non-Error value', async () => {
+    vi.mocked(statsService.getMatchHistory).mockRejectedValue('connection refused')
+    vi.mocked(statsService.getWinrate).mockRejectedValue('connection refused')
+
+    const { result } = renderHook(() => useStatsController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.error).toBe('Failed to load stats')
+  })
+
+  it('history and stats remain empty on load failure', async () => {
+    vi.mocked(statsService.getMatchHistory).mockRejectedValue(new Error('Unauthorized'))
+    vi.mocked(statsService.getWinrate).mockRejectedValue(new Error('Unauthorized'))
+
+    const { result } = renderHook(() => useStatsController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.history).toHaveLength(0)
+    expect(result.current.stats).toBeNull()
+  })
+})

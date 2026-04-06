@@ -38,6 +38,7 @@ services:
       DB_USER: ${MARIADB_USER}
       DB_PASSWORD: ${MARIADB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
+      PUBLIC_URL: ${VITE_USERS_API_URL}
     depends_on:
       mariadb:
         condition: service_healthy
@@ -52,7 +53,8 @@ services:
 
   webapp:
     build:
-      context: ./webapp
+      context: .
+      dockerfile: webapp/Dockerfile
     container_name: webapp
     image: ghcr.io/arquisoft/yovi_en2b-webapp:latest
     ports:
@@ -85,8 +87,9 @@ services:
       DB_USER: ${MARIADB_USER}
       DB_PASSWORD: ${MARIADB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-      RUST_ENGINE_URL: http://gamey:4000
-      USERS_SERVICE_URL: http://users:3000
+      PUBLIC_URL: ${VITE_GAME_API_URL}
+      USERS_PUBLIC_URL: ${VITE_USERS_API_URL}
+      RUST_INTERNAL_URL: http://gamey:4000
     depends_on:
       mariadb:
         condition: service_healthy

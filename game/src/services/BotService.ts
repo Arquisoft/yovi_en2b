@@ -1,7 +1,7 @@
 import { boardToYEN, coordsToRowCol } from '../utils/yen';
 import type { BoardCell, BoardSize, BotLevel, PlayerColor } from '../types/game';
 
-const RUST_ENGINE_URL = process.env.RUST_ENGINE_URL || 'http://localhost:4000';
+const RUST_INTERNAL_URL = process.env.RUST_INTERNAL_URL || 'http://localhost:4000';
 
 function botIdFromLevel(level: BotLevel): string {
   if (level === 'hard') return 'smart_bot';
@@ -18,7 +18,7 @@ export async function getBotMove(
   const yen = boardToYEN(board, boardSize, currentTurn);
   const botId = botIdFromLevel(botLevel);
 
-  const response = await fetch(`${RUST_ENGINE_URL}/v1/ybot/choose/${botId}`, {
+  const response = await fetch(`${RUST_INTERNAL_URL}/v1/ybot/choose/${botId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(yen),

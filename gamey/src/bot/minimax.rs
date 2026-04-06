@@ -462,6 +462,12 @@ impl MinimaxState {
         self.available_mask.ones()
     }
 
+    /// Returns 0 if `idx` is occupied by `player`, 1 if empty.
+    #[inline]
+    fn cell_cost(&self, idx: usize, player: u8) -> u32 {
+        if self.board[idx] == player { 0 } else { 1 }
+    }
+
     // -------------------------------------------------------------------------
     // Win detection
     // -------------------------------------------------------------------------
@@ -521,7 +527,7 @@ impl MinimaxState {
 
         for idx in 0..n {
             if self.edges_cache[idx] & side_bit != 0 && self.board[idx] != opponent {
-                self.bfs_dist[idx] = if self.board[idx] == player { 0 } else { 1 };
+                self.bfs_dist[idx] = self.cell_cost(idx, player);
                 self.bfs_queue.push_back(idx);
             }
         }
@@ -530,7 +536,7 @@ impl MinimaxState {
             let d = self.bfs_dist[idx];
             for &nb in &self.neighbors_cache[idx] {
                 if self.bfs_dist[nb] == BLOCKED && self.board[nb] != opponent {
-                    self.bfs_dist[nb] = d + if self.board[nb] == player { 0 } else { 1 };
+                    self.bfs_dist[nb] = d + self.cell_cost(nb, player);
                     self.bfs_queue.push_back(nb);
                 }
             }
@@ -754,6 +760,111 @@ fn order_moves(
     for &(idx, _) in &rest {
         moves[out] = idx;
         out += 1;
+    }
+}
+
+// ============================================================================
+// Search helpers
+// ============================================================================
+
+/// Probes the transposition table and updates the alpha-beta window.
+///
+/// Returns `Some(score)` when the result can be used immediately (exact hit or
+/// cutoff after window narrowing). Returns `None` when the search must continue.
+fn apply_tt_probe(
+    tt: &TranspositionTable,
+    hash: u64,
+    depth: u8,
+    alpha: &mut i32,
+    beta: &mut i32,
+) -> Option<i32> {
+    let entry = tt.probe(hash, depth)?;
+    match entry.flag {
+        TtFlag::Exact => return Some(entry.score),
+        TtFlag::LowerBound => *alpha = (*alpha).max(entry.score),
+        TtFlag::UpperBound => *beta = (*beta).min(entry.score),
+    }
+    if *alpha >= *beta { Some(entry.score) } else { None }
+}
+
+/// Principal Variation Search child evaluation.
+///
+/// Assumes the move for this child has already been applied to `state`.
+/// Implements the PVS null-window scout and optional re-search:
+/// - First move (`searched == 0`): full `[-beta, -alpha]` window.
+/// - Subsequent moves: null window `[-(alpha+1), -alpha]`; re-searches with
+///   full window only when the scout score falls strictly inside `(alpha, beta)`.
+///
+/// Returns the negated child score from `player`'s perspective, or `ABORTED`.
+fn pvs_child_score(
+    state: &mut MinimaxState,
+    depth: u8,
+    alpha: i32,
+    beta: i32,
+    opponent: u8,
+    searched: u32,
+    killers: &mut KillerTable,
+    tt: &mut TranspositionTable,
+    history: &mut HistoryTable,
+    start_time: Instant,
+    max_limit: Duration,
+) -> i32 {
+    if searched == 0 {
+        let child = negamax(state, depth - 1, -beta, -alpha, opponent, killers, tt, history, start_time, max_limit);
+        if child == ABORTED { return ABORTED; }
+        -child
+    } else {
+        let child = negamax(state, depth - 1, -(alpha + 1), -alpha, opponent, killers, tt, history, start_time, max_limit);
+        if child == ABORTED { return ABORTED; }
+        let s = -child;
+        if s > alpha && s < beta {
+            let child2 = negamax(state, depth - 1, -beta, -alpha, opponent, killers, tt, history, start_time, max_limit);
+            if child2 == ABORTED { return ABORTED; }
+            -child2
+        } else {
+            s
+        }
+    }
+}
+
+/// Updates alpha, best score/move, and killer/history tables after evaluating
+/// a move. Returns `true` when a beta cutoff is detected (caller should break).
+fn update_search_state(
+    score: i32,
+    move_idx: usize,
+    depth_idx: usize,
+    p_idx: usize,
+    depth: u8,
+    beta: i32,
+    alpha: &mut i32,
+    best_score: &mut i32,
+    best_move: &mut Option<usize>,
+    killers: &mut KillerTable,
+    history: &mut HistoryTable,
+) -> bool {
+    if score > *best_score {
+        *best_score = score;
+        *best_move = Some(move_idx);
+    }
+    if score > *alpha {
+        *alpha = score;
+    }
+    if *alpha >= beta {
+        killers.store(depth_idx, move_idx);
+        history.record_cutoff(move_idx, p_idx, depth);
+        return true;
+    }
+    false
+}
+
+/// Determines the transposition-table bound flag from the search result.
+fn compute_tt_flag(best_score: i32, alpha_orig: i32, beta: i32) -> TtFlag {
+    if best_score <= alpha_orig {
+        TtFlag::UpperBound
+    } else if best_score >= beta {
+        TtFlag::LowerBound
+    } else {
+        TtFlag::Exact
     }
 }
 
@@ -985,69 +1096,14 @@ fn search_best_move(
             return (move_idx, WIN_SCORE);
         }
 
-        // PVS: full window for first move, null window for the rest.
-        let score;
-        if searched == 0 {
-            let child = negamax(
-                state,
-                depth - 1,
-                -beta,
-                -alpha,
-                opponent,
-                killers,
-                tt,
-                history,
-                start_time,
-                max_limit,
-            );
-            if child == ABORTED {
-                state.undo_move(move_idx);
-                return (best_move, ABORTED);
-            }
-            score = -child;
-        } else {
-            let child = negamax(
-                state,
-                depth - 1,
-                -(alpha + 1),
-                -alpha,
-                opponent,
-                killers,
-                tt,
-                history,
-                start_time,
-                max_limit,
-            );
-            if child == ABORTED {
-                state.undo_move(move_idx);
-                return (best_move, ABORTED);
-            }
-            let mut s = -child;
-            if s > alpha && s < beta {
-                let child2 = negamax(
-                    state,
-                    depth - 1,
-                    -beta,
-                    -alpha,
-                    opponent,
-                    killers,
-                    tt,
-                    history,
-                    start_time,
-                    max_limit,
-                );
-                if child2 == ABORTED {
-                    state.undo_move(move_idx);
-                    return (best_move, ABORTED);
-                }
-                s = -child2;
-            }
-            score = s;
+        let score = pvs_child_score(state, depth, alpha, beta, opponent, searched, killers, tt, history, start_time, max_limit);
+        state.undo_move(move_idx);
+
+        if score == ABORTED {
+            return (best_move, ABORTED);
         }
 
-        state.undo_move(move_idx);
         searched += 1;
-
         if score > best_score {
             best_score = score;
             best_move = move_idx;
@@ -1060,15 +1116,7 @@ fn search_best_move(
         }
     }
 
-    // Correct bound flag for aspiration windows.
-    let flag = if best_score <= alpha_orig {
-        TtFlag::UpperBound
-    } else if best_score >= beta {
-        TtFlag::LowerBound
-    } else {
-        TtFlag::Exact
-    };
-
+    let flag = compute_tt_flag(best_score, alpha_orig, beta);
     tt.store(state.hash, depth, best_score, flag, Some(best_move));
     (best_move, best_score)
 }
@@ -1102,19 +1150,11 @@ fn negamax(
         return ABORTED;
     }
 
-    // --- TT probe ---
     let alpha_orig = alpha;
     let position_hash = state.hash;
 
-    if let Some(entry) = tt.probe(position_hash, depth) {
-        match entry.flag {
-            TtFlag::Exact => return entry.score,
-            TtFlag::LowerBound => alpha = alpha.max(entry.score),
-            TtFlag::UpperBound => beta = beta.min(entry.score),
-        }
-        if alpha >= beta {
-            return entry.score;
-        }
+    if let Some(score) = apply_tt_probe(&tt, position_hash, depth, &mut alpha, &mut beta) {
+        return score;
     }
 
     if depth == 0 {
@@ -1128,7 +1168,6 @@ fn negamax(
     let killer_moves = killers.get(depth_idx);
     let tt_move = tt.best_move(position_hash);
     let mut moves: SmallVec<[usize; 128]> = state.available_cells().collect();
-
     order_moves(&mut moves, state, player, tt_move, killer_moves, history);
 
     let mut best_score = -INFINITY;
@@ -1142,99 +1181,24 @@ fn negamax(
         if state.check_win(player) {
             state.undo_move(move_idx);
             killers.store(depth_idx, move_idx);
-            let score = WIN_SCORE;
-            tt.store(position_hash, depth, score, TtFlag::Exact, Some(move_idx));
-            return score;
+            tt.store(position_hash, depth, WIN_SCORE, TtFlag::Exact, Some(move_idx));
+            return WIN_SCORE;
         }
 
-        // PVS: full window for first move, null window for subsequent.
-        let score;
-        if searched == 0 {
-            let child = negamax(
-                state,
-                depth - 1,
-                -beta,
-                -alpha,
-                opponent,
-                killers,
-                tt,
-                history,
-                start_time,
-                max_limit,
-            );
-            if child == ABORTED {
-                state.undo_move(move_idx);
-                return ABORTED;
-            }
-            score = -child;
-        } else {
-            let child = negamax(
-                state,
-                depth - 1,
-                -(alpha + 1),
-                -alpha,
-                opponent,
-                killers,
-                tt,
-                history,
-                start_time,
-                max_limit,
-            );
-            if child == ABORTED {
-                state.undo_move(move_idx);
-                return ABORTED;
-            }
-            let mut s = -child;
-            if s > alpha && s < beta {
-                // Null-window scout proved this move can beat alpha.
-                // Re-search with full window to get exact score.
-                let child2 = negamax(
-                    state,
-                    depth - 1,
-                    -beta,
-                    -alpha,
-                    opponent,
-                    killers,
-                    tt,
-                    history,
-                    start_time,
-                    max_limit,
-                );
-                if child2 == ABORTED {
-                    state.undo_move(move_idx);
-                    return ABORTED;
-                }
-                s = -child2;
-            }
-            score = s;
-        }
-
+        let score = pvs_child_score(state, depth, alpha, beta, opponent, searched, killers, tt, history, start_time, max_limit);
         state.undo_move(move_idx);
-        searched += 1;
 
-        if score > best_score {
-            best_score = score;
-            best_move_found = Some(move_idx);
+        if score == ABORTED {
+            return ABORTED;
         }
-        if score > alpha {
-            alpha = score;
-        }
-        if alpha >= beta {
-            killers.store(depth_idx, move_idx);
-            history.record_cutoff(move_idx, p_idx, depth);
+
+        searched += 1;
+        if update_search_state(score, move_idx, depth_idx, p_idx, depth, beta, &mut alpha, &mut best_score, &mut best_move_found, killers, history) {
             break;
         }
     }
 
-    // Determine and store the bound type.
-    let flag = if best_score <= alpha_orig {
-        TtFlag::UpperBound
-    } else if best_score >= beta {
-        TtFlag::LowerBound
-    } else {
-        TtFlag::Exact
-    };
-
+    let flag = compute_tt_flag(best_score, alpha_orig, beta);
     tt.store(position_hash, depth, best_score, flag, best_move_found);
     best_score
 }

@@ -1,14 +1,14 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { User } from '../src/entities/User';
-import { MatchRecord } from '../src/entities/MatchRecord';
+import { User } from '../entities/User';
+import { MatchRecord } from '../entities/MatchRecord';
 
 export const TestDataSource = new DataSource({
   type: 'mariadb',
   host: 'localhost',
   port: 3306,
   username: 'test_user',
-  password: process.env.DB_PASSWORD || 'test_password',
+  password: 'test_password',
   database: 'users_db',
   entities: [User, MatchRecord],
   synchronize: true,

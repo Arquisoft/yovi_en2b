@@ -2,9 +2,9 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import app from '../src/app';
+import app from '../app';
 import { TestDataSource } from './testDatabase';
-import { Game } from '../src/entities/Game';
+import { Game } from '../entities/Game';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'please_dont_tell_anyone';
 

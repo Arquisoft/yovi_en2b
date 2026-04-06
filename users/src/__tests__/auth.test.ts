@@ -1,9 +1,9 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
-import app from '../src/app';
+import app from '../app';
 import { TestDataSource } from './testDatabase';
-import { User } from '../src/entities/User';
+import { User } from '../entities/User';
 
 describe('Authentication API', () => {
   const testUser = {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
-import { jsonErrorHandler, globalErrorHandler } from '../src/middleware/errorHandler';
+import { jsonErrorHandler, globalErrorHandler } from '../middleware/errorHandler';
 
 describe('Error Handlers', () => {
     let mockReq: Partial<Request>;

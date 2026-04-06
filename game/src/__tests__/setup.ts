@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { TestDataSource } from './testDatabase';
 
-vi.mock('../src/config/database', () => ({
+vi.mock('../config/database', () => ({
   AppDataSource: TestDataSource,
 }));
 

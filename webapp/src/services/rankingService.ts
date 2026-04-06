@@ -1,13 +1,13 @@
 // webapp/src/services/rankingService.ts
 
 import type { RankingEntry, RankingMode } from '@/types'
-
-//const API_BASE_URL = "http://api.localhost/users/api"
-const API_BASE_URL = 'https://api.micrati.com/users/api'
+import { USERS_API_URL } from '@/config/api'
 
 class RankingService {
+  constructor(private baseUrl: string) {}
+
   private async request<T>(endpoint: string, token: string): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
@@ -25,4 +25,4 @@ class RankingService {
   }
 }
 
-export const rankingService = new RankingService()
+export const rankingService = new RankingService(USERS_API_URL)

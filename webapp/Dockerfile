@@ -1,29 +1,32 @@
 # Build stage
+# Context is the repo root (set in docker-compose.yml) so we can access the root .env
 FROM node:22-alpine AS builder
-WORKDIR /app
+
+# /app is the parent dir — root .env will live here so vite.config.ts finds it at ../
+RUN mkdir -p /app/webapp
+WORKDIR /app/webapp
 
 # Install deps
-COPY package.json package-lock.json ./
+COPY webapp/package.json webapp/package-lock.json ./
 RUN npm ci --silent
 
-# Copy sources
-COPY . .
+# Copy webapp sources and root .env (Vite reads it from ../ at build time)
+COPY webapp/ .
+COPY .env /app/.env
 
-# Accept build-time API url (defaults to localhost:3000)
-ARG VITE_API_URL="http://localhost:3000"
-RUN export VITE_API_URL=${VITE_API_URL} && npm run build
+RUN npm run build
 
 # Production image
 FROM nginx:stable-alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/webapp/dist /usr/share/nginx/html
 
 # Copy nginx config
-COPY nginx/snippets/ /etc/nginx/snippets/
-COPY nginx/nginx.prod.conf /etc/nginx/prod.conf
-COPY nginx/nginx.dev.conf /etc/nginx/dev.conf
+COPY webapp/nginx/snippets/ /etc/nginx/snippets/
+COPY webapp/nginx/nginx.prod.conf /etc/nginx/prod.conf
+COPY webapp/nginx/nginx.dev.conf /etc/nginx/dev.conf
 
 # Copy entrypoint script
-COPY nginx/start-nginx.sh /start-nginx.sh
+COPY webapp/nginx/start-nginx.sh /start-nginx.sh
 RUN chmod +x /start-nginx.sh
 
 # Remove default nginx config and dependant scripts
