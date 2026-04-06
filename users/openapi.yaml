@@ -1,13 +1,13 @@
 openapi: 3.0.0
 info:
   title: YOVI Users API
-  description: REST API to manage YOVI application users
+  description: REST API to manage YOVI application users, statistics and rankings.
   version: 1.0.0
 servers:
-- url: https://api.micrati.com/users
-  description: Production server
-- url: http://api.localhost/users
-  description: Local server
+  - url: https://api.micrati.com/users
+    description: Production server
+  - url: http://api.localhost/users
+    description: Local server
 
 paths:
   /health:
@@ -30,7 +30,7 @@ paths:
     post:
       summary: Register new user
       tags:
-      - Authentication
+        - Authentication
       requestBody:
         required: true
         content:
@@ -38,9 +38,9 @@ paths:
             schema:
               type: object
               required:
-              - username
-              - email
-              - password
+                - username
+                - email
+                - password
               properties:
                 username:
                   type: string
@@ -66,53 +66,19 @@ paths:
                     type: string
                     example: User registered successfully
                   user:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 1
-                      username:
-                        type: string
-                        example: player1
-                      email:
-                        type: string
-                        format: email
-                        example: player1@example.com
-                      role:
-                        type: string
-                        enum: [ player, admin ]
-                        example: player
-                      createdAt:
-                        type: string
-                        format: date-time
-                        example: "2026-02-14T15:30:00.000Z"
+                    $ref: "#/components/schemas/UserProfile"
         "400":
           description: Validation error or username/email already exists
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-              examples:
-                missingFields:
-                  value:
-                    error: All fields are required
-                shortPassword:
-                  value:
-                    error: Password must be at least 6 characters long
-                duplicateUser:
-                  value:
-                    error: Username or email already exists
-                invalidJson:
-                  value:
-                    error: Invalid JSON
-                    message: The request body contains malformed JSON.
-                    details: Unexpected token in JSON at position 0
 
   /api/auth/login:
     post:
       summary: User login
       tags:
-      - Authentication
+        - Authentication
       requestBody:
         required: true
         content:
@@ -120,8 +86,8 @@ paths:
             schema:
               type: object
               required:
-              - email
-              - password
+                - email
+                - password
               properties:
                 email:
                   type: string
@@ -146,58 +112,21 @@ paths:
                     type: string
                     example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
                   user:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 1
-                      username:
-                        type: string
-                        example: player1
-                      email:
-                        type: string
-                        format: email
-                        example: player1@example.com
-                      role:
-                        type: string
-                        enum: [ player, admin ]
-                        example: player
-        "400":
-          description: Missing required fields or invalid JSON
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-              examples:
-                missingFields:
-                  value:
-                    error: Email and password are required
-                invalidJson:
-                  value:
-                    error: Invalid JSON
-                    message: The request body contains malformed JSON.
-                    details: Unexpected token in JSON at position 0
+                    $ref: "#/components/schemas/UserProfile"
         "401":
-          description: Invalid credentials or user deactivated
+          description: Invalid credentials
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
-              examples:
-                invalidCredentials:
-                  value:
-                    error: Invalid credentials
-                deactivated:
-                  value:
-                    error: User deactivated
+                $ref: "#/components/schemas/AuthError"
 
   /api/auth/profile:
     get:
       summary: Get authenticated user profile
       tags:
-      - Authentication
+        - Authentication
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       responses:
         "200":
           description: User profile
@@ -206,51 +135,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/UserProfile"
         "401":
-          description: Unauthorized - Missing, invalid, or expired token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthError"
-              examples:
-                noToken:
-                  value:
-                    error: No authentication token provided
-                invalidToken:
-                  value:
-                    error: Invalid token
-                    message: Authentication token is invalid.
-                expiredToken:
-                  value:
-                    error: Token expired
-                    message: Your session has expired. Please login again.
-                userNotFound:
-                  value:
-                    error: User not found
-                    message: Invalid authentication token
-        "403":
-          description: Forbidden - Account deactivated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthError"
-              example:
-                error: Account deactivated
-                message: Your account has been deactivated. Please contact support.
-        "404":
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-              example:
-                error: User not found
-
+          $ref: "#/components/responses/UnauthorizedError"
     put:
       summary: Update user profile
       tags:
-      - Authentication
+        - Authentication
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -260,206 +151,158 @@ paths:
               properties:
                 username:
                   type: string
-                  example: newUsername
                 email:
                   type: string
                   format: email
-                  example: newemail@example.com
       responses:
         "200":
-          description: Profile updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Profile updated successfully
-                  user:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 1
-                      username:
-                        type: string
-                        example: newUsername
-                      email:
-                        type: string
-                        format: email
-                        example: newemail@example.com
-                      role:
-                        type: string
-                        enum: [ player, admin ]
-                        example: player
-        "400":
-          description: Validation error or username/email already exists
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-              examples:
-                duplicateUsername:
-                  value:
-                    error: Username already exists
-                duplicateEmail:
-                  value:
-                    error: Email already exists
-                userNotFound:
-                  value:
-                    error: User not found
-                invalidJson:
-                  value:
-                    error: Invalid JSON
-                    message: The request body contains malformed JSON.
-                    details: Unexpected token in JSON at position 0
-                databaseError:
-                  value:
-                    error: Database error
-                    message: Invalid data provided
+          description: Profile updated
         "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthError"
-        "403":
-          description: Forbidden - Account deactivated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthError"
+          $ref: "#/components/responses/UnauthorizedError"
 
   /api/auth/change-password:
     put:
       summary: Change user password
       tags:
-      - Authentication
+        - Authentication
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-              - currentPassword
-              - newPassword
+              required: [currentPassword, newPassword]
               properties:
                 currentPassword:
                   type: string
-                  format: password
-                  example: currentPass123
                 newPassword:
                   type: string
-                  format: password
                   minLength: 6
-                  example: newPass456
       responses:
         "200":
-          description: Password changed successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Password updated successfully
+          description: Password updated
         "400":
-          description: Validation error or incorrect current password
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-              examples:
-                missingFields:
-                  value:
-                    error: Current and new password are required
-                shortPassword:
-                  value:
-                    error: New password must be at least 6 characters long
-                incorrectPassword:
-                  value:
-                    error: Current password is incorrect
-                userNotFound:
-                  value:
-                    error: User not found
-                invalidJson:
-                  value:
-                    error: Invalid JSON
-                    message: The request body contains malformed JSON.
-                    details: Unexpected token in JSON at position 0
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthError"
-        "403":
-          description: Forbidden - Account deactivated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthError"
+          $ref: "#/components/schemas/Error"
 
   /api/auth/account:
     delete:
       summary: Deactivate user account
       tags:
-      - Authentication
+        - Authentication
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       responses:
         "200":
-          description: Account deactivated successfully
+          description: Account deactivated
+
+  # --- STATS ENDPOINTS ---
+  /api/stats/history:
+    get:
+      summary: Get match history
+      tags:
+        - Statistics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MatchRecord"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /api/stats/winrate:
+    get:
+      summary: Get win rate
+      tags:
+        - Statistics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Win rate statistics
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: Account deactivated successfully
-        "400":
-          description: Error deactivating account
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-              example:
-                error: User not found
+                  winrate:
+                    type: number
+                    example: 65.5
         "401":
-          description: Unauthorized
+          $ref: "#/components/responses/UnauthorizedError"
+
+  /api/stats/record:
+    post:
+      summary: Record a new match
+      tags:
+        - Statistics
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [opponentName, result, durationSeconds]
+              properties:
+                opponentName:
+                  type: string
+                result:
+                  type: string
+                  enum: [win, loss, draw]
+                durationSeconds:
+                  type: integer
+      responses:
+        "201":
+          description: Record saved
+        "500":
+          $ref: "#/components/schemas/Error"
+
+  # --- RANKING ENDPOINTS ---
+  /api/ranking/{mode}:
+    get:
+      summary: Get ranking by mode
+      tags:
+        - Ranking
+      parameters:
+        - name: mode
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [pve-easy, pve-medium, pve-hard]
+      responses:
+        "200":
+          description: Ranking list
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthError"
-        "403":
-          description: Forbidden - Account deactivated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AuthError"
+                type: array
+                items:
+                  $ref: "#/components/schemas/RankingEntry"
+        "400":
+          description: Invalid mode
 
   /metrics:
     get:
       summary: Prometheus metrics
       tags:
-      - Monitoring
+        - Monitoring
       responses:
         "200":
-          description: Metrics in Prometheus format
+          description: Metrics
           content:
             text/plain:
               schema:
                 type: string
-                example: |
-                  # HELP http_request_duration_seconds duration histogram
-                  # TYPE http_request_duration_seconds histogram
-                  http_request_duration_seconds_bucket{le="0.1"} 100
 
 components:
   securitySchemes:
@@ -467,7 +310,14 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Bearer token authentication using JWT
+
+  responses:
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AuthError"
 
   schemas:
     UserProfile:
@@ -475,47 +325,60 @@ components:
       properties:
         id:
           type: integer
-          example: 1
         username:
           type: string
-          example: player1
         email:
           type: string
-          format: email
-          example: player1@example.com
         role:
           type: string
-          enum: [ player, admin ]
-          example: player
+          enum: [player, admin]
         createdAt:
           type: string
           format: date-time
-          example: "2026-02-14T15:30:00.000Z"
         lastLogin:
           type: string
           format: date-time
           nullable: true
-          example: "2026-02-14T16:00:00.000Z"
+
+    MatchRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        opponentName:
+          type: string
+        result:
+          type: string
+        durationSeconds:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+
+    RankingEntry:
+      type: object
+      properties:
+        username:
+          type: string
+        score:
+          type: integer
+        rank:
+          type: integer
 
     Error:
       type: object
       properties:
         error:
           type: string
-          example: Error message
         message:
           type: string
-          example: Additional error details
         details:
           type: string
-          example: Technical error details
 
     AuthError:
       type: object
       properties:
         error:
           type: string
-          example: Authentication error
         message:
           type: string
-          example: Detailed authentication error message
