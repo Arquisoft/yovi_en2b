@@ -1,18 +1,18 @@
-Computer Strategy: {
+Computer Strategy Execution: {
     style: {
         font-size: 36
         bold: true
     }
     shape: sequence_diagram
 
-    Backend: Web Application (TS) {
+    Game: game service (Node.js) {
         style: {
             fill: "#CCE5FF"
             stroke: "#0D6EFD"
             font-color: "#002752"
         }
     }
-    Engine: Game Engine {
+    Gamey: gamey (Rust / Axum) {
         style: {
             fill: "#E2D9F3"
             stroke: "#6F42C1"
@@ -20,13 +20,15 @@ Computer Strategy: {
         }
     }
 
-    Backend."Board state encoded in YEN notation"
+    Game."Board state encoded in YEN notation\n{ size, turn, players, layout }"
 
-    Backend -> Engine: Fetch current board state
-    Engine -> Engine: Calculate next move
-    Engine -> Backend: Return next move {
+    Game -> Gamey: POST /ybot/choose/{botId}\n(random_bot | fast_bot | smart_bot)
+    Gamey -> Gamey: Deserialise YEN\n(YENAdapter)
+    Gamey -> Gamey: Run strategy algorithm\n(within time budget)
+    Gamey -> Game: Chosen cell coordinate "x,y,z" {
         style: {
             stroke-dash: 3
         }
     }
+    Game -> Game: Apply move\n+ evaluate win condition
 }

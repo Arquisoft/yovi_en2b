@@ -13,21 +13,21 @@ History Consultation: {
             font-color: "#664D03"
         }
     }
-    Frontend: Web Frontend (TS) {
+    Frontend: Web Frontend (TS / React) {
         style: {
             fill: "#D4EDDA"
             stroke: "#28A745"
             font-color: "#155724"
         }
     }
-    Backend: Web Application (TS) {
+    UsersService: users service (Node.js) {
         style: {
             fill: "#CCE5FF"
             stroke: "#0D6EFD"
             font-color: "#002752"
         }
     }
-    DB: Database {
+    DB: MariaDB {
         shape: cylinder
         style: {
             fill: "#F8D7DA"
@@ -36,21 +36,21 @@ History Consultation: {
         }
     }
 
-    User -> Frontend: Request history
-    Frontend -> Backend: Get history
-    Backend -> DB: Query match data
-    DB -> Backend: Raw match data {
+    User -> Frontend: Request match history
+    Frontend -> UsersService: GET /users/api/history\n(Authorization: Bearer JWT)
+    UsersService -> DB: Query match_records\nWHERE user_id = ?
+    DB -> UsersService: Raw match records {
         style: {
             stroke-dash: 3
         }
     }
-    Backend -> Backend: Compute metrics
-    Backend -> Frontend: History metrics {
+    UsersService -> Frontend: Match record list {
         style: {
             stroke-dash: 3
         }
     }
-    Frontend -> User: Render history {
+    Frontend -> Frontend: Compute display metrics\n(win rate, totals, etc.)
+    Frontend -> User: Render history view {
         style: {
             stroke-dash: 3
         }

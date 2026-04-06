@@ -1,4 +1,4 @@
-Bot API: {
+Bot API Interaction: {
     style: {
         font-size: 36
         bold: true
@@ -13,14 +13,14 @@ Bot API: {
             font-color: "#664D03"
         }
     }
-    Backend: Web Application (TS) {
+    Interop: interop service (Node.js) {
         style: {
             fill: "#CCE5FF"
             stroke: "#0D6EFD"
             font-color: "#002752"
         }
     }
-    Engine: Game Engine {
+    Gamey: gamey (Rust / Axum) {
         style: {
             fill: "#E2D9F3"
             stroke: "#6F42C1"
@@ -28,17 +28,18 @@ Bot API: {
         }
     }
 
-    Bot."Board state encoded in YEN notation"
+    Bot."Board state encoded in YEN notation\n{ size, turn, players, layout }"
 
-    Bot -> Backend: play(boardState)
-    Backend -> Engine: Request next move
-    Engine -> Engine: Calculate next move
-    Engine -> Backend: Return next move {
+    Bot -> Interop: POST /games/play\n{ position: YEN, bot_id?, strategy? }
+    Interop -> Interop: Validate YEN position\nResolve bot\n(bot_id > strategy > default random_bot)
+    Interop -> Gamey: YEN board state\n+ resolved botId
+    Gamey -> Gamey: Compute next move\n(selected strategy)
+    Gamey -> Interop: Chosen cell "x,y,z"\n+ updated layout {
         style: {
             stroke-dash: 3
         }
     }
-    Backend -> Bot: Next move (YEN notation) {
+    Interop -> Bot: { move, position, bot_id } {
         style: {
             stroke-dash: 3
         }

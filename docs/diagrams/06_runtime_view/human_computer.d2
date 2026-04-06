@@ -13,28 +13,28 @@ Human vs Computer Match: {
             font-color: "#664D03"
         }
     }
-    Frontend: Web Frontend (TS) {
+    Frontend: Web Frontend (TS / React) {
         style: {
             fill: "#D4EDDA"
             stroke: "#28A745"
             font-color: "#155724"
         }
     }
-    Backend: Web Application (TS) {
+    Game: game service (Node.js) {
         style: {
             fill: "#CCE5FF"
             stroke: "#0D6EFD"
             font-color: "#002752"
         }
     }
-    Engine: Game Engine {
+    Gamey: gamey (Rust / Axum) {
         style: {
             fill: "#E2D9F3"
             stroke: "#6F42C1"
             font-color: "#3B1F6E"
         }
     }
-    DB: Database {
+    DB: MariaDB {
         shape: cylinder
         style: {
             fill: "#F8D7DA"
@@ -42,32 +42,46 @@ Human vs Computer Match: {
             font-color: "#721C24"
         }
     }
+    Users: users service (Node.js) {
+        style: {
+            fill: "#D1ECF1"
+            stroke: "#17A2B8"
+            font-color: "#0C5460"
+        }
+    }
 
     User -> Frontend: Select cell
-    Frontend -> Backend: Perform move
-
-    Backend -> Engine: Verify move
-    Engine -> Backend: Validation / win status {
+    Frontend -> Game: POST /game/api/games/{id}/move\n{ row, col, player }
+    Game -> Game: Validate move\n(turn, cell, status)
+    Game -> Game: Apply human move
+    Game -> Gamey: POST /ybot/choose/{botId}\n— YEN board state (PvE)
+    Gamey -> Gamey: Compute move\n(random_bot / fast_bot / smart_bot)
+    Gamey -> Game: Chosen cell coordinate {
         style: {
             stroke-dash: 3
         }
     }
-
-    If match has ended {
-        Backend -> DB: Save match results
-        DB -> Backend: Confirmation status {
+    Game -> Game: Apply bot move\n+ evaluate win condition
+    Game -> DB: Persist board state\nand move records
+    DB -> Game: OK {
+        style: {
+            stroke-dash: 3
+        }
+    }
+    If game ended {
+        Game -> Users: POST match result\n(USERS_SERVICE_URL)
+        Users -> Game: Confirmation {
             style: {
                 stroke-dash: 3
             }
         }
     }
-
-    Backend -> Frontend: Updated board state {
+    Game -> Frontend: GameState (board, status, winner, timer) {
         style: {
             stroke-dash: 3
         }
     }
-    Frontend -> User: Render result & status {
+    Frontend -> User: Render board and result {
         style: {
             stroke-dash: 3
         }
