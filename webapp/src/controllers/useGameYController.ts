@@ -2,21 +2,19 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import type { GameState, ChatMessage, Move, PlayerColor, TimerState } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
-import { useRealtime } from '@/contexts/RealtimeContext'
 import { gameService } from '@/services/gameyService'
 
 export function useGameYController() {
     const { gameId } = useParams<{ gameId: string }>()
     const navigate = useNavigate()
-    // feat/guest-mode: destructure isGuest to build effectiveToken
     const { user, token, isGuest } = useAuth()
     const effectiveToken = isGuest ? undefined : (token ?? undefined)
-    const transport = useRealtime()
 
     const [game, setGame] = useState<GameState | null>(null)
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [moveError, setMoveError] = useState<string | null>(null)
     const [isBotThinking, setIsBotThinking] = useState(false)
 
     const [liveTimer, setLiveTimer] = useState<TimerState | null>(null)
@@ -42,50 +40,8 @@ export function useGameYController() {
             }
         }
 
-        const checkBotOpens = async () => {
-            const state = await gameService.getGameState(gameId)
-            if (!state) return
-
-            const botStartsFirst =
-                state.config.mode === 'pve' &&
-                state.status === 'playing' &&
-                state.moves.length === 0 &&
-                (state.currentTurn === 'player1'
-                    ? state.players.player1.isBot
-                    : state.players.player2.isBot)
-
-            if (botStartsFirst) {
-                await waitForBot(gameId, 0)
-            }
-        }
-
-        load().then(() => checkBotOpens().catch(() => {}))
+        load()
     }, [gameId])
-
-    // --- Realtime subscription ---
-
-    useEffect(() => {
-        if (!gameId) return
-
-        transport.startPolling({ type: 'game', gameId })
-        transport.startPolling({ type: 'chat', gameId })
-
-        const unsubGame = transport.subscribe('gameUpdated', (event) => {
-            const updated = event.payload as GameState
-            if (updated.id === gameId) setGame(updated)
-        })
-
-        const unsubChat = transport.subscribe('chatMessageReceived', (event) => {
-            setChatMessages(event.payload as ChatMessage[])
-        })
-
-        return () => {
-            transport.stopPolling({ type: 'game', gameId })
-            transport.stopPolling({ type: 'chat', gameId })
-            unsubGame()
-            unsubChat()
-        }
-    }, [gameId, transport])
 
     // --- Timer sync ---
 
@@ -95,7 +51,7 @@ export function useGameYController() {
         let player1Ms = game.timer.player1RemainingMs
         let player2Ms = game.timer.player2RemainingMs
 
-        // Si la partida terminó por timeout, forzar a 0 el jugador que perdió
+        // If game ended by timeout, force loser to 0
         if (game.status === 'finished' && game.winner && game.timer.activePlayer === null) {
             const loser = game.winner === 'player1' ? 'player2' : 'player1'
             if (loser === 'player1') player1Ms = 0
@@ -114,13 +70,22 @@ export function useGameYController() {
     useEffect(() => {
         if (!game?.timer || game.status !== 'playing' || !game.timer.activePlayer) return
 
-        const activePlayer = game.timer.activePlayer
+        // While the bot is thinking, the server is running both the human's move
+        // and the bot's response before returning. Count down the bot's clock in
+        // the frontend instead of the human's so the display stays accurate.
+        const botColor: PlayerColor | null =
+            game.config.mode === 'pve'
+                ? (game.players.player1.isBot ? 'player1' : 'player2')
+                : null
+        const activePlayer = isBotThinking && botColor ? botColor : game.timer.activePlayer
+
         const interval = setInterval(() => {
             const elapsed = Date.now() - clockStartedAtRef.current
             setLiveTimer((prev) => {
                 if (!prev) return prev
                 return {
                     ...prev,
+                    activePlayer,
                     player1RemainingMs:
                         activePlayer === 'player1'
                             ? Math.max(0, timerBaseRef.current.player1Ms - elapsed)
@@ -134,7 +99,7 @@ export function useGameYController() {
         }, 250)
 
         return () => clearInterval(interval)
-    }, [game?.timer?.activePlayer, game?.status])
+    }, [game?.timer?.activePlayer, game?.status, isBotThinking])
 
     // --- Resync on tab focus ---
 
@@ -148,17 +113,7 @@ export function useGameYController() {
         return () => document.removeEventListener('visibilitychange', onVisibilityChange)
     }, [gameId])
 
-    // --- Helpers ---
-
-    const waitForBot = async (gid: string, afterMovesCount: number) => {
-        setIsBotThinking(true)
-        try {
-            const state = await gameService.waitForBotMove(gid, afterMovesCount)
-            if (state) setGame(state)
-        } finally {
-            setIsBotThinking(false)
-        }
-    }
+    // --- Derived state ---
 
     const lastMove: Move | null = game?.moves.length ? game.moves[game.moves.length - 1] : null
 
@@ -166,7 +121,7 @@ export function useGameYController() {
         if (!game || game.status !== 'playing' || isBotThinking) return false
         if (game.config.mode === 'pvp-local') return true
         const currentPlayer = game.currentTurn === 'player1' ? game.players.player1 : game.players.player2
-        return currentPlayer.id === user?.id
+        return String(currentPlayer.id) === String(user?.id)
     }, [game, user, isBotThinking])
 
     // --- Handlers ---
@@ -174,18 +129,41 @@ export function useGameYController() {
     const handleCellClick = useCallback(async (row: number, col: number) => {
         if (!game || !gameId || !canPlay()) return
 
-        try {
-            // feat/guest-mode: use effectiveToken (undefined for guests)
-            const updated = await gameService.playMove(gameId, row, col, game.currentTurn, effectiveToken)
-            setGame(updated)
+        // Optimistic update: show the move immediately, revert on error
+        const snapshot = game
+        const optimisticBoard = game.board.map((boardRow, r) =>
+            boardRow.map((cell, c) =>
+                r === row && c === col ? { ...cell, owner: game.currentTurn as PlayerColor } : cell
+            )
+        )
+        setGame({ ...game, board: optimisticBoard })
 
-            if (updated.config.mode === 'pve' && updated.status === 'playing') {
-                await waitForBot(gameId, updated.moves.length)
+        setMoveError(null)
+
+        // In PvE the server processes the human move + bot response in one round-
+        // trip, returning only when both are done. Reset the clock reference to
+        // right now so the bot's countdown interval starts from the correct base.
+        if (game.config.mode === 'pve' && game.timer) {
+            timerBaseRef.current = {
+                player1Ms: liveTimer?.player1RemainingMs ?? game.timer.player1RemainingMs,
+                player2Ms: liveTimer?.player2RemainingMs ?? game.timer.player2RemainingMs,
             }
-        } catch (err) {
-            console.error('Failed to play move:', err)
+            clockStartedAtRef.current = Date.now()
         }
-    }, [game, gameId, canPlay, effectiveToken])
+
+        setIsBotThinking(game.config.mode === 'pve')
+        try {
+            const updated = await gameService.playMove(gameId, row, col, game.currentTurn as PlayerColor, effectiveToken)
+            setGame(updated)
+        } catch (err) {
+            setGame(snapshot)
+            const msg = err instanceof Error ? err.message : 'Failed to play move'
+            setMoveError(msg)
+            console.error('Failed to play move:', err)
+        } finally {
+            setIsBotThinking(false)
+        }
+    }, [game, gameId, canPlay, effectiveToken, liveTimer])
 
     const handleSurrender = useCallback(async () => {
         if (!game || !gameId) return
@@ -193,7 +171,7 @@ export function useGameYController() {
         const surrenderingPlayer: PlayerColor =
             game.config.mode === 'pvp-local'
                 ? game.currentTurn
-                : game.players.player1.id === user?.id ? 'player1' : 'player2'
+                : String(game.players.player1.id) === String(user?.id) ? 'player1' : 'player2'
 
         try {
             // feat/guest-mode: use effectiveToken (undefined for guests)
@@ -226,6 +204,7 @@ export function useGameYController() {
         chatMessages,
         isLoading,
         error,
+        moveError,
         lastMove,
         isBotThinking,
         canPlay: canPlay(),

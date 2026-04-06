@@ -12,6 +12,7 @@ import { AppDataSource } from './config/database';
 import authRoutes from './routes/authRoutes';
 import { jsonErrorHandler, globalErrorHandler } from './middleware/errorHandler';
 import statsRoutes from './routes/statsRoutes';
+import rankingRoutes from './routes/rankingRoutes';
 
 dotenv.config();
 
@@ -20,13 +21,8 @@ const PORT = process.env.PORT || 3000;
 
 console.log(`Starting nodejs server with env: ` + process.env.NODE_ENV);
 
-
-
-
-// JSON PARSING
 app.use(express.json({ limit: '10mb' }));
 
-// SECURITY 
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -40,7 +36,6 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 
-// PROMETHEUS METRICS
 const metricsMiddleware = promBundle({
     includeMethod: true,
     includePath: true,
@@ -53,7 +48,6 @@ const metricsMiddleware = promBundle({
 });
 app.use(metricsMiddleware);
 
-// SWAGGER DOCUMENTATION
 try {
     const swaggerPath = path.join(__dirname, '../openapi.yaml');
     const swaggerDocument = YAML.load(fs.readFileSync(swaggerPath, 'utf8')) as object;
@@ -63,16 +57,12 @@ try {
     console.warn('Could not load openapi.yaml:', error);
 }
 
-// JSON ERROR HANDLING
 app.use(jsonErrorHandler);
 
-// API ROUTES
 app.use('/api/auth', authRoutes);
-
-// STATISTICS
 app.use('/api/stats', statsRoutes);
+app.use('/api/ranking', rankingRoutes);
 
-// HEALTH CHECK
 app.get('/health', (_, res) => {
     res.json({
         status: 'ok',
@@ -81,7 +71,6 @@ app.get('/health', (_, res) => {
     });
 });
 
-// 404 HANDLING
 app.use((req, res) => {
     res.status(404).json({
         error: 'Not Found',
@@ -90,10 +79,8 @@ app.use((req, res) => {
     });
 });
 
-// GLOBAL ERROR HANDLING
 app.use(globalErrorHandler);
 
-// SERVER START
 const startServer = async () => {
     try {
         await AppDataSource.initialize();

@@ -15,6 +15,10 @@ flamegraph.svg
 perf.data
 conexion-base.txt
 
+.claude/
+AGENTS.md
+CLAUDE.md
+
 .staging/
 .DS_Store
 tmp/

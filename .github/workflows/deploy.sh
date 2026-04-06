@@ -19,10 +19,12 @@ chmod 600 .env
 mkdir -p users/monitoring/prometheus
 mkdir -p users/monitoring/grafana/provisioning/datasources
 mkdir -p users/monitoring/grafana/provisioning/dashboards
+mkdir -p game
 
 # Download files
 wget -q "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/master/docker-compose.yml" -O docker-compose.yml
 wget -q "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/master/users/schema.sql" -O users/schema.sql
+wget -q "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/master/game/schema.sql" -O game/schema.sql
 wget -q "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/master/users/monitoring/prometheus/prometheus.yml" -O users/monitoring/prometheus/prometheus.yml
 wget -q "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/master/users/monitoring/grafana/provisioning/datasources/datasource.yml" -O users/monitoring/grafana/provisioning/datasources/datasource.yml
 wget -q "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/master/users/monitoring/grafana/provisioning/dashboards/dashboard.yml" -O users/monitoring/grafana/provisioning/dashboards/dashboard.yml

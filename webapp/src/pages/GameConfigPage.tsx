@@ -7,9 +7,8 @@ import { Select } from '@/components/ui/Select'
 import { Switch } from '@/components/ui/Switch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { ArrowLeft, AlertCircle } from 'lucide-react'
-import type { BoardSize, BotLevel, PlayerColor } from '@/types'
+import type { BotLevel, PlayerColor } from '@/types'
 
-const boardSizes: BoardSize[] = [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 const botLevels: { value: BotLevel; label: string }[] = [
   { value: 'easy', label: 'Easy' },
   { value: 'medium', label: 'Medium' },
@@ -24,35 +23,34 @@ export function GameConfigPage() {
   const navigate = useNavigate()
   const {
     mode,
-    boardSize,
-    setBoardSize,
+    boardSizeInput,
+    setBoardSizeInput,
+    boardSizeError,
+    parsedBoardSize,
+    timerInput,
+    setTimerInput,
+    timerError,
+    parsedTimerMinutes,
     timerEnabled,
     setTimerEnabled,
-    timerMinutes,
-    setTimerMinutes,
     botLevel,
     setBotLevel,
     playerColor,
     setPlayerColor,
-    roomName,
-    setRoomName,
-    isPrivate,
-    setIsPrivate,
     isLoading,
     error,
     handleStartGame,
+    boardMin,
+    boardMax,
+    timerMin,
+    timerMax,
   } = useGameConfigController()
 
   const getModeTitle = () => {
     switch (mode) {
-      case 'pvp-local':
-        return 'Local Match'
-      case 'pvp-online':
-        return 'Online Match'
-      case 'pve':
-        return 'vs Computer'
-      default:
-        return 'Game Setup'
+      case 'pvp-local': return 'Local Match'
+      case 'pve':       return 'vs Computer'
+      default:          return 'Game Setup'
     }
   }
 
@@ -71,9 +69,7 @@ export function GameConfigPage() {
         <Card>
           <CardHeader>
             <CardTitle>{getModeTitle()}</CardTitle>
-            <CardDescription>
-              Configure your game settings
-            </CardDescription>
+            <CardDescription>Configure your game settings</CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-6">
@@ -87,20 +83,33 @@ export function GameConfigPage() {
             {/* Board Size */}
             <div className="space-y-2">
               <Label htmlFor="boardSize">Board Size</Label>
-              <Select
-                id="boardSize"
-                value={String(boardSize)}
-                onChange={(e) => setBoardSize(Number(e.target.value) as BoardSize)}
-              >
-                {boardSizes.map((size) => (
-                  <option key={size} value={size}>
-                    {size} x {size}
-                  </option>
-                ))}
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Larger boards make for longer, more strategic games
-              </p>
+              <div className="flex items-center gap-3">
+                <Input
+                  id="boardSize"
+                  type="number"
+                  min={boardMin}
+                  max={boardMax}
+                  value={boardSizeInput}
+                  onChange={(e) => setBoardSizeInput(e.target.value)}
+                  error={!!boardSizeError}
+                  className="w-24"
+                  placeholder="9"
+                />
+                {parsedBoardSize ? (
+                  <span className="text-sm font-medium text-foreground tabular-nums">
+                    {parsedBoardSize} × {parsedBoardSize}
+                  </span>
+                ) : (
+                  <span className="text-sm text-muted-foreground">— × —</span>
+                )}
+              </div>
+              {boardSizeError ? (
+                <p className="text-xs text-destructive">{boardSizeError}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Enter a number from {boardMin} to {boardMax}. Larger boards make for longer, more strategic games.
+                </p>
+              )}
             </div>
 
             {/* PvE specific options */}
@@ -138,36 +147,7 @@ export function GameConfigPage() {
               </>
             )}
 
-            {/* PvP Online specific options */}
-            {mode === 'pvp-online' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="roomName">Room Name</Label>
-                  <Input
-                    id="roomName"
-                    placeholder="Enter a room name"
-                    value={roomName}
-                    onChange={(e) => setRoomName(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="private">Private Room</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Only players with invite link can join
-                    </p>
-                  </div>
-                  <Switch
-                    id="private"
-                    checked={isPrivate}
-                    onCheckedChange={setIsPrivate}
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Timer settings */}
+            {/* Timer */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
@@ -185,18 +165,30 @@ export function GameConfigPage() {
 
               {timerEnabled && (
                 <div className="space-y-2">
-                  <Label htmlFor="timerMinutes">Time per Player (minutes)</Label>
-                  <Select
-                    id="timerMinutes"
-                    value={String(timerMinutes)}
-                    onChange={(e) => setTimerMinutes(Number(e.target.value))}
-                  >
-                    {[5, 10, 15, 20, 30].map((mins) => (
-                      <option key={mins} value={mins}>
-                        {mins} minutes
-                      </option>
-                    ))}
-                  </Select>
+                  <Label htmlFor="timerMinutes">Time per Player</Label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id="timerMinutes"
+                      type="number"
+                      min={timerMin}
+                      max={timerMax}
+                      value={timerInput}
+                      onChange={(e) => setTimerInput(e.target.value)}
+                      error={!!timerError}
+                      className="w-24"
+                      placeholder="10"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {parsedTimerMinutes === 1 ? 'minute' : 'minutes'}
+                    </span>
+                  </div>
+                  {timerError ? (
+                    <p className="text-xs text-destructive">{timerError}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Enter a number from {timerMin} to {timerMax} minutes.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -205,8 +197,9 @@ export function GameConfigPage() {
               className="w-full"
               onClick={handleStartGame}
               isLoading={isLoading}
+              disabled={!!boardSizeError || !!timerError || boardSizeInput === '' || (timerEnabled && timerInput === '')}
             >
-              {mode === 'pvp-online' ? 'Create Room' : 'Start Game'}
+              Start Game
             </Button>
           </CardContent>
         </Card>

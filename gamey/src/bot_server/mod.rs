@@ -29,7 +29,7 @@ pub use error::ErrorResponse;
 use std::sync::Arc;
 pub use version::*;
 
-use crate::{GameYError, MinimaxBot, RandomBot, YBotRegistry, state::AppState};
+use crate::{FastBot, GameYError, RandomBot, SmartBot, YBotRegistry, state::AppState};
 
 /// Creates the Axum router with the given state.
 ///
@@ -46,11 +46,15 @@ pub fn create_router(state: AppState) -> axum::Router {
 
 /// Creates the default application state with the standard bot registry.
 ///
-/// The default state includes the `RandomBot` which selects moves randomly.
+/// Registered bots:
+/// - `random_bot` — random move selection (EASY)
+/// - `fast_bot`   — minimax with 500 ms budget (MEDIUM)
+/// - `smart_bot`  — minimax with 1 000–3 000 ms budget (HARD)
 pub fn create_default_state() -> AppState {
     let bots = YBotRegistry::new()
         .with_bot(Arc::new(RandomBot))
-        .with_bot(Arc::new(MinimaxBot::new(500, 500)));
+        .with_bot(Arc::new(FastBot))
+        .with_bot(Arc::new(SmartBot));
     AppState::new(bots)
 }
 

@@ -1,4 +1,4 @@
-use crate::{Coordinates, GameY, PlayerId, YBot, game};
+use crate::{Coordinates, GameY, PlayerId, game};
 use fixedbitset::FixedBitSet;
 use smallvec::SmallVec;
 use std::{
@@ -758,40 +758,35 @@ fn order_moves(
 }
 
 // ============================================================================
-// Bot
+// Public helper
 // ============================================================================
 
-pub struct MinimaxBot {
+/// Runs the minimax engine for `game` and returns the chosen [`Coordinates`].
+///
+/// This is the shared implementation used by [`FastBot`](crate::FastBot) and
+/// [`SmartBot`](crate::SmartBot). Both strategies use the same algorithm but
+/// with different time budgets:
+///
+/// | Bot       | `min_time_ms` | `max_time_ms` |
+/// |-----------|---------------|---------------|
+/// | fast_bot  | 500           | 500           |
+/// | smart_bot | 1 000         | 3 000         |
+///
+/// Returns `None` only when there are no available moves.
+pub fn choose_move_with_minimax(
+    game: &GameY,
     min_time_ms: u64,
     max_time_ms: u64,
-}
+) -> Option<Coordinates> {
+    let bot_player = game.next_player()?;
+    let mut state = MinimaxState::new(game, bot_player);
 
-impl MinimaxBot {
-    pub fn new(min_time_ms: u64, max_time_ms: u64) -> Self {
-        Self {
-            min_time_ms,
-            max_time_ms,
-        }
-    }
-}
-
-impl YBot for MinimaxBot {
-    fn name(&self) -> &str {
-        "minimax_bot"
+    if let Some(coords) = greedy_search(&mut state) {
+        return Some(coords);
     }
 
-    fn choose_move(&self, game: &GameY) -> Option<Coordinates> {
-        let bot_player = game.next_player()?;
-        let mut state = MinimaxState::new(game, bot_player);
-
-        if let Some(coords) = greedy_search(&mut state) {
-            return Some(coords);
-        }
-
-        let best_move = iterative_deepening_search(&mut state, self.min_time_ms, self.max_time_ms);
-
-        Some(Coordinates::from_index(best_move as u32, game.board_size()))
-    }
+    let best_move = iterative_deepening_search(&mut state, min_time_ms, max_time_ms);
+    Some(Coordinates::from_index(best_move as u32, game.board_size()))
 }
 
 // ============================================================================
@@ -1694,18 +1689,12 @@ mod tests {
     }
 
     #[test]
-    fn test_bot_choose_move_returns_valid_coords() {
+    fn test_choose_move_with_minimax_returns_valid_coords() {
         let game = GameY::new(3);
-        let bot = MinimaxBot::new(50, 200);
-        let coords = bot.choose_move(&game);
+        let coords = choose_move_with_minimax(&game, 50, 200);
 
         assert!(coords.is_some());
         assert!(coords.unwrap().is_valid(3));
-    }
-
-    #[test]
-    fn test_bot_name() {
-        assert_eq!(MinimaxBot::new(50, 200).name(), "minimax_bot");
     }
 
     #[test]
