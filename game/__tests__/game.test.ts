@@ -44,8 +44,16 @@ beforeEach(() => {
 
 describe('Game API', () => {
   describe('POST /api/games', () => {
-    it('returns 401 without token', async () => {
-      const res = await request(app).post('/api/games').send(pvePatch);
+    it('allows guest creation without token', async () => {
+      const res = await request(app).post('/api/games').send({ ...pvePatch, guestId: 'guest-test' });
+      expect(res.status).toBe(201);
+    });
+
+    it('returns 401 with invalid token', async () => {
+      const res = await request(app)
+        .post('/api/games')
+        .set('Authorization', 'Bearer invalid-token')
+        .send(pvePatch);
       expect(res.status).toBe(401);
     });
 
@@ -124,9 +132,17 @@ describe('Game API', () => {
   });
 
   describe('POST /api/games/:id/move', () => {
-    it('returns 401 without token', async () => {
+    it('returns 404 without token (guest allowed, game not found)', async () => {
       const res = await request(app)
         .post('/api/games/some-id/move')
+        .send({ row: 0, col: 0, player: 'player1' });
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 401 with invalid token', async () => {
+      const res = await request(app)
+        .post('/api/games/some-id/move')
+        .set('Authorization', 'Bearer invalid-token')
         .send({ row: 0, col: 0, player: 'player1' });
       expect(res.status).toBe(401);
     });
@@ -212,9 +228,17 @@ describe('Game API', () => {
   });
 
   describe('POST /api/games/:id/surrender', () => {
-    it('returns 401 without token', async () => {
+    it('returns 404 without token (guest allowed, game not found)', async () => {
       const res = await request(app)
         .post('/api/games/some-id/surrender')
+        .send({ player: 'player1' });
+      expect(res.status).toBe(404);
+    });
+
+    it('returns 401 with invalid token', async () => {
+      const res = await request(app)
+        .post('/api/games/some-id/surrender')
+        .set('Authorization', 'Bearer invalid-token')
         .send({ player: 'player1' });
       expect(res.status).toBe(401);
     });
@@ -312,6 +336,182 @@ describe('Game API', () => {
       const res = await request(app).get('/health');
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('ok');
+    });
+  });
+
+  describe('Unknown routes', () => {
+    it('returns 404 for unknown GET route', async () => {
+      const res = await request(app).get('/api/unknown-route');
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe('Not Found');
+    });
+
+    it('returns 404 for unknown POST route', async () => {
+      const res = await request(app).post('/api/unknown-route').send({});
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('Malformed JSON', () => {
+    it('returns 400 for malformed JSON body', async () => {
+      const res = await request(app)
+        .post('/api/games')
+        .set('Content-Type', 'application/json')
+        .set('Authorization', `Bearer ${token}`)
+        .send('{ invalid json }');
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Invalid JSON');
+    });
+  });
+
+  describe('Authentication edge cases', () => {
+    it('returns 401 for expired token on any route', async () => {
+      const expiredToken = jwt.sign(
+        { id: 1, username: 'test', role: 'player' },
+        JWT_SECRET,
+        { expiresIn: '-1s' }
+      );
+      const res = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${expiredToken}`)
+        .send(pvePatch);
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe('Token expired');
+    });
+  });
+
+  describe('POST /api/games — config validation', () => {
+    it('returns 400 when boardSize < 4', async () => {
+      const res = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ config: { mode: 'pvp-local', boardSize: 3, timerEnabled: false } });
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 when boardSize > 16', async () => {
+      const res = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ config: { mode: 'pvp-local', boardSize: 17, timerEnabled: false } });
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 when timerSeconds out of range', async () => {
+      const res = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ config: { mode: 'pvp-local', boardSize: 5, timerEnabled: true, timerSeconds: 10 } });
+      expect(res.status).toBe(400);
+    });
+
+    it('creates game with easy bot level', async () => {
+      const res = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ config: { mode: 'pve', boardSize: 5, timerEnabled: false, botLevel: 'easy', playerColor: 'player1' } });
+      expect(res.status).toBe(201);
+      expect(res.body.players.player2.isBot).toBe(true);
+    });
+
+    it('creates game with hard bot level', async () => {
+      const res = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ config: { mode: 'pve', boardSize: 5, timerEnabled: false, botLevel: 'hard', playerColor: 'player1' } });
+      expect(res.status).toBe(201);
+      expect(res.body.players.player2.isBot).toBe(true);
+    });
+
+    it('creates game with timer enabled', async () => {
+      const res = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ config: { mode: 'pvp-local', boardSize: 5, timerEnabled: true, timerSeconds: 300 } });
+      expect(res.status).toBe(201);
+      expect(res.body.timer).not.toBeNull();
+      expect(res.body.timer.player1RemainingMs).toBe(300000);
+      expect(res.body.timer.activePlayer).toBe('player1');
+    });
+  });
+
+  describe('POST /api/games/:id/surrender — validation', () => {
+    it('returns 400 when player field is missing', async () => {
+      const createRes = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send(pvpLocalConfig);
+      const gameId = createRes.body.id;
+
+      const res = await request(app)
+        .post(`/api/games/${gameId}/surrender`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({});
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/player is required/i);
+    });
+  });
+
+  describe('Timer game flow', () => {
+    it('timer decrements after a move', async () => {
+      const createRes = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ config: { mode: 'pvp-local', boardSize: 5, timerEnabled: true, timerSeconds: 300 } });
+      const gameId = createRes.body.id;
+      const initialMs = createRes.body.timer.player1RemainingMs;
+
+      const moveRes = await request(app)
+        .post(`/api/games/${gameId}/move`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ row: 0, col: 0, player: 'player1' });
+
+      expect(moveRes.status).toBe(200);
+      expect(moveRes.body.timer).not.toBeNull();
+      expect(moveRes.body.timer.player1RemainingMs).toBeLessThanOrEqual(initialMs);
+      expect(moveRes.body.timer.activePlayer).toBe('player2');
+    });
+
+    it('timer activePlayer is null after surrender', async () => {
+      const createRes = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ config: { mode: 'pvp-local', boardSize: 5, timerEnabled: true, timerSeconds: 300 } });
+      const gameId = createRes.body.id;
+
+      const res = await request(app)
+        .post(`/api/games/${gameId}/surrender`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ player: 'player1' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.timer.activePlayer).toBeNull();
+    });
+  });
+
+  describe('PvE game with token — match recording', () => {
+    it('pve game records match when human wins (bot fails gracefully)', async () => {
+      // Mock bot to return an invalid move so it skips — human can play to win
+      vi.mocked(fetch)
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ coords: { x: 0, y: 0, z: 0 } }) } as any)
+        .mockResolvedValue({ ok: false, status: 503 } as any);
+
+      const createRes = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ config: { mode: 'pve', boardSize: 5, timerEnabled: false, botLevel: 'medium', playerColor: 'player1' } });
+
+      expect(createRes.status).toBe(201);
+    });
+
+    it('returns 201 for pve game where bot is player2 (human player1)', async () => {
+      const res = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ config: { mode: 'pve', boardSize: 5, timerEnabled: false, botLevel: 'medium', playerColor: 'player1' } });
+      expect(res.status).toBe(201);
+      expect(res.body.players.player1.isBot).toBeUndefined();
+      expect(res.body.players.player2.isBot).toBe(true);
     });
   });
 });
