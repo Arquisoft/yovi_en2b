@@ -1,47 +1,87 @@
-History consultation: {
-        style: {
-        font-size: 40
+Human vs Computer Match: {
+    style: {
+        font-size: 36
         bold: true
-    }   
+    }
     shape: sequence_diagram
 
-    # Participants
-    User: Human Player
-    Frontend: Web Frontend (TS)
-    Backend: Web Application (TS)
-    Engine: Game Engine
-    DB: Database
+    User: Human Player {
+        shape: person
+        style: {
+            fill: "#FFF3CD"
+            stroke: "#E6A817"
+            font-color: "#664D03"
+        }
+    }
+    Frontend: Web Frontend (TS / React) {
+        style: {
+            fill: "#D4EDDA"
+            stroke: "#28A745"
+            font-color: "#155724"
+        }
+    }
+    Game: game service (Node.js) {
+        style: {
+            fill: "#CCE5FF"
+            stroke: "#0D6EFD"
+            font-color: "#002752"
+        }
+    }
+    Gamey: gamey (Rust / Axum) {
+        style: {
+            fill: "#E2D9F3"
+            stroke: "#6F42C1"
+            font-color: "#3B1F6E"
+        }
+    }
+    DB: MariaDB {
+        shape: cylinder
+        style: {
+            fill: "#F8D7DA"
+            stroke: "#DC3545"
+            font-color: "#721C24"
+        }
+    }
+    Users: users service (Node.js) {
+        style: {
+            fill: "#D1ECF1"
+            stroke: "#17A2B8"
+            font-color: "#0C5460"
+        }
+    }
 
-    # 1. Start Turn
-    User -> Frontend: Selects cell
-    Frontend -> Backend: Perform the move
-
-    # 2. Check the move
-    Backend -> Engine: Verify the move
-    Engine -> Backend: Return validation/win status {
+    User -> Frontend: Select cell
+    Frontend -> Game: POST /game/api/games/:id/move\n(row, col, player)
+    Game -> Game: Validate move\n(turn, cell, status)
+    Game -> Game: Apply human move
+    Game -> Gamey: POST /ybot/choose/:botId\n— YEN board state (PvE)
+    Gamey -> Gamey: Compute move\n(random_bot / fast_bot / smart_bot)
+    Gamey -> Game: Chosen cell coordinate {
         style: {
             stroke-dash: 3
         }
     }
-
-    # 3. Check if the game is over
-    If match has ended {
-        # This only happens if Rust says "Match Won"
-        Backend -> DB: Save match results
-        DB -> Backend: Confirmation status {
+    Game -> Game: Apply bot move\n+ evaluate win condition
+    Game -> DB: Persist board state\nand move records
+    DB -> Game: OK {
         style: {
             stroke-dash: 3
         }
     }
+    "If game ended" {
+        Game -> Users: POST match result\n(USERS_SERVICE_URL)
+        Users -> Game: Confirmation {
+            style: {
+                stroke-dash: 3
+            }
+        }
     }
-
-    # 4. UI Update
-    Backend -> Frontend: Updated state {
+    Game -> Frontend: GameState (board, status, winner, timer) {
         style: {
             stroke-dash: 3
         }
     }
-    Frontend -> User: Render result & show status {
+    Frontend -> User: Render board and result {
         style: {
             stroke-dash: 3
         }

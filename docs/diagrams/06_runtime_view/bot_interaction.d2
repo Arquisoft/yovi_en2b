@@ -1,31 +1,47 @@
-Bot API: {
-        style: {
-        font-size: 40
+Bot API Interaction: {
+    style: {
+        font-size: 36
         bold: true
-    }    
+    }
     shape: sequence_diagram
 
-    # Participants
-    Bot: External Bot
-    Backend: Web Application (TS)
-    Engine: Game Engine
-
-    # Scenario: Computer calculates its turn
-    Bot."YEN notation used for board state"
-
-    Bot -> Backend: play(boardState)
-
-    Backend -> Engine: Request next move
-    Engine -> Engine: Calculate the next move
-    Engine -> Backend: Return the next move {
-            style: {
-                stroke-dash: 3
-            }
+    Bot: External Bot {
+        shape: person
+        style: {
+            fill: "#FFF3CD"
+            stroke: "#E6A817"
+            font-color: "#664D03"
         }
-
-    Backend -> Bot: Next move {
-            style: {
-                stroke-dash: 3
-            }
+    }
+    Interop: interop service (Node.js) {
+        style: {
+            fill: "#CCE5FF"
+            stroke: "#0D6EFD"
+            font-color: "#002752"
         }
+    }
+    Gamey: gamey (Rust / Axum) {
+        style: {
+            fill: "#E2D9F3"
+            stroke: "#6F42C1"
+            font-color: "#3B1F6E"
+        }
+    }
+
+    Bot."Board state encoded in YEN notation\n(size, turn, players, layout)"
+
+    Bot -> Interop: POST /games/play\n(position: YEN, bot_id?, strategy?)
+    Interop -> Interop: Validate YEN position\nResolve bot\n(bot_id > strategy > default random_bot)
+    Interop -> Gamey: YEN board state\n+ resolved botId
+    Gamey -> Gamey: Compute next move\n(selected strategy)
+    Gamey -> Interop: Chosen cell "x,y,z"\n+ updated layout {
+        style: {
+            stroke-dash: 3
+        }
+    }
+    Interop -> Bot: (move, position, bot_id) {
+        style: {
+            stroke-dash: 3
+        }
+    }
 }
