@@ -4184,13 +4184,14 @@ layout string after the bot&#8217;s move has been applied.</p>
 <h2 id="section-deployment-view">7. Deployment View</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The deployment view describes the physical environment in which the YOVI system is executed and the automation processes that manage its lifecycle.</p>
+<p>The deployment view describes the physical environment in which the YOVI system executes and the
+automation processes that manage its lifecycle.</p>
 </div>
 <div class="sect2">
 <h3 id="_infrastructure_level_1_cloud_environment">7.1. Infrastructure Level 1: Cloud Environment</h3>
 <div class="paragraph">
-<p>The system is deployed on the Microsoft Azure cloud platform, using the "Azure for Students" subscription.
-A system with the following capabilities was deployed looking for a compromise between performance and cost:</p>
+<p>The system is deployed on Microsoft Azure using the "Azure for Students" subscription. A virtual
+machine with the following profile was provisioned, balancing performance against cost:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -4209,39 +4210,72 @@ A system with the following capabilities was deployed looking for a compromise b
 <div class="sect2">
 <h3 id="_infrastructure_level_2_execution_environment_docker">7.2. Infrastructure Level 2: Execution Environment (Docker)</h3>
 <div class="paragraph">
-<p>The system follows a "Cattle" not "Pets" approach, using containerization to ensure consistency between development and production.</p>
+<p>The system follows a "Cattle not Pets" approach, using Docker containers coordinated by Docker
+Compose to ensure consistency between development and production environments.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 25%;">
-<col style="width: 25%;">
-<col style="width: 50%;">
+<col style="width: 14.2857%;">
+<col style="width: 28.5714%;">
+<col style="width: 14.2857%;">
+<col style="width: 42.8572%;">
 </colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Container</th>
+<th class="tableblock halign-left valign-top">Technology</th>
+<th class="tableblock halign-left valign-top">Port</th>
+<th class="tableblock halign-left valign-top">Responsibility</th>
+</tr>
+</thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Container</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Technology</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Responsibility</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>webapp</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nginx + React 18 (TypeScript, Vite)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">80 / 443</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Serves the React SPA as static files and acts as the Nginx reverse proxy, routing
+  <code>/users/</code> to the <code>users</code> service, <code>/game/</code> to the <code>game</code> service, and proxying Grafana and
+  Prometheus paths.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Web Application</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">TypeScript / Node.js</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Handles the UI, User sessions, and API requests.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>users</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TypeScript / Node.js 22 (Express, TypeORM)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Authentication, user profiles, match history, and ranking. Manages the <code>users</code> and
+  <code>match_records</code> tables.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Game Engine</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Rust</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Performs game logic validation and strategy suggestions.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>game</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TypeScript / Node.js 22 (Express, TypeORM)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game session management, move validation, bot orchestration, and timer enforcement. Manages the
+  <code>games</code> and <code>game_moves</code> tables. Delegates bot move computation to <code>gamey</code>.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Database</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">MariaDB</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Persistent storage for users and match history.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gamey</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rust (Axum)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4000 <strong>(internal only)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bot AI engine. Computes the next move for a given YEN board position using the configured
+  strategy (random_bot, fast_bot, smart_bot). Never directly reachable from the browser.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Monitoring</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus / Grafana</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Observability of system health (Ports 9090/9091).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>mariadb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MariaDB 11.4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3306 <strong>(internal only)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistent storage for all application data. Both <code>users</code> and <code>game</code> share the same
+  <code>users_db</code> database instance.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>prometheus</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9090</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Metrics collection. Scrapes the <code>/metrics</code> endpoint exposed by the <code>users</code> service.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>grafana</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grafana</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9091 (host) → 3000 (container)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Metrics visualisation dashboards, pre-provisioned via the <code>users/monitoring/grafana</code> directory.</p></td>
 </tr>
 </tbody>
 </table>
@@ -4249,21 +4283,42 @@ A system with the following capabilities was deployed looking for a compromise b
 <div class="sect2">
 <h3 id="_network_and_connectivity">7.3. Network and Connectivity</h3>
 <div class="paragraph">
-<p>The Virtual Machine is configured with a Public IP and specific inbound port rules as required by the project specifications:</p>
+<p>The Virtual Machine is configured with a public IP and specific inbound port rules:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Port 80/443:</strong> Public access to the Web Application.</p>
+<p><strong>Port 80 / 443:</strong> Public HTTPS access, handled by Nginx inside the <code>webapp</code> container. Nginx
+proxies all API traffic to the internal services:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>/users/</code> → <code>users</code> service on port 3000</p>
 </li>
 <li>
-<p><strong>Port 3000/4000:</strong> Internal service communication.</p>
+<p><code>/game/</code> → <code>game</code> service on port 5000</p>
 </li>
 <li>
-<p><strong>Port 22:</strong> Restricted SSH access for automated deployment.</p>
+<p><code>/grafana</code> → Grafana on port 3000 (container-internal)</p>
 </li>
 <li>
-<p><strong>Ports 9090/9091:</strong> Monitoring and metrics data.</p>
+<p><code>/prometheus</code> → Prometheus on port 9090</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Port 9090:</strong> Direct access to Prometheus metrics (restricted in production).</p>
+</li>
+<li>
+<p><strong>Port 9091:</strong> Direct access to Grafana dashboards (restricted in production).</p>
+</li>
+<li>
+<p><strong>Port 22:</strong> SSH access, restricted to the CI/CD deployment pipeline.</p>
+</li>
+<li>
+<p><strong>Ports 3000, 4000, 5000, 3306:</strong> Internal to the Docker network (<code>monitor-net</code>); not publicly
+routed.</p>
 </li>
 </ul>
 </div>
@@ -4271,7 +4326,8 @@ A system with the following capabilities was deployed looking for a compromise b
 <div class="sect2">
 <h3 id="_deployment_pipeline_cicd">7.4. Deployment Pipeline (CI/CD)</h3>
 <div class="paragraph">
-<p>The system utilizes GitHub Actions for Continuous Deployment (CD). The process is triggered automatically when a new release is created or a version tag is pushed.</p>
+<p>The system uses GitHub Actions for continuous delivery. The pipeline is triggered automatically
+when a new release is created or a version tag is pushed to the repository.</p>
 </div>
 <div class="imageblock text-center">
 <div class="content">
@@ -4281,20 +4337,32 @@ A system with the following capabilities was deployed looking for a compromise b
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong>Automation:</strong> Configuration is stored as YAML files in <code>.github/workflows</code>.</p>
+<p><strong>Automation:</strong> Workflow configuration is stored as YAML files in <code>.github/workflows</code>.</p>
 </li>
 <li>
-<p><strong>Artifact Management:</strong> Docker images are built and stored in the GitHub Container Registry (GHCR).</p>
+<p><strong>Build and Test:</strong> Docker images are built for all services; unit, integration, and SonarCloud
+quality-gate checks are executed.</p>
 </li>
 <li>
-<p><strong>Secrets Management:</strong> Sensitive data (IP addresses, SSH keys, DB passwords) are stored as GitHub Actions Secrets and injected into the environment at runtime.</p>
+<p><strong>Artifact Management:</strong> Docker images are pushed to the GitHub Container Registry (GHCR) under
+the <code>ghcr.io/arquisoft/yovi_en2b-*</code> namespace.</p>
+</li>
+<li>
+<p><strong>Deployment:</strong> GitHub Actions SSHs into the Azure VM and executes <code>docker compose pull &amp;&amp; docker
+compose up -d</code> to update all running containers with the latest images.</p>
+</li>
+<li>
+<p><strong>Secrets Management:</strong> Sensitive values (SSH keys, DB passwords, JWT secret, MariaDB credentials)
+are stored as GitHub Actions Secrets and injected as environment variables at runtime; they are
+never committed to the repository or baked into images.</p>
 </li>
 </ol>
 </div>
 <div class="sect3">
 <h4 id="_documentation_deployment">7.4.1. Documentation Deployment</h4>
 <div class="paragraph">
-<p>Following the "Documentation as Code" principle, our arc42 documentation is automatically built and published.</p>
+<p>Following the "Documentation as Code" principle, the arc42 documentation is automatically built and
+published.</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -4302,23 +4370,12 @@ A system with the following capabilities was deployed looking for a compromise b
 <p><strong>Automation:</strong> A dedicated GitHub Action tracks changes in the <code>docs/</code> directory.</p>
 </li>
 <li>
-<p><strong>Build Process:</strong> The action executes <code>npm install</code> and <code>npm run build</code> to generate the HTML version of this arc42 documentation from the AsciiDoc source files.</p>
+<p><strong>Build Process:</strong> The action runs <code>npm install</code> and <code>npm run build</code>, generating an HTML version
+from the AsciiDoc source files using Asciidoctor with diagram support.</p>
 </li>
 <li>
-<p><strong>Publication:</strong></p>
-<div class="ulist">
-<ul>
-<li>
-<p>The system uses the <code>gh-pages</code> npm package to automate the transfer of generated files.</p>
-</li>
-<li>
-<p>The build result is pushed to the <code>gh-pages</code> branch of the repository.</p>
-</li>
-<li>
-<p>The documentation is then hosted and accessible via <strong>GitHub Pages</strong> at the project&#8217;s public URL.</p>
-</li>
-</ul>
-</div>
+<p><strong>Publication:</strong> The build artefact is pushed to the <code>gh-pages</code> branch via the <code>gh-pages</code> npm
+package and served via GitHub Pages.</p>
 </li>
 </ol>
 </div>
@@ -5795,7 +5852,7 @@ VPS availability is low (cheap Azure instance, no backups), but this risk is acc
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-04-06 21:46:01 UTC
+Last updated 2026-04-06 21:53:17 UTC
 </div>
 </div>
 </body>
