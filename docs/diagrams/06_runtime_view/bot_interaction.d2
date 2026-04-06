@@ -28,9 +28,9 @@ Bot API Interaction: {
         }
     }
 
-    Bot."Board state encoded in YEN notation\n{ size, turn, players, layout }"
+    Bot."Board state encoded in YEN notation\n(size, turn, players, layout)"
 
-    Bot -> Interop: POST /games/play\n{ position: YEN, bot_id?, strategy? }
+    Bot -> Interop: POST /games/play\n(position: YEN, bot_id?, strategy?)
     Interop -> Interop: Validate YEN position\nResolve bot\n(bot_id > strategy > default random_bot)
     Interop -> Gamey: YEN board state\n+ resolved botId
     Gamey -> Gamey: Compute next move\n(selected strategy)
@@ -39,7 +39,7 @@ Bot API Interaction: {
             stroke-dash: 3
         }
     }
-    Interop -> Bot: { move, position, bot_id } {
+    Interop -> Bot: (move, position, bot_id) {
         style: {
             stroke-dash: 3
         }

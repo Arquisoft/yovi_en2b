@@ -20,9 +20,9 @@ Computer Strategy Execution: {
         }
     }
 
-    Game."Board state encoded in YEN notation\n{ size, turn, players, layout }"
+    Game."Board state encoded in YEN notation\n(size, turn, players, layout)"
 
-    Game -> Gamey: POST /ybot/choose/{botId}\n(random_bot | fast_bot | smart_bot)
+    Game -> Gamey: POST /ybot/choose/:botId\n(random_bot | fast_bot | smart_bot)
     Gamey -> Gamey: Deserialise YEN\n(YENAdapter)
     Gamey -> Gamey: Run strategy algorithm\n(within time budget)
     Gamey -> Game: Chosen cell coordinate "x,y,z" {
