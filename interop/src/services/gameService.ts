@@ -35,9 +35,8 @@ const DEFAULT_BOT_ID = 'random_bot';
 // instead of a raw bot_id.  Additional difficulty levels can be added here.
 const STRATEGY_TO_BOT: Record<string, string> = {
   EASY: 'random_bot',
-  MEDIUM: 'random_bot',
-  HARD: 'minimax_bot',
-  EXPERT: 'minimax_bot',
+  MEDIUM: 'fast_bot',
+  HARD: 'smart_bot',
 };
 
 // ── Public API ────────────────────────────────────────────────────────────────

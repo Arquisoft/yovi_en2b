@@ -68,10 +68,10 @@ describe('play — happy paths', () => {
 
     const result = await play(emptyPosition, undefined, 'HARD');
 
-    expect(result.bot_id).toBe('minimax_bot');
+    expect(result.bot_id).toBe('smart_bot');
     // Rust must have been called with the mapped bot id
     expect(mockedAxios.post).toHaveBeenCalledWith(
-      expect.stringContaining('minimax_bot'),
+      expect.stringContaining('smart_bot'),
       emptyPosition,
       expect.any(Object)
     );
@@ -117,10 +117,10 @@ describe('play — happy paths', () => {
   it('strategy lookup is case-insensitive', async () => {
     mockedAxios.post.mockResolvedValue(engineResponse);
 
-    await play(emptyPosition, undefined, 'expert');
+    await play(emptyPosition, undefined, 'medium');
 
     expect(mockedAxios.post).toHaveBeenCalledWith(
-      expect.stringContaining('minimax_bot'),
+      expect.stringContaining('fast_bot'),
       expect.any(Object),
       expect.any(Object)
     );
