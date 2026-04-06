@@ -41,6 +41,7 @@ jobs:
     - run: npm --prefix users ci
     - run: npm --prefix webapp ci
     - run: npm --prefix game ci
+    - run: npm --prefix interop ci
 
     - name: Run users tests with coverage
       run: npm --prefix users run test:coverage:ci
@@ -62,6 +63,9 @@ jobs:
         DB_NAME: users_db
         DB_USER: test_user
         DB_PASSWORD: test_password
+
+    - name: Run interop tests with coverage
+      run: npm --prefix interop run test:coverage:ci
 
     - name: Install cargo-llvm-cov
       run: cargo install cargo-llvm-cov --locked
