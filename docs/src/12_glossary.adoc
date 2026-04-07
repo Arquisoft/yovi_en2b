@@ -33,80 +33,77 @@ endif::arc42help[]
 |System name: a web-based platform to play Game Y through a browser and public APIs.
 
 |Game Y
-|Board game implemented by the system, including a player-vs-bot mode.
+|The board game implemented by the system: players compete to connect three sides of a triangular board.
 
 |Micrati
 |Company behind the project in the assignment context (project sponsor).
 
-|Web Frontend
-|Browser-based TypeScript SPA that renders the board UI and interacts with backend APIs via HTTP (and WebSockets when enabled).
-
 |SPA (Single-Page Application)
 |Web application that loads once and updates the UI dynamically by calling backend APIs.
 
-|webapp-backend
-|Backend that exposes the public Game API and acts as orchestration layer (BFF) towards internal services (notably `gamey`) and the `users` service.
-
-|BFF (Backend for Frontend)
-|Pattern where a single backend endpoint is tailored to a specific frontend, centralizing orchestration and cross-cutting concerns.
+|Web Frontend
+|Browser-based TypeScript SPA that renders the board and interacts with backend services via HTTP.
 
 |users (service)
-|Service responsible for authentication and user management, exposing the public User API (e.g., register/login/profile) and persisting user data in MariaDB.
+|Service responsible for authentication and user management. Exposes the public User API (register, login, profile, stats, ranking) and persists user data in MariaDB.
 
-|User API (Public User API)
-|Public HTTP API surface for user management (register/login/profile) provided by the `users` service.
-
-|Game API (Public Game API)
-|Public HTTP API surface for game interaction (match flow/play actions) provided by `webapp-backend`.
+|game (service)
+|Service responsible for all game session logic. It validates moves, manages board state, calls `gamey` for bot moves, and writes match results to the `users` service when a game ends.
 
 |gamey (Rust engine)
-|Internal Rust service that validates game states and computes bot moves; invoked by `webapp-backend` via HTTP using JSON/YEN.
+|Internal Rust service that computes bot moves. Accepts a board position in YEN format and returns one move. Invoked only by the `game` service — never directly by the browser.
+
+|interop (service)
+|Standalone service that exposes a public API allowing external bots or clients to play against the bot engine. Required by the assignment for interoperability with other teams. Implemented but not yet connected in `docker-compose.yml`.
+
+|User API
+|Public HTTP API for user management (register, login, profile, history) provided by the `users` service.
+
+|Game API
+|Public HTTP API for game interaction (create session, play moves, surrender) provided by the `game` service.
 
 |YEN
-|Notation used to represent a Game Y state (board size, players, turn, and layout), exchanged as JSON between services.
+|Notation for representing a Game Y board state: includes board size, current player turn, player identifiers, and the board layout.
 
 |YEN/JSON game state
-|JSON payload that encodes the game state following YEN; invalid states must be rejected by the engine.
+|A JSON payload encoding a game state in YEN format. Invalid states are rejected by the engine.
 
 |JSON
-|Default payload format used in the system APIs and service-to-service communication.
+|Default payload format used in all API and service-to-service communication.
 
 |REST
-|HTTP-based style used for request/response APIs in the system.
+|HTTP-based request/response style used across all services in the system.
 
 |WebSocket
-|Bidirectional communication channel used for realtime gameplay/multiplayer events when enabled.
+|Bidirectional communication channel planned for real-time online multiplayer.
 
 |JWT (JSON Web Token)
-|Token format used for authentication; clients send it via `Authorization: Bearer <token>`.
+|Token format used for authentication. Clients send it in the `Authorization: Bearer <token>` header.
 
 |HS256
-|HMAC-SHA256 algorithm used to sign/verify JWTs using a shared secret.
+|HMAC-SHA256 algorithm used to sign and verify JWTs using a shared secret key.
 
 |Authentication
-|Process of proving identity (who a user/client is), handled by the `users` service via JWT issuance/verification.
+|The process of verifying who a user is. Handled by the `users` service via JWT issuance; verified locally by both `users` and `game`.
 
 |Authorization
-|Process of deciding permissions (what a user can do), implemented as role-based checks (e.g., `player`/`admin`).
-
-|Role (player/admin)
-|User permission label used for authorization decisions.
+|The process of deciding what a user is allowed to do. Implemented as role-based checks (`player` / `admin`).
 
 |MariaDB
-|Relational database used by the `users` service to persist user accounts and credentials/roles.
+|Relational database used by both the `users` and `game` services to persist data (user accounts, match records, game sessions, and move history).
 
 |ADR (Architecture Decision Record)
-|Short document describing an important architectural decision, its context, and consequences.
+|Short document describing an important architectural decision, its context, and its consequences.
 
 |arc42
 |Software architecture documentation template used to structure this documentation (sections 1–12).
 
 |M1
-|First milestone focused on end-to-end functionality.
+|First project milestone, focused on delivering end-to-end functionality.
 
 |Error envelope
-|Standard JSON structure for error responses using `errorCode`, `message`, and `requestId`.
+|Standard JSON structure for error responses, using `errorCode`, `message`, and `requestId` fields.
 
 |requestId
-|Identifier included in error responses to correlate client-visible failures with server-side logs/traces.
+|Identifier included in error responses to help correlate client-visible failures with server-side logs.
 |===
