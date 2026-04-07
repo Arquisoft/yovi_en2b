@@ -110,7 +110,6 @@ cd users && npm install && npm run dev
 ```bash
 cd game && npm install && npm run dev
 # Available at http://localhost:5000
-# Requires: DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD, JWT_SECRET, RUST_ENGINE_URL
 ```
 
 **3. Bot engine**
@@ -203,9 +202,39 @@ cd gamey && cargo llvm-cov --lcov --output-path lcov.info
 
 ## Environment Variables
 
+### Env file structure
+
+| File | Committed | Purpose |
+|------|-----------|---------|
+| `.env` | No (gitignored) | Local dev — single source of truth. Copy from `.env.example` |
+| `.env.example` | Yes | Template with safe placeholder values |
+| `.env.shared` | Yes | Production API URLs baked into the webapp bundle at CI build time |
+
+**Development** (`npm run dev` or `docker compose up`): copy `.env.example` to `.env` and fill in secrets.
+
+**Production (CI)**: `.env.shared` is copied to `.env` before the Docker image build, so Vite bakes prod URLs into the bundle. MariaDB credentials and JWT secret come from GitHub Secrets.
+
+### Root `.env` / `.env.example`
+
+| Variable | Example value | Description |
+|----------|---------------|-------------|
+| `APP_ENV` | `development` | Runtime environment (`development` / `production`) |
+| `VITE_USERS_API_URL` | `http://api.localhost/users` | Webapp build-time URL for the users service |
+| `VITE_GAME_API_URL` | `http://api.localhost/game` | Webapp build-time URL for the game service |
+| `MARIADB_ROOT_PASSWORD` | — | MariaDB root password |
+| `MARIADB_USER` | `yovi_user` | Application DB user |
+| `MARIADB_PASSWORD` | — | Application DB password |
+| `JWT_SECRET` | — | Shared JWT signing key (users + game) |
+
+### Webapp — build-time only
+
+`VITE_USERS_API_URL` and `VITE_GAME_API_URL` are read by Vite at build time via `loadEnv` in `vite.config.ts` (pointing to the root directory). They are baked into the JS bundle — not available at runtime. The single entry point is `webapp/src/config/api.ts`.
+
 ### Users service
+
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `APP_ENV` | `production` | Runtime environment; gates TypeORM `synchronize` |
 | `PORT` | `3000` | HTTP port |
 | `DB_HOST` | — | MariaDB host |
 | `DB_PORT` | `3306` | MariaDB port |
@@ -213,12 +242,16 @@ cd gamey && cargo llvm-cov --lcov --output-path lcov.info
 | `DB_USER` | — | Database user |
 | `DB_PASSWORD` | — | Database password |
 | `JWT_SECRET` | — | Shared JWT signing key |
+| `PUBLIC_URL` | — | Public base URL (e.g. `http://api.localhost/users`) — used in startup logs |
 
 ### Game service
+
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `APP_ENV` | `production` | Runtime environment; gates TypeORM `synchronize` |
 | `PORT` | `5000` | HTTP port |
 | `DB_*` | — | Same MariaDB instance as users |
 | `JWT_SECRET` | — | Must match users service |
-| `RUST_ENGINE_URL` | `http://localhost:4000` | Bot engine URL |
-| `USERS_SERVICE_URL` | `http://localhost:3000` | Users service URL (for match recording) |
+| `RUST_INTERNAL_URL` | `http://gamey:4000` | Internal Docker hostname of the bot engine |
+| `USERS_PUBLIC_URL` | — | Users service URL via Nginx (for recording match results) |
+| `PUBLIC_URL` | — | Public base URL for the game service — used in startup logs |

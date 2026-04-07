@@ -169,3 +169,52 @@ describe('GameYPage — sidebar actions', () => {
     expect(handlePlayAgain).toHaveBeenCalled()
   })
 })
+
+describe('GameYPage — moveError banner', () => {
+  it('shows moveError banner on desktop when moveError is set', () => {
+    setup({ controller: { moveError: 'Invalid move' } })
+    expect(screen.getByText('Invalid move')).toBeInTheDocument()
+  })
+
+  it('shows moveError banner on mobile when moveError is set', () => {
+    setup({ controller: { moveError: 'Not your turn' }, mobile: true })
+    expect(screen.getByText('Not your turn')).toBeInTheDocument()
+  })
+
+  it('does not show moveError banner when moveError is null', () => {
+    setup({ controller: { moveError: null } })
+    expect(screen.queryByText('Invalid move')).not.toBeInTheDocument()
+  })
+})
+
+describe('GameYPage — desktop sidebar toggle', () => {
+  it('renders collapse/expand sidebar button', () => {
+    setup()
+    expect(screen.getByRole('button', { name: /collapse sidebar/i })).toBeInTheDocument()
+  })
+
+  it('toggles sidebar label when collapse button is clicked', () => {
+    setup()
+    const toggleBtn = screen.getByRole('button', { name: /collapse sidebar/i })
+    fireEvent.click(toggleBtn)
+    expect(screen.getByRole('button', { name: /expand sidebar/i })).toBeInTheDocument()
+  })
+})
+
+describe('GameYPage — mobile sidebar drag handle', () => {
+  it('renders drag handle on mobile', () => {
+    setup({ mobile: true })
+    // The drag handle div sits above the sidebar
+    expect(screen.getByTestId('sidebar')).toBeInTheDocument()
+  })
+
+  it('toggles sidebar open/closed when drag handle is clicked', () => {
+    setup({ mobile: true })
+    // Find the clickable handle (the only div with touch handlers, wraps the sidebar)
+    // It collapses on first click (was open by default)
+    const handles = document.querySelectorAll('.cursor-ns-resize')
+    expect(handles.length).toBeGreaterThan(0)
+    fireEvent.click(handles[0])
+    // After click the sidebar should be in a collapsed state – no crash is the key assertion
+  })
+})

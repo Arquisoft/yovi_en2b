@@ -1,10 +1,10 @@
 // users/__tests__/RankingController.test.ts
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { RankingController } from '../src/controllers/RankingController'
-import { RankingService } from '../src/services/RankingService'
+import { RankingController } from '../controllers/RankingController'
+import { RankingService } from '../services/RankingService'
 
-vi.mock('../src/services/RankingService', () => ({
+vi.mock('../services/RankingService', () => ({
   RankingService: {
     getRankingByMode: vi.fn(),
   },

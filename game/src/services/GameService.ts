@@ -21,7 +21,7 @@ import type {
   BotLevel,
 } from '../types/game';
 
-const USERS_SERVICE_URL = process.env.USERS_SERVICE_URL || 'http://localhost:3000';
+const USERS_PUBLIC_URL = process.env.USERS_PUBLIC_URL || 'http://localhost:3000';
 
 export class GameService {
   private gameRepo: Repository<Game>;
@@ -77,10 +77,7 @@ export class GameService {
     token?: string
   ): Promise<GameState> {
     const game = await this.gameRepo.findOne({ where: { id: gameId } });
-    if (!game) throw Object.assign(new Error('Game not found'), { status: 404 });
-    if (game.status !== 'playing') throw Object.assign(new Error('Game is not active'), { status: 409 });
-    if (game.currentTurn !== player) throw Object.assign(new Error('Not your turn'), { status: 409 });
-    if (!isValidMove(game.boardState, row, col)) throw Object.assign(new Error('Invalid move'), { status: 409 });
+    this.assertPlayMoveValid(game, row, col, player);
 
     const moves = await this.moveRepo.find({
       where: { game: { id: gameId } },
@@ -110,9 +107,7 @@ export class GameService {
     game.currentTurn = nextTurn;
     game.winner = winner;
     game.status = winner ? 'finished' : 'playing';
-    game.timerState = updatedTimer
-      ? { ...updatedTimer, activePlayer: winner ? null : nextTurn, lastSyncTimestamp: now }
-      : null;
+    game.timerState = this.computePostMoveTimer(updatedTimer, winner, nextTurn, now);
     await this.gameRepo.save(game);
 
     const allMoves = [...moves, moveRecord];
@@ -123,12 +118,9 @@ export class GameService {
       );
     }
 
-    // Bot responds in PvE
-    if (!winner && game.config.mode === 'pve') {
-      const botPlayer = game.players.player1.isBot ? game.players.player1 : game.players.player2;
-      if (botPlayer.color === nextTurn) {
-        return this.applyBotMove(game, allMoves, game.config.botLevel ?? 'medium', token);
-      }
+    const botPlayer = this.getPveBot(game);
+    if (!winner && botPlayer?.color === nextTurn) {
+      return this.applyBotMove(game, allMoves, game.config.botLevel ?? 'medium', token);
     }
 
     return this.toGameState(game, allMoves);
@@ -162,6 +154,23 @@ export class GameService {
   }
 
   // --- Private helpers ---
+
+  private assertPlayMoveValid(game: Game | null, row: number, col: number, player: PlayerColor): asserts game is Game {
+    if (!game) throw Object.assign(new Error('Game not found'), { status: 404 });
+    if (game.status !== 'playing') throw Object.assign(new Error('Game is not active'), { status: 409 });
+    if (game.currentTurn !== player) throw Object.assign(new Error('Not your turn'), { status: 409 });
+    if (!isValidMove(game.boardState, row, col)) throw Object.assign(new Error('Invalid move'), { status: 409 });
+  }
+
+  private computePostMoveTimer(timer: TimerState | null, winner: PlayerColor | null, nextTurn: PlayerColor, now: number): TimerState | null {
+    if (!timer) return null;
+    return { ...timer, activePlayer: winner ? null : nextTurn, lastSyncTimestamp: now };
+  }
+
+  private getPveBot(game: Game): Player | undefined {
+    if (game.config.mode !== 'pve') return undefined;
+    return game.players.player1.isBot ? game.players.player1 : game.players.player2;
+  }
 
   private async applyBotMove(
     game: Game,
@@ -308,7 +317,7 @@ export class GameService {
       (game.updatedAt.getTime() - game.createdAt.getTime()) / 1000
     );
 
-    await fetch(`${USERS_SERVICE_URL}/api/stats/record`, {
+    await fetch(`${USERS_PUBLIC_URL}/api/stats/record`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

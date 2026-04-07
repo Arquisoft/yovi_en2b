@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SnakeCaseNamingStrategy } from '../src/config/SnakeCaseNamingStrategy';
+import { SnakeCaseNamingStrategy } from '../config/SnakeCaseNamingStrategy';
 
 
 describe('SnakeCaseNamingStrategy', () => {

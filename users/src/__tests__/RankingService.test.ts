@@ -1,7 +1,7 @@
 
 // users/__tests__/RankingService.test.ts
-import { RankingService } from '../src/services/RankingService';
-import { GameMode, RankingEntry } from '../src/types/ranking';
+import { RankingService } from '../services/RankingService';
+import { GameMode, RankingEntry } from '../types/ranking';
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 describe('RankingService', () => {

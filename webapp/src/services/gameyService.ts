@@ -7,9 +7,7 @@ import type {
 } from '@/types'
 import { AVAILABLE_GAMES } from '@/mocks/mockData'
 import { generateId } from '@/utils'
-
-//const GAME_API_BASE = 'http://api.localhost/game/api'
-const GAME_API_BASE = "https://api.micrati.com/game/api";
+import { GAME_API_URL } from '@/config/api'
 
 class GameService {
   private baseUrl: string
@@ -109,4 +107,4 @@ class GameService {
   }
 }
 
-export const gameService = new GameService(GAME_API_BASE)
+export const gameService = new GameService(GAME_API_URL)

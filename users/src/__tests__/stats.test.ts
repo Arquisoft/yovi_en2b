@@ -2,7 +2,7 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
-import app from '../src/app';
+import app from '../app';
 
 describe('Stats API', () => {
   const testUser = {

@@ -1,7 +1,5 @@
 import type { User, AuthSession, LoginCredentials, RegisterCredentials } from '@/types'
-
-//const API_BASE_URL = "http://api.localhost/users/api"
-const API_BASE_URL = "https://api.micrati.com/users/api";
+import { USERS_API_URL } from '@/config/api'
 
 class AuthService {
   private baseUrl: string
@@ -117,4 +115,4 @@ class AuthService {
   }
 }
 
-export const authService = new AuthService(API_BASE_URL)
+export const authService = new AuthService(USERS_API_URL)

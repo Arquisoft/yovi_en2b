@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
-import { jsonErrorHandler, globalErrorHandler } from '../src/middleware/errorHandler';
+import { jsonErrorHandler, globalErrorHandler } from '../middleware/errorHandler';
 
 describe('Error Handlers', () => {
     let mockReq: Partial<Request>;
@@ -68,7 +68,7 @@ describe('Error Handlers', () => {
     });
 
     describe('globalErrorHandler', () => {
-        const originalEnv = process.env.NODE_ENV;
+        const originalEnv = process.env.APP_ENV;
         const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
 
         beforeEach(() => {
@@ -76,7 +76,7 @@ describe('Error Handlers', () => {
         });
 
         afterAll(() => {
-            process.env.NODE_ENV = originalEnv;
+            process.env.APP_ENV = originalEnv;
             consoleErrorSpy.mockRestore();
         });
 
@@ -133,7 +133,7 @@ describe('Error Handlers', () => {
         });
 
         it('should include stack trace in development mode', () => {
-            process.env.NODE_ENV = 'development';
+            process.env.APP_ENV = 'development';
             const error = new Error('Dev error');
 
             globalErrorHandler(
@@ -151,7 +151,7 @@ describe('Error Handlers', () => {
         });
 
         it('should not include stack trace in production mode', () => {
-            process.env.NODE_ENV = 'production';
+            process.env.APP_ENV = 'production';
             const error = new Error('Prod error');
 
             globalErrorHandler(

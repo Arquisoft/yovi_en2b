@@ -34,6 +34,6 @@ export const globalErrorHandler = (
   res.status(err.status || 500).json({
     error: err.name || 'Internal Server Error',
     message: err.message || 'Something went wrong',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    ...(process.env.APP_ENV === 'development' && { stack: err.stack }),
   });
 };
