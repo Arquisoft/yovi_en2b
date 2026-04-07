@@ -135,14 +135,10 @@ Goals::
 - The UI must give clear feedback at every step, especially when waiting for the bot.
 
 Key principles::
-
-*Guest-first access* — Players can start a game without registering. An account is only required to save match history and appear in the ranking. This lowers the barrier to try the game.
-
-*Server-authoritative rendering* — The board state shown to the player always comes from the server. The UI does not maintain its own copy of the game logic; it only renders what the `game` service returns. This keeps the frontend simple and prevents the display from going out of sync.
-
-*Visible bot feedback* — When the bot is computing a move (which can take up to 3 seconds on large boards), the UI shows a "thinking…" indicator. The player cannot interact with the board during this time. This avoids confusion about whether the game is frozen.
-
-*Accessible components* — UI primitives are built with Radix UI, which provides keyboard navigation and screen-reader support out of the box.
+- *Guest-first access* — Players can start a game without registering. An account is only required to save match history and appear in the ranking. This lowers the barrier to try the game.
+- *Server-authoritative rendering* — The board state shown to the player always comes from the server. The UI does not maintain its own copy of the game logic; it only renders what the `game` service returns. This keeps the frontend simple and prevents the display from going out of sync.
+- *Visible bot feedback* — When the bot is computing a move (which can take up to 3 seconds on large boards), the UI shows a "thinking…" indicator. The player cannot interact with the board during this time. This avoids confusion about whether the game is frozen.
+- *Accessible components* — UI primitives are built with Radix UI, which provides keyboard navigation and screen-reader support out of the box.
 
 === Configuration and Secrets
 

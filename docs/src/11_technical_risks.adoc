@@ -112,5 +112,3 @@ a|
 - **Plan**: Implement once WebSocket infrastructure is in place (linked to R-03). Treat as a separate delivery.
 
 |===
-
-NOTE: Test coverage is >= 80% across the codebase. Move validation and score submission are handled server-side in the `game` service, preventing spoofed results. The CI/CD pipeline is operational. Rate limiting is not prioritized given the closed academic context.
