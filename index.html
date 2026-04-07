@@ -2780,29 +2780,24 @@ print {
 </li>
 <li><a href="#section-concepts">8. Cross-cutting Concepts</a>
 <ul class="sectlevel2">
-<li><a href="#_yen_json_game_state_domain_contract">8.1. YEN - JSON Game State (domain contract)</a></li>
-<li><a href="#_rest_conventions">8.2. REST conventions</a></li>
-<li><a href="#_authentication_and_authorization">8.3. Authentication and authorization</a></li>
-<li><a href="#_backend_for_frontend_bff">8.4. Backend for Frontend (BFF)</a></li>
-<li><a href="#_development_concepts">8.5. Development concepts</a></li>
+<li><a href="#_yen_game_state_format">8.1. YEN — Game State Format</a></li>
+<li><a href="#_rest_conventions">8.2. REST Conventions</a></li>
+<li><a href="#_authentication">8.3. Authentication</a></li>
+<li><a href="#_service_routing_and_orchestration">8.4. Service Routing and Orchestration</a></li>
+<li><a href="#_development_workflow">8.5. Development Workflow</a></li>
 <li><a href="#_user_experience_ux">8.6. User Experience (UX)</a></li>
-<li><a href="#_configuration_and_secrets">8.7. Configuration and secrets</a></li>
+<li><a href="#_configuration_and_secrets">8.7. Configuration and Secrets</a></li>
 </ul>
 </li>
 <li><a href="#section-design-decisions">9. Architecture Decisions</a>
 <ul class="sectlevel2">
-<li><a href="#_adr_001_bff_internal_services_rest">9.1. ADR-001: BFF + internal services (REST)</a></li>
-<li><a href="#_adr_002_internal_endpoints_between_bff_and_gamey">9.2. ADR-002: Internal endpoints between BFF and gamey</a></li>
-<li><a href="#_adr_003_yenjson_as_game_state_contract_validation_in_gamey">9.3. ADR-003: YEN/JSON as game state contract + validation in gamey</a></li>
-<li><a href="#_adr_004_stateless_engine_no_game_state_persistence_in_m1">9.4. ADR-004: Stateless engine + no game state persistence in M1</a></li>
-<li><a href="#_adr_005_api_versioning">9.5. ADR-005: API versioning</a></li>
-<li><a href="#_adr_006_jwt_signing_algorithm">9.6. ADR-006: JWT signing algorithm</a></li>
-<li><a href="#_adr_007_secretsconfig_injection_mechanism">9.7. ADR-007: Secrets/config injection mechanism</a></li>
-<li><a href="#_adr_008_error_response_envelope">9.8. ADR-008: Error response envelope</a></li>
-<li><a href="#_adr_009_bff_game_service_timeouts">9.9. ADR-009: BFF &#8594; Game Service timeouts</a></li>
-<li><a href="#_adr_010_user_persistence_and_minimal_user_entity">9.10. ADR-010: User persistence and minimal user entity</a></li>
-<li><a href="#_adr_011_clientserver_entrypoint_and_public_apis">9.11. ADR-011: Client/Server entrypoint and public APIs</a></li>
-<li><a href="#_adr_012_reverse_proxy_for_path_based_routing_nginx">9.12. ADR-012: Reverse proxy for path-based routing (Nginx)</a></li>
+<li><a href="#_adr_001_dedicated_game_service_owns_all_session_state">9.1. ADR-001: Dedicated game service owns all session state</a></li>
+<li><a href="#_adr_002_nginx_as_single_public_entry_point_with_path_based_routing">9.2. ADR-002: Nginx as single public entry point with path-based routing</a></li>
+<li><a href="#_adr_003_shared_jwt_secret_with_local_token_verification">9.3. ADR-003: Shared JWT secret with local token verification</a></li>
+<li><a href="#_adr_004_one_mariadb_instance_with_strict_table_ownership_per_service">9.4. ADR-004: One MariaDB instance with strict table ownership per service</a></li>
+<li><a href="#_adr_005_stateless_bot_engine_gamey">9.5. ADR-005: Stateless bot engine (gamey)</a></li>
+<li><a href="#_adr_006_hs256_for_jwt_signing">9.6. ADR-006: HS256 for JWT signing</a></li>
+<li><a href="#_adr_007_secrets_and_configuration_via_environment_variables">9.7. ADR-007: Secrets and configuration via environment variables</a></li>
 </ul>
 </li>
 <li><a href="#section-quality-scenarios">10. Quality Requirements</a>
@@ -4487,17 +4482,16 @@ on this list.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_yen_json_game_state_domain_contract">8.1. YEN - JSON Game State (domain contract)</h3>
+<h3 id="_yen_game_state_format">8.1. YEN — Game State Format</h3>
 <div class="dlist">
 <dl>
 <dt class="hdlist1">Purpose</dt>
 <dd>
-<p>Represent the state of a Game Y match at a particular point of time. Domain contract between<br>
-<code>webapp-backend</code> &#8592;&#8594; <code>gamey</code>.</p>
+<p>A shared format for representing a Game Y board at a specific point in time. Used as the data contract between the <code>game</code> service and <code>gamey</code>.</p>
 </dd>
 <dt class="hdlist1">Format</dt>
 <dd>
-<p>The game state is serialized as JSON using YEN notation.</p>
+<p>The game state is encoded as JSON following YEN notation.</p>
 </dd>
 </dl>
 </div>
@@ -4514,24 +4508,24 @@ on this list.</p>
 </div>
 <div class="dlist">
 <dl>
-<dt class="hdlist1">Minimal invariants</dt>
+<dt class="hdlist1">Rules</dt>
 <dd>
 <div class="ulist">
 <ul>
 <li>
-<p><em>size</em>: integer &gt; 0.</p>
+<p><code>size</code>: integer greater than 0.</p>
 </li>
 <li>
-<p><em>turn</em>: must be a player ID from the players list.</p>
+<p><code>turn</code>: must be one of the player IDs listed in <code>players</code>.</p>
 </li>
 <li>
-<p><em>players</em>: an array holding player IDs, currently "B" and "R".</p>
+<p><code>players</code>: list of player identifiers (currently <code>"B"</code> and <code>"R"</code>).</p>
 </li>
 <li>
-<p><em>layout</em>: string representation of the board, '/' is the separator and '.' represents an empty cell.</p>
+<p><code>layout</code>: board encoded as a string; <code>/</code> separates rows, <code>.</code> marks an empty cell.</p>
 </li>
 <li>
-<p>The system  responds with a 4xx error for invalid states (see 8.2 / 8.2.1).</p>
+<p>Invalid states are rejected with a 4xx error.</p>
 </li>
 </ul>
 </div>
@@ -4541,10 +4535,7 @@ on this list.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>We only publish one version of the API as part of M1, and we&#8217;re not too concerned about backward compatibility.</p>
-</li>
-<li>
-<p>Any breaking change must be reflected in the documentation and contract tests.</p>
+<p>One version of the API is published. Any breaking change must be reflected in the documentation and contract tests.</p>
 </li>
 </ul>
 </div>
@@ -4553,7 +4544,7 @@ on this list.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_rest_conventions">8.2. REST conventions</h3>
+<h3 id="_rest_conventions">8.2. REST Conventions</h3>
 <div class="dlist">
 <dl>
 <dt class="hdlist1">Scope</dt>
@@ -4561,20 +4552,13 @@ on this list.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Applies to:</p>
-<div class="ulist">
-<ul>
-<li>
-<p><code>webapp-backend</code> &#8594; <code>frontend</code></p>
+<p>Browser → <code>users</code> service (authentication, stats, ranking)</p>
 </li>
 <li>
-<p><code>webapp-backend</code> &#8594; <code>users</code></p>
+<p>Browser → <code>game</code> service (game sessions and moves)</p>
 </li>
 <li>
-<p><code>webapp-backend</code> &#8594; <code>gamey</code></p>
-</li>
-</ul>
-</div>
+<p><code>game</code> service → <code>gamey</code> (bot move requests, internal only)</p>
 </li>
 </ul>
 </div>
@@ -4584,43 +4568,19 @@ on this list.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>JSON as the default payload format.</p>
+<p>JSON is the default payload format.</p>
 </li>
 <li>
-<p>HTTP status codes:</p>
-<div class="ulist">
-<ul>
-<li>
-<p>2xx success, 4xx client/request/validation/auth error, 5xx internal/server error.</p>
-</li>
-</ul>
-</div>
+<p>HTTP status codes: 2xx for success, 4xx for client errors, 5xx for server errors.</p>
 </li>
 <li>
-<p>Timeouts and retries:</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Calls to <code>gamey</code>/<code>users</code> must use finite timeouts.</p>
+<p>Calls from <code>game</code> to <code>gamey</code> must use finite timeouts.</p>
 </li>
 <li>
-<p>Do not automatically retry non-idempotent operations (if any exist).</p>
-</li>
-</ul>
-</div>
+<p>Non-idempotent operations are not retried automatically.</p>
 </li>
 <li>
-<p>Recommended headers</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Content-Type: application/json</p>
-</li>
-<li>
-<p>Accept: application/json</p>
-</li>
-</ul>
-</div>
+<p>Recommended headers: <code>Content-Type: application/json</code>, <code>Accept: application/json</code>.</p>
 </li>
 </ul>
 </div>
@@ -4629,28 +4589,25 @@ on this list.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_authentication_and_authorization">8.3. Authentication and authorization</h3>
+<h3 id="_authentication">8.3. Authentication</h3>
 <div class="dlist">
 <dl>
 <dt class="hdlist1">Scope</dt>
 <dd>
-<div class="ulist">
-<ul>
-<li>
-<p>Applies to public endpoints exposed by <code>users</code> (authentication/user management) and to protected endpoints in <code>webapp-backend</code> (game interaction).</p>
-</li>
-</ul>
-</div>
+<p>All endpoints exposed by <code>users</code> (registration, login, profile) and <code>game</code> (game sessions and moves).</p>
 </dd>
-<dt class="hdlist1">Authentication</dt>
+<dt class="hdlist1">How it works</dt>
 <dd>
 <div class="ulist">
 <ul>
 <li>
-<p><code>users</code> acts as the auth server: it issues JWTs and verifies them (HS256).</p>
+<p><code>users</code> issues JWTs signed with HS256. Clients send them as <code>Authorization: Bearer &lt;token&gt;</code>.</p>
 </li>
 <li>
-<p>Clients send JWTs in <code>Authorization: Bearer &lt;token&gt;</code>; <code>webapp-backend</code> may also verify them when protecting endpoints.</p>
+<p><code>game</code> and <code>users</code> share the same secret key and verify tokens locally — no inter-service call is made per request.</p>
+</li>
+<li>
+<p><code>game</code> endpoints use optional authentication: requests without a token are accepted as guest sessions; requests with an invalid or expired token are rejected with 401.</p>
 </li>
 </ul>
 </div>
@@ -4660,10 +4617,7 @@ on this list.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Role-based access control with roles: <code>player</code> and <code>admin</code>.</p>
-</li>
-<li>
-<p>Default rule: a user can only access/modify their own data; admin-only operations (if any) require <code>admin</code>.</p>
+<p>Role-based: <code>player</code> and <code>admin</code>. A user can only read or modify their own data by default.</p>
 </li>
 </ul>
 </div>
@@ -4672,28 +4626,21 @@ on this list.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_backend_for_frontend_bff">8.4. Backend for Frontend (BFF)</h3>
+<h3 id="_service_routing_and_orchestration">8.4. Service Routing and Orchestration</h3>
 <div class="dlist">
 <dl>
-<dt class="hdlist1">Principles</dt>
+<dt class="hdlist1">How requests flow</dt>
 <dd>
 <div class="ulist">
 <ul>
 <li>
-<p>The frontend only consumes <code>webapp-backend</code>.</p>
+<p>Nginx is the single public entry point. It routes requests by path prefix: <code>/users/</code> → users service, <code>/game/</code> → game service, <code>/</code> → SPA static files.</p>
 </li>
 <li>
-<p><code>users</code> and <code>gamey</code> are not accessible from the browser (no direct routing and no CORS exposure).</p>
+<p>The <code>game</code> service is the only component that calls <code>gamey</code>. The browser never reaches the bot engine directly, and its port is not exposed through Nginx.</p>
 </li>
-</ul>
-</div>
-</dd>
-<dt class="hdlist1">Motivation</dt>
-<dd>
-<div class="ulist">
-<ul>
 <li>
-<p>Simplifies the frontend and centralizes auth and service composition in one place.</p>
+<p>This keeps game logic and bot calls on the server side, preventing clients from interfering with game state.</p>
 </li>
 </ul>
 </div>
@@ -4702,7 +4649,7 @@ on this list.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_development_concepts">8.5. Development concepts</h3>
+<h3 id="_development_workflow">8.5. Development Workflow</h3>
 <div class="dlist">
 <dl>
 <dt class="hdlist1">Rules</dt>
@@ -4710,19 +4657,16 @@ on this list.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Trunk-based development with short-lived branches.</p>
+<p>Short-lived branches merged into master via Pull Request.</p>
 </li>
 <li>
-<p>Changes reach trunk (master) only via Pull Request.</p>
+<p>Each PR requires at least one human approval and a passing CI run before merging.</p>
 </li>
 <li>
-<p>Mandatory checks before merge: at least 1 human approval + green CI.</p>
+<p>PRs are merged using squash merge to keep a linear history.</p>
 </li>
 <li>
-<p>Pull Requests are merged using squash merge to keep a linear history.</p>
-</li>
-<li>
-<p>Merge without feature flags to prioritize simplicity.</p>
+<p>No feature flags — changes go straight to master once approved.</p>
 </li>
 </ul>
 </div>
@@ -4732,15 +4676,39 @@ on this list.</p>
 </div>
 <div class="sect2">
 <h3 id="_user_experience_ux">8.6. User Experience (UX)</h3>
-<div class="paragraph">
-<p>TBD</p>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Goals</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>Players should be able to start a game with as little friction as possible.</p>
+</li>
+<li>
+<p>The UI must give clear feedback at every step, especially when waiting for the bot.</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">Key principles</dt>
+<dd>
+<p><strong>Guest-first access</strong> — Players can start a game without registering. An account is only required to save match history and appear in the ranking. This lowers the barrier to try the game.</p>
+</dd>
+</dl>
 </div>
 <div class="paragraph">
-<p>&#8230;&#8203;</p>
+<p><strong>Server-authoritative rendering</strong> — The board state shown to the player always comes from the server. The UI does not maintain its own copy of the game logic; it only renders what the <code>game</code> service returns. This keeps the frontend simple and prevents the display from going out of sync.</p>
+</div>
+<div class="paragraph">
+<p><strong>Visible bot feedback</strong> — When the bot is computing a move (which can take up to 3 seconds on large boards), the UI shows a "thinking…" indicator. The player cannot interact with the board during this time. This avoids confusion about whether the game is frozen.</p>
+</div>
+<div class="paragraph">
+<p><strong>Accessible components</strong> — UI primitives are built with Radix UI, which provides keyboard navigation and screen-reader support out of the box.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuration_and_secrets">8.7. Configuration and secrets</h3>
+<h3 id="_configuration_and_secrets">8.7. Configuration and Secrets</h3>
 <div class="dlist">
 <dl>
 <dt class="hdlist1">Rules</dt>
@@ -4748,13 +4716,13 @@ on this list.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Environment-specific configuration is injected from the outside (e.g., environment variables in compose/CI).</p>
+<p>All environment-specific configuration is injected via environment variables (Docker Compose locally, GitHub Secrets in CI).</p>
 </li>
 <li>
-<p>Secrets (keys, tokens, passwords) are never committed to the repo and never baked into images; local dev uses a non-committed <code>.env</code>.</p>
+<p>Sensitive values (JWT key, database password) are never committed to the repository and never baked into container images. Local development uses a gitignored <code>.env</code> file.</p>
 </li>
 <li>
-<p>Do not log secret, mask if needed.</p>
+<p>Secrets must never appear in logs.</p>
 </li>
 </ul>
 </div>
@@ -4813,7 +4781,7 @@ There you will find links and examples about ADR.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_adr_001_bff_internal_services_rest">9.1. ADR-001: BFF + internal services (REST)</h3>
+<h3 id="_adr_001_dedicated_game_service_owns_all_session_state">9.1. ADR-001: Dedicated game service owns all session state</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -4832,21 +4800,21 @@ There you will find links and examples about ADR.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Browser-facing API should be centralized; system is split into webapp (frontend + backend), users, and gamey.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game session state (board, turns, moves, timers) must live on the server to prevent cheating and keep the browser thin. We needed to decide which component owns this state.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Use webapp-backend as a Backend-for-Frontend (BFF); the BFF calls users and gamey via REST.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A dedicated <code>game</code> service owns all game session state. It validates moves, calls <code>gamey</code> for bot moves, and writes match results to the <code>users</code> service when a game ends. The browser only renders what the server returns.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Browser talks only to BFF; orchestration and cross-cutting concerns (auth, validation, timeouts) are centralized.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clear ownership of game logic; the browser cannot modify game state directly. Adding game features means touching the <code>game</code> service, not the frontend.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect2">
-<h3 id="_adr_002_internal_endpoints_between_bff_and_gamey">9.2. ADR-002: Internal endpoints between BFF and gamey</h3>
+<h3 id="_adr_002_nginx_as_single_public_entry_point_with_path_based_routing">9.2. ADR-002: Nginx as single public entry point with path-based routing</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -4865,21 +4833,21 @@ There you will find links and examples about ADR.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">gamey provides core game logic (win verification + bot move selection); BFF must check health and request moves.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system has two backend services and a frontend SPA. Clients need a single address to reach all of them.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Expose a minimal internal HTTP API in gamey: <code>GET /status</code> (health), <code>POST /ybot/choose/{botId}</code> (YEN/JSON in, move out as JSON).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nginx routes requests by path prefix: <code>/users/</code> → users service, <code>/game/</code> → game service, <code>/</code> → SPA static files. The bot engine port (4000) is never exposed through Nginx.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Small, stable internal surface; requires consistent contracts for YEN and coordinate encoding.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One public entry point with simple routing rules. The bot engine stays internal. Adding a new service requires a new Nginx route.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect2">
-<h3 id="_adr_003_yenjson_as_game_state_contract_validation_in_gamey">9.3. ADR-003: YEN/JSON as game state contract + validation in gamey</h3>
+<h3 id="_adr_003_shared_jwt_secret_with_local_token_verification">9.3. ADR-003: Shared JWT secret with local token verification</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -4898,21 +4866,21 @@ There you will find links and examples about ADR.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Game state must follow YEN notation; invalid states must be rejected.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Both <code>game</code> and <code>users</code> need to verify user identity. Calling <code>users</code> on every authenticated request adds latency and a runtime dependency.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Exchange game state as JSON following YEN; validate YEN in gamey and return a JSON error on invalid input.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>game</code> and <code>users</code> share the same <code>JWT_SECRET</code> and verify tokens locally using the same algorithm (HS256). No inter-service call is made per request.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Single source of truth for domain validation; BFF maps validation failures to 4xx for clients.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No extra round-trip for authentication. The shared secret must be identical across both services and kept confidential.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect2">
-<h3 id="_adr_004_stateless_engine_no_game_state_persistence_in_m1">9.4. ADR-004: Stateless engine + no game state persistence in M1</h3>
+<h3 id="_adr_004_one_mariadb_instance_with_strict_table_ownership_per_service">9.4. ADR-004: One MariaDB instance with strict table ownership per service</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -4931,54 +4899,21 @@ There you will find links and examples about ADR.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">M1 prioritizes end-to-end functionality; persisting full game states is out of scope for M1.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Both services need persistent storage. Running two separate database instances adds operational overhead for an academic project.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Keep gamey stateless; do not persist game state in M1.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Both services connect to the same MariaDB instance (<code>users_db</code>). Table ownership is strict: <code>users</code> and <code>match_records</code> belong to the users service; <code>games</code> and <code>game_moves</code> belong to the game service. Neither service queries the other&#8217;s tables directly.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Each request must carry full required state; simpler deployment/testing for M1.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One database container to manage. The services remain logically independent as long as table boundaries are respected.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect2">
-<h3 id="_adr_005_api_versioning">9.5. ADR-005: API versioning</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 25%;">
-<col style="width: 75%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Field</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Status</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon"><i class="fa fa-times-circle"></i></span> NOT APPROVED</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Breaking changes may happen; a versioning policy was proposed early.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">(Not approved) URL-based versioning and “major bump rules” are not decided yet; avoid committing to <code>/v1</code> paths until requirements stabilize.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">No premature coupling to a versioning scheme; versioning can be introduced later (or via headers) if needed.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_adr_006_jwt_signing_algorithm">9.6. ADR-006: JWT signing algorithm</h3>
+<h3 id="_adr_005_stateless_bot_engine_gamey">9.5. ADR-005: Stateless bot engine (gamey)</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -4997,21 +4932,21 @@ There you will find links and examples about ADR.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The users service acts as the auth server: it issues tokens and also verifies them; the webapp (BFF and/or frontend) receives tokens and may verify them when needed.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The bot only needs the current board position to compute a move. Storing session state in the Rust service would complicate deployment and testing.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Use HS256 for JWT signing/verification (shared secret) for M1.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gamey</code> is stateless. Each request carries the full board state in YEN format; the engine computes one move and discards the state.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Simple setup and fast verification; secret must be protected across components that verify tokens.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simple deployment and testing for the Rust service. The <code>game</code> service is responsible for sending the full board on every bot request.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect2">
-<h3 id="_adr_007_secretsconfig_injection_mechanism">9.7. ADR-007: Secrets/config injection mechanism</h3>
+<h3 id="_adr_006_hs256_for_jwt_signing">9.6. ADR-006: HS256 for JWT signing</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -5030,21 +4965,21 @@ There you will find links and examples about ADR.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Secrets must not be stored in git; configuration must work locally and in CI/CD.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>users</code> issues tokens and <code>game</code> verifies them. A signing algorithm must be chosen.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Use environment variables for configuration; store sensitive values as GitHub Actions Secrets and inject them into the deployment as env vars; local dev uses dotenv (<code>.env</code> not committed).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use HMAC-SHA256 (HS256) with a shared secret for JWT signing and verification.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Consistent secret values across deployments; requires discipline to avoid leaking env values in logs.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simple setup and fast verification. Asymmetric keys are not needed since both services are internal and controlled by the same team.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="sect2">
-<h3 id="_adr_008_error_response_envelope">9.8. ADR-008: Error response envelope</h3>
+<h3 id="_adr_007_secrets_and_configuration_via_environment_variables">9.7. ADR-007: Secrets and configuration via environment variables</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -5063,147 +4998,15 @@ There you will find links and examples about ADR.</p>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Multiple services/clients need consistent error handling.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sensitive values (JWT key, database password) must not be stored in the repository or baked into container images.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Standardize JSON error responses with: <code>errorCode</code>, <code>message</code>, <code>requestId</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">All sensitive configuration is injected at runtime via environment variables. Locally, a gitignored <code>.env</code> file is used. In CI and production, values come from GitHub Secrets.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Simpler client-side mapping and debugging; requires stable error codes over time.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_adr_009_bff_game_service_timeouts">9.9. ADR-009: BFF &#8594; Game Service timeouts</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 25%;">
-<col style="width: 75%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Field</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Status</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon"><i class="fa fa-question-circle"></i></span> PROPOSED</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Bot computation and network calls may be slow/fail; BFF must stay responsive.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apply timeouts for BFF → gamey requests; allow strictly bounded retries only for safe idempotent operations.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Prevents hanging requests; retries must be conservative to avoid overload during outages.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_adr_010_user_persistence_and_minimal_user_entity">9.10. ADR-010: User persistence and minimal user entity</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 25%;">
-<col style="width: 75%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Field</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Status</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon"><i class="fa fa-check-circle"></i></span> APPROVED</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">users must persist accounts; we need credentials and basic authorization.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Persist user accounts; minimal user entity includes: <code>id</code>, <code>username</code>, <code>email</code>, <code>passwordHash</code>, <code>role</code> (<code>player</code>/<code>admin</code>) (extra fields TBD).</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Enables authentication and basic admin features; requires clear password hashing rules and role-based authorization checks.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_adr_011_clientserver_entrypoint_and_public_apis">9.11. ADR-011: Client/Server entrypoint and public APIs</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 25%;">
-<col style="width: 75%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Field</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Status</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon"><i class="fa fa-check-circle"></i></span> APPROVED</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Client/server architecture: browser client (SPA) calls server APIs over HTTP; we want a single public entrypoint.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Expose: <code>/</code> for the SPA, plus two public API surfaces: one for user management (register/login/profile/history) and one for game interaction (create/join room, play, etc.); exact path prefixes are stable but versioning is not decided.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Clear boundaries between “user management” and “game” concerns; simpler documentation and security rules per API.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="sect2">
-<h3 id="_adr_012_reverse_proxy_for_path_based_routing_nginx">9.12. ADR-012: Reverse proxy for path-based routing (Nginx)</h3>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 25%;">
-<col style="width: 75%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Field</th>
-<th class="tableblock halign-left valign-top">Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Status</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon"><i class="fa fa-question-circle"></i></span> PROPOSED</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Single public port must serve the SPA and route requests to backend APIs; full API gateway is overkill.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Use Nginx to route by path: <code>/</code> → SPA static assets, <code>/api/&#8230;&#8203;</code> → BFF (covering both public APIs), optional <code>/ws/&#8230;&#8203;</code> → BFF for WebSockets; no API version prefix is assumed.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">One clean entrypoint with simple routing rules; adds a lightweight component to configure and maintain.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Secrets never enter version control. Developers must copy <code>.env.example</code> to get started locally.</p></td>
 </tr>
 </tbody>
 </table>
@@ -5315,11 +5118,8 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 </div>
 <div class="paragraph">
 <p>This section makes quality requirements concrete through a quality tree and measurable scenarios, referencing the quality goals defined in section 1.2 <a href="#_quality_goals">Quality Goals</a> where applicable.
-The quality-attribute taxonomy follows ISO/IEC 25010 (product quality: usability, performance efficiency, reliability, security, maintainability, compatibility, portability, etc.).
-The YOVI system consists of a TypeScript web application and a Rust module exposed via a web interface, communicating through JSON messages and YEN notation to represent game states.</p>
-</div>
-<div class="paragraph">
-<p>Scenarios make quality requirements precise by stating stimulus, response, and measurable criteria (usage scenarios and change scenarios).</p>
+The quality-attribute taxonomy follows ISO/IEC 25010.
+Scenarios make quality requirements precise by stating stimulus, response, and measurable criteria.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -5342,46 +5142,46 @@ The YOVI system consists of a TypeScript web application and a Rust module expos
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-01"></a><strong>QS-01</strong> (Fast start)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A new player accesses the web application for the first time.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new player accesses the application for the first time.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">They can register, log in, and start a game against the bot.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Completes the flow in &lt; 30 s without needing a manual (quality goal 1).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Completes the flow in &lt; 30 s without needing instructions (quality goal 1).</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-02"></a><strong>QS-02</strong> (Playable UI)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A player starts a game and makes a move.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The UI responds without noticeable blocking and reflects the new state.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Main interaction (render + local confirmation) does not exceed 500 ms on the client (TBD: might measure in the future).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The UI reflects the new state without noticeable delay.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Main interaction (render + confirmation) does not exceed 500 ms on the client (TBD: to be measured).</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-03"></a><strong>QS-03</strong> (API latency without Rust)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-03"></a><strong>QS-03</strong> (API latency — no bot)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A standard REST request to the Node/Express backend (e.g., login/profile) that does not require Rust computation.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A standard request to the Node.js backend (e.g., login, profile) that does not involve the bot engine.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The system responds with the result.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">p95 &#8656; 50 ms for ~10 concurrent users (internal target).</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-04"></a><strong>QS-04</strong> (Rust healthcheck)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-04"></a><strong>QS-04</strong> (Bot engine health check)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The backend invokes the Rust service health-check endpoint.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">It receives OK/FAIL and can degrade functionality if FAIL.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>game</code> service calls the bot engine health-check endpoint.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It receives a status response and can disable bot features if the engine is down.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">p95 &#8656; 50 ms.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-05"></a><strong>QS-05</strong> (Choose-move latency by board size)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-05"></a><strong>QS-05</strong> (Bot move latency by board size)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A player/bot requests “choose next move” from the Rust module (Random strategy or Minimax with alpha-beta + iterative deepening).</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The service returns a valid move in the expected format.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A player requests the next bot move (random strategy or minimax with alpha-beta pruning).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The service returns a valid move.</p></td>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
 <ul>
 <li>
-<p>“Hard” target (board size 4-12): p95 &#8656; 500 ms (quality goal 2).</p>
+<p>"Hard" difficulty (board size 4–12): p95 &#8656; 500 ms (quality goal 2).</p>
 </li>
 <li>
-<p>“Hard” target (board size 13-16): p95 &#8656; 3000 ms, and the UI shows a “thinking…” state without blocking the session.</p>
+<p>"Hard" difficulty (board size 13–16): p95 &#8656; 3000 ms; the UI shows a "thinking…" indicator without blocking the session.</p>
 </li>
 <li>
-<p>Note: these thresholds will be validated with real measurements (not fully measured yet).</p>
+<p>Note: thresholds will be validated with real measurements.</p>
 </li>
 </ul>
 </div></div></td>
@@ -5389,72 +5189,72 @@ The YOVI system consists of a TypeScript web application and a Rust module expos
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-06"></a><strong>QS-06</strong> (Add bot strategy in 1 day)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Change</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A new bot strategy or difficulty adjustment is added to the Rust module.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new bot strategy or difficulty level is added to the Rust module.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The feature is integrated without breaking the frontend or API contracts.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Effort &#8656; 1 work day, and the /play endpoint contract remains compatible (quality goal 3).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Effort &#8656; 1 work day; the <code>/v1/ybot/choose/{bot_id}</code> endpoint contract remains compatible (quality goal 3).</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-07"></a><strong>QS-07</strong> (Extend board size)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Change</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Board-size support is extended/refactored within the allowed range.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The change does not require rewriting the UI or persistence layer.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Localized changes and updated tests; the YEN/JSON format is not broken.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Board-size support is extended within the allowed range.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The change does not require rewriting the UI or the persistence layer.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Changes are localized and tests are updated; the YEN format is not broken.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-08"></a><strong>QS-08</strong> (Persist match result)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A game ends and the result is saved to MariaDB.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A game ends and the result is saved to the database.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The result is persisted and appears in the user&#8217;s history.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">99% of save operations without losing the result (quality goal 4); on failure, an explicit error is returned and no match is “confirmed” as saved when it was not.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">99% of save operations succeed (quality goal 4); on failure, an explicit error is returned and no match is falsely confirmed as saved.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-09"></a><strong>QS-09</strong> (Service degraded availability)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-09"></a><strong>QS-09</strong> (Recovery after restart)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The VPS suffers downtime/restarts (low availability, short-lived operation).</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The system becomes operational again after restart, even if live sessions are lost.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Service recovers after restart (TBD: &#8656; 5 min) and keeps already persisted data (no backups).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The server restarts unexpectedly.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system comes back online and retains previously persisted data.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service recovers after restart (TBD: &#8656; 5 min); live sessions in progress may be lost, but finished match records are kept.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-10"></a><strong>QS-10</strong> (Authenticated score submission)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">An unauthenticated user tries to submit a score/result or access private data.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The backend rejects the operation.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Only authenticated users can submit scores to their own profile (quality goal 5).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An unauthenticated client tries to submit a match result or access private data.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The backend rejects the request.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Only authenticated users can submit results linked to their own account (quality goal 5).</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-11"></a><strong>QS-11</strong> (Score spoofing)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">An authenticated user attempts to forge results: submit results without having played, manipulate the state/input (e.g., YEN) to obtain an illegitimate score.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The backend validates consistency and rejects the operation.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">“Score spoofing” is prevented for those two scenarios (quality goal 5); replay &#169; will be addressed when a global scoring system exists.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An authenticated user attempts to submit a result without having played, or sends a manipulated game state to obtain an illegitimate score.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>game</code> service validates the state server-side and rejects the operation.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Both spoofing scenarios are prevented (quality goal 5).</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-12"></a><strong>QS-12</strong> (Anti-abuse / rate limiting)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-12"></a><strong>QS-12</strong> (Abuse / rate limiting)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A malicious client attempts brute force / spam against server-side “users” endpoints.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The system limits and logs the abuse.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Rate limiting enabled (TBD: thresholds per IP/user) and security-event logs.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A client attempts brute force or spam against the <code>users</code> service endpoints.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system limits and logs the requests.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rate limiting is enabled (TBD: thresholds per IP/user) and security events are logged.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-13"></a><strong>QS-13</strong> (Documented external API)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A third party implements a bot using the public API.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">They can integrate without reverse engineering.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">API is “fully documented” (OpenAPI/Swagger + examples) as required by the assignment.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A third party builds a bot using the public interoperability API.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">They can integrate without reverse engineering the system.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The API is fully documented (OpenAPI/Swagger with examples) as required by the assignment.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-14"></a><strong>QS-14</strong> (Observability)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">An error occurs in a match (Node or Rust) or latency increases.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The team diagnoses the issue using metrics/logs.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Minimum metrics (p95 latencies, error rate, Rust health) and logs with correlation-id (TBD implementation).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An error occurs during a match or latency increases.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The team can diagnose the issue using metrics and logs.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Basic metrics (p95 latencies, error rate, bot engine health) are available; logs include a correlation ID (TBD implementation).</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-15"></a><strong>QS-15</strong> (Arc42 + ADR quality)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-15"></a><strong>QS-15</strong> (Architecture documentation quality)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Change</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Team reviews the architecture and decisions.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">They can trace decisions and quality attributes.</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Clear documentation (complete arc42) and relevant decisions recorded (e.g., ADR) per evaluation criteria.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The team reviews the architecture and its decisions.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">They can trace decisions and quality attributes without ambiguity.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Complete arc42 documentation with relevant ADRs recorded per evaluation criteria.</p></td>
 </tr>
 </tbody>
 </table>
@@ -5489,8 +5289,7 @@ The YOVI system consists of a TypeScript web application and a Rust module expos
 </div>
 </div>
 <div class="paragraph">
-<p>This section lists identified technical risks and technical debts, ordered by priority.
-Risk management enables proactive decision-making and informs stakeholders (project managers, teaching staff) about architectural concerns.</p>
+<p>This section lists identified technical risks and technical debts, ordered by priority.</p>
 </div>
 <div class="sect2">
 <h3 id="_technical_risks">11.1. Technical Risks</h3>
@@ -5511,91 +5310,88 @@ Risk management enables proactive decision-making and informs stakeholders (proj
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-01</strong> (Minimax algorithm does not scale beyond board size 11)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-01</strong> (Minimax does not scale beyond board size 11)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>HIGH</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The current Minimax implementation (alpha-beta + iterative deepening) cannot handle boards of size 11+ within acceptable time limits; this limits the "variable board size" requirement.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The current minimax implementation (alpha-beta pruning + iterative deepening) cannot handle boards of size 11+ within acceptable time limits, which restricts the variable board size requirement.</p></td>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
 <ul>
 <li>
-<p>Option A: Cap maximum board size to 10 for "Hard" difficulty.</p>
+<p>Option A: Cap maximum board size at 10 for "Hard" difficulty.</p>
 </li>
 <li>
-<p>Option B: Optimize algorithm (transposition tables, better move ordering) or reduce search depth for larger boards.</p>
+<p>Option B: Optimize the algorithm (transposition tables, better move ordering) or reduce search depth for larger boards.</p>
 </li>
 <li>
-<p>Option C: Add time-limit cutoff and return best move found so far; display "thinking&#8230;&#8203;" state to user.</p>
+<p>Option C: Add a time-limit cutoff and return the best move found so far; show a "thinking…" indicator to the user.</p>
 </li>
 </ul>
 </div></div></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-02</strong> (Rust service failure blocks gameplay)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-02</strong> (Bot engine failure blocks PvE games)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>HIGH</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">If the Rust module (win verification + move suggestion) becomes unavailable, players cannot continue games against the bot.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">If <code>gamey</code> becomes unavailable, players cannot continue games against the bot. Note: win detection runs in the <code>game</code> service (Node.js), so it is not affected by this failure.</p></td>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
 <ul>
 <li>
-<p>Implement a fallback mode: automatically switch to <strong>local player-vs-player</strong> with a clear notification ("Bot unavailable; multiplayer mode enabled").</p>
+<p>Implement graceful degradation: switch to a local two-player mode with a clear message ("Bot unavailable; switching to local multiplayer").</p>
 </li>
 <li>
-<p>Add health-check monitoring and alert if Rust service is down.</p>
-</li>
-<li>
-<p>Ensure graceful degradation rather than complete system failure.</p>
+<p>Add health-check monitoring to detect and alert when <code>gamey</code> is down.</p>
 </li>
 </ul>
 </div></div></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-03</strong> (WebSocket technology adoption unproven)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-03</strong> (WebSocket integration is unproven)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>HIGH</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The team has not tested WebSocket integration for real-time multiplayer; lack of experience increases risk of incomplete implementation or bugs.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The team has not yet implemented WebSocket support for real-time online multiplayer. Lack of experience increases the risk of bugs or incomplete implementation.</p></td>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
 <ul>
 <li>
-<p>Spike/prototype WebSocket basics early (by sprint N, TBD).</p>
+<p>Prototype WebSocket basics early (by sprint N, TBD).</p>
 </li>
 <li>
-<p>Allocate buffer time for debugging connection issues and state synchronization.</p>
+<p>Allocate extra time for debugging connection and state-sync issues.</p>
 </li>
 <li>
-<p>Fallback: if WebSocket multiplayer is not ready, prioritize player-vs-bot and consider multiplayer optional.</p>
+<p>If not ready in time, online multiplayer can be deferred; player-vs-bot and local multiplayer remain functional.</p>
 </li>
 </ul>
 </div></div></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-04</strong> (Lack of observability in production)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-04</strong> (Limited observability in production)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>HIGH</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Without metrics and correlation-based logging, diagnosing errors or performance issues in the deployed VPS will be difficult.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Without structured logs and metrics, diagnosing problems on the deployed server is difficult and slow.</p></td>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
 <ul>
 <li>
-<p>Implement basic structured logging with correlation-id (request tracing across Node ↔ Rust).</p>
+<p>Add structured logging with a correlation ID (request tracing across Node and Rust).</p>
 </li>
 <li>
-<p>Add minimal metrics (error rate, p95 latencies, Rust health) using a lightweight tool (e.g., Prometheus + Grafana, or simpler: logs + parsing scripts).</p>
+<p>Expose basic metrics (error rate, p95 latencies, bot engine health) via Prometheus and Grafana.</p>
 </li>
 <li>
-<p>Allocate time for this before final deployment.</p>
+<p>Address this before final deployment.</p>
 </li>
 </ul>
 </div></div></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-05</strong> (Team inexperience with stack)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-05</strong> (Team inexperience with the stack)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>MEDIUM</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The team is relatively inexperienced with the chosen stack (React/Node/Rust), which may slow development and increase bug rate.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The team is relatively new to some parts of the stack (React, Node.js, Rust), which may slow development and increase the bug rate.</p></td>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
 <ul>
 <li>
-<p>The team has sufficient time to learn (academic project schedule).</p>
+<p>The academic schedule allows time for learning.</p>
 </li>
 <li>
-<p>Pair programming and code reviews help share knowledge.</p>
+<p>Code reviews and pair programming help spread knowledge across the team.</p>
 </li>
 <li>
-<p>SonarQube enforces quality standards and catches common mistakes (see TD-01).</p>
+<p>SonarQube enforces quality standards and catches common mistakes early (see TD-01).</p>
 </li>
 </ul>
 </div></div></td>
@@ -5603,29 +5399,29 @@ Risk management enables proactive decision-making and informs stakeholders (proj
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-06</strong> (Scope creep from optional features)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>MEDIUM</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The assignment includes many optional features (variants, i18n, mobile, undo, hints, etc.); the team has not yet decided which to implement, risking overcommitment.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The assignment includes many optional features (game variants, i18n, mobile, undo, hints, etc.). Taking on too many risks overcommitment.</p></td>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
 <ul>
 <li>
-<p>Finalize scope early: prioritize 1–2 optional features aligned with grading criteria (e.g., one Game Y variant + leaderboard).</p>
+<p>Lock scope early: prioritize one or two optional features aligned with grading criteria (e.g., leaderboard).</p>
 </li>
 <li>
-<p>Avoid starting optional features until core requirements (player-vs-bot, API, user management) are stable and tested.</p>
+<p>Do not start optional features until the core requirements (player-vs-bot, API, user management) are stable and tested.</p>
 </li>
 </ul>
 </div></div></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-07</strong> (Documentation contains TBD sections)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-07</strong> (Documentation has open TBD sections)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>MEDIUM</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Arc42 documentation is up-to-date and API documentation is exhaustive, but some sections still contain "TBD" placeholders.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Some documentation sections still contain TBD placeholders, which may affect the final evaluation.</p></td>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
 <ul>
 <li>
-<p>Schedule a documentation review sprint before final delivery.</p>
+<p>Schedule a documentation review before final delivery.</p>
 </li>
 <li>
-<p>Assign owners to close remaining TBDs (e.g., finalize ADRs, update deployment diagrams).</p>
+<p>Assign an owner to each open TBD to ensure it gets closed.</p>
 </li>
 </ul>
 </div></div></td>
@@ -5650,18 +5446,43 @@ Risk management enables proactive decision-making and informs stakeholders (proj
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TD-01</strong> (SonarQube slows development velocity)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">SonarQube quality gates are enabled and catch issues early, but they slow down the development workflow (additional checks, required fixes before merge).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TD-01</strong> (SonarQube slows development)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Quality gates are enabled and catch issues early, but they add overhead to the development workflow.</p></td>
 <td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
 <ul>
 <li>
-<p><strong>Impact</strong>: Reduced short-term velocity, but higher long-term code quality and fewer bugs.</p>
+<p><strong>Impact</strong>: Reduced short-term velocity, higher long-term code quality.</p>
 </li>
 <li>
-<p><strong>Plan</strong>: Accept this trade-off; SonarQube prevents accumulation of worse technical debt (poor code, security issues).</p>
+<p><strong>Plan</strong>: Accept the trade-off. SonarQube prevents worse debt from accumulating (poor code, security issues). Thresholds can be adjusted if they become unreasonably strict for the project scope.</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TD-02</strong> (<code>interop</code> service not connected in docker-compose)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>interop</code> service (required by the assignment for bot interoperability) is implemented and tested but not wired into <code>docker-compose.yml</code>. It cannot be reached in the current deployment.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p><strong>Impact</strong>: The interoperability requirement is not met in production until this is enabled.</p>
 </li>
 <li>
-<p>Consider adjusting thresholds if checks become overly strict for the project scope.</p>
+<p><strong>Plan</strong>: Add the <code>interop</code> service to <code>docker-compose.yml</code> before final delivery. The required configuration is documented in section 5.</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TD-03</strong> (<code>pvp-online</code> mode not implemented)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The online multiplayer mode (<code>pvp-online</code>) is defined in the type system and reserved in the game service, but the matching logic and real-time synchronization are not implemented.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p><strong>Impact</strong>: Online multiplayer is unavailable. Player-vs-bot and local multiplayer are not affected.</p>
+</li>
+<li>
+<p><strong>Plan</strong>: Implement once WebSocket infrastructure is in place (linked to R-03). Treat as a separate delivery.</p>
 </li>
 </ul>
 </div></div></td>
@@ -5675,11 +5496,7 @@ Risk management enables proactive decision-making and informs stakeholders (proj
 <i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-Test coverage is currently &gt;= 80% across the codebase, which is acceptable.
-Score spoofing validation is implemented in the Rust module (validates YEN state integrity server-side).
-CI/CD pipeline for deployment is already operational.
-Rate limiting is not prioritized (low risk in academic/closed project context).
-VPS availability is low (cheap Azure instance, no backups), but this risk is accepted given the academic scope.
+Test coverage is &gt;= 80% across the codebase. Move validation and score submission are handled server-side in the <code>game</code> service, preventing spoofed results. The CI/CD pipeline is operational. Rate limiting is not prioritized given the closed academic context.
 </td>
 </tr>
 </table>
@@ -5742,91 +5559,87 @@ VPS availability is low (cheap Azure instance, no backups), but this risk is acc
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Game Y</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Board game implemented by the system, including a player-vs-bot mode.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The board game implemented by the system: players compete to connect three sides of a triangular board.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Micrati</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Company behind the project in the assignment context (project sponsor).</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Web Frontend</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Browser-based TypeScript SPA that renders the board UI and interacts with backend APIs via HTTP (and WebSockets when enabled).</p></td>
-</tr>
-<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">SPA (Single-Page Application)</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Web application that loads once and updates the UI dynamically by calling backend APIs.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">webapp-backend</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Backend that exposes the public Game API and acts as orchestration layer (BFF) towards internal services (notably <code>gamey</code>) and the <code>users</code> service.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">BFF (Backend for Frontend)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Pattern where a single backend endpoint is tailored to a specific frontend, centralizing orchestration and cross-cutting concerns.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Web Frontend</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Browser-based TypeScript SPA that renders the board and interacts with backend services via HTTP.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">users (service)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Service responsible for authentication and user management, exposing the public User API (e.g., register/login/profile) and persisting user data in MariaDB.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service responsible for authentication and user management. Exposes the public User API (register, login, profile, stats, ranking) and persists user data in MariaDB.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">User API (Public User API)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Public HTTP API surface for user management (register/login/profile) provided by the <code>users</code> service.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Game API (Public Game API)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Public HTTP API surface for game interaction (match flow/play actions) provided by <code>webapp-backend</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">game (service)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service responsible for all game session logic. It validates moves, manages board state, calls <code>gamey</code> for bot moves, and writes match results to the <code>users</code> service when a game ends.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gamey (Rust engine)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Internal Rust service that validates game states and computes bot moves; invoked by <code>webapp-backend</code> via HTTP using JSON/YEN.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Internal Rust service that computes bot moves. Accepts a board position in YEN format and returns one move. Invoked only by the <code>game</code> service — never directly by the browser.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">interop (service)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Standalone service that exposes a public API allowing external bots or clients to play against the bot engine. Required by the assignment for interoperability with other teams. Implemented but not yet connected in <code>docker-compose.yml</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Public HTTP API for user management (register, login, profile, history) provided by the <code>users</code> service.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Public HTTP API for game interaction (create session, play moves, surrender) provided by the <code>game</code> service.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">YEN</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Notation used to represent a Game Y state (board size, players, turn, and layout), exchanged as JSON between services.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Notation for representing a Game Y board state: includes board size, current player turn, player identifiers, and the board layout.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">YEN/JSON game state</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">JSON payload that encodes the game state following YEN; invalid states must be rejected by the engine.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A JSON payload encoding a game state in YEN format. Invalid states are rejected by the engine.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">JSON</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Default payload format used in the system APIs and service-to-service communication.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default payload format used in all API and service-to-service communication.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">REST</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP-based style used for request/response APIs in the system.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP-based request/response style used across all services in the system.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">WebSocket</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Bidirectional communication channel used for realtime gameplay/multiplayer events when enabled.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bidirectional communication channel planned for real-time online multiplayer.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">JWT (JSON Web Token)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Token format used for authentication; clients send it via <code>Authorization: Bearer &lt;token&gt;</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Token format used for authentication. Clients send it in the <code>Authorization: Bearer &lt;token&gt;</code> header.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">HS256</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">HMAC-SHA256 algorithm used to sign/verify JWTs using a shared secret.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HMAC-SHA256 algorithm used to sign and verify JWTs using a shared secret key.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Authentication</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Process of proving identity (who a user/client is), handled by the <code>users</code> service via JWT issuance/verification.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The process of verifying who a user is. Handled by the <code>users</code> service via JWT issuance; verified locally by both <code>users</code> and <code>game</code>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Authorization</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Process of deciding permissions (what a user can do), implemented as role-based checks (e.g., <code>player</code>/<code>admin</code>).</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Role (player/admin)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">User permission label used for authorization decisions.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The process of deciding what a user is allowed to do. Implemented as role-based checks (<code>player</code> / <code>admin</code>).</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">MariaDB</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Relational database used by the <code>users</code> service to persist user accounts and credentials/roles.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Relational database used by both the <code>users</code> and <code>game</code> services to persist data (user accounts, match records, game sessions, and move history).</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">ADR (Architecture Decision Record)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Short document describing an important architectural decision, its context, and consequences.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Short document describing an important architectural decision, its context, and its consequences.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">arc42</p></td>
@@ -5834,15 +5647,15 @@ VPS availability is low (cheap Azure instance, no backups), but this risk is acc
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">M1</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">First milestone focused on end-to-end functionality.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">First project milestone, focused on delivering end-to-end functionality.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Error envelope</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Standard JSON structure for error responses using <code>errorCode</code>, <code>message</code>, and <code>requestId</code>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Standard JSON structure for error responses, using <code>errorCode</code>, <code>message</code>, and <code>requestId</code> fields.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">requestId</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Identifier included in error responses to correlate client-visible failures with server-side logs/traces.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Identifier included in error responses to help correlate client-visible failures with server-side logs.</p></td>
 </tr>
 </tbody>
 </table>
@@ -5852,7 +5665,7 @@ VPS availability is low (cheap Azure instance, no backups), but this risk is acc
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-04-06 21:53:17 UTC
+Last updated 2026-04-07 01:31:09 UTC
 </div>
 </div>
 </body>
