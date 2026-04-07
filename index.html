@@ -4693,18 +4693,24 @@ on this list.</p>
 </dd>
 <dt class="hdlist1">Key principles</dt>
 <dd>
+<div class="ulist">
+<ul>
+<li>
 <p><strong>Guest-first access</strong> — Players can start a game without registering. An account is only required to save match history and appear in the ranking. This lowers the barrier to try the game.</p>
+</li>
+<li>
+<p><strong>Server-authoritative rendering</strong> — The board state shown to the player always comes from the server. The UI does not maintain its own copy of the game logic; it only renders what the <code>game</code> service returns. This keeps the frontend simple and prevents the display from going out of sync.</p>
+</li>
+<li>
+<p><strong>Visible bot feedback</strong> — When the bot is computing a move (which can take up to 3 seconds on large boards), the UI shows a "thinking…" indicator. The player cannot interact with the board during this time. This avoids confusion about whether the game is frozen.</p>
+</li>
+<li>
+<p><strong>Accessible components</strong> — UI primitives are built with Radix UI, which provides keyboard navigation and screen-reader support out of the box.</p>
+</li>
+</ul>
+</div>
 </dd>
 </dl>
-</div>
-<div class="paragraph">
-<p><strong>Server-authoritative rendering</strong> — The board state shown to the player always comes from the server. The UI does not maintain its own copy of the game logic; it only renders what the <code>game</code> service returns. This keeps the frontend simple and prevents the display from going out of sync.</p>
-</div>
-<div class="paragraph">
-<p><strong>Visible bot feedback</strong> — When the bot is computing a move (which can take up to 3 seconds on large boards), the UI shows a "thinking…" indicator. The player cannot interact with the board during this time. This avoids confusion about whether the game is frozen.</p>
-</div>
-<div class="paragraph">
-<p><strong>Accessible components</strong> — UI primitives are built with Radix UI, which provides keyboard navigation and screen-reader support out of the box.</p>
 </div>
 </div>
 <div class="sect2">
@@ -5489,18 +5495,6 @@ Scenarios make quality requirements precise by stating stimulus, response, and m
 </tr>
 </tbody>
 </table>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-Test coverage is &gt;= 80% across the codebase. Move validation and score submission are handled server-side in the <code>game</code> service, preventing spoofed results. The CI/CD pipeline is operational. Rate limiting is not prioritized given the closed academic context.
-</td>
-</tr>
-</table>
-</div>
 <div style="page-break-after: always;"></div>
 </div>
 </div>
@@ -5665,7 +5659,7 @@ Test coverage is &gt;= 80% across the codebase. Move validation and score submis
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-04-07 01:31:09 UTC
+Last updated 2026-04-07 01:42:13 UTC
 </div>
 </div>
 </body>
