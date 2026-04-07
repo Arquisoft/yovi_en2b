@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { useLoginController } from './useLoginController'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -95,8 +95,9 @@ describe('useLoginController', () => {
     it('sets isLoading to true during login and false when done', async () => {
       let resolveLogin!: () => void
       const mockLogin = vi.fn().mockReturnValue(
-        new Promise<void>((resolve) => { resolveLogin = resolve })
+        new Promise((resolve) => { resolveLogin = resolve as () => void })
       )
+
       vi.mocked(useAuth).mockReturnValue(makeAuthMock({ login: mockLogin }) as any)
 
       const { result } = renderHook(() => useLoginController())
