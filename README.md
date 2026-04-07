@@ -110,7 +110,6 @@ cd users && npm install && npm run dev
 ```bash
 cd game && npm install && npm run dev
 # Available at http://localhost:5000
-# Requires: DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD, JWT_SECRET, RUST_INTERNAL_URL
 ```
 
 **3. Bot engine**
