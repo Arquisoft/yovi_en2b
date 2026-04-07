@@ -11,6 +11,7 @@ function makeGame(overrides: Partial<GameInfo> = {}): GameInfo {
     minPlayers: 2,
     maxPlayers: 2,
     isAvailable: true,
+    thumbnail: '',
     ...overrides,
   }
 }

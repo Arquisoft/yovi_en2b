@@ -38,7 +38,7 @@ describe('ChatPanel — message display', () => {
     render(
       <ChatPanel
         {...defaultProps}
-        messages={[makeMessage({ content: 'Hello from Alice' })]}
+        messages={[makeMessage({ content: 'Hello from Alice', senderName: 'Alice' })]}
       />
     )
     expect(screen.getByText('Hello from Alice')).toBeDefined()
@@ -54,11 +54,11 @@ describe('ChatPanel — message display', () => {
     expect(screen.getByText('You')).toBeDefined()
   })
 
-  it('shows sender name for other users\' messages', () => {
+  it("shows sender name for other users' messages", () => {
     render(
       <ChatPanel
         {...defaultProps}
-        messages={[makeMessage({ senderId: 'user-2', senderName: 'Bob' })]}
+        messages={[makeMessage({ senderName: 'Bob', senderId: 'user-2' })]}
       />
     )
     expect(screen.getByText('Bob')).toBeDefined()
@@ -68,7 +68,7 @@ describe('ChatPanel — message display', () => {
     render(
       <ChatPanel
         {...defaultProps}
-        messages={[makeMessage({ senderId: 'system', senderName: 'System', content: 'Game started' })]}
+        messages={[makeMessage({ senderId: 'system', content: 'Game started' })]}
       />
     )
     expect(screen.getByText('Game started')).toBeDefined()
@@ -82,7 +82,7 @@ describe('ChatPanel — message sending', () => {
     const onSendMessage = vi.fn()
     render(<ChatPanel {...defaultProps} onSendMessage={onSendMessage} />)
     const input = screen.getByPlaceholderText('Type a message...')
-    fireEvent.change(input, { target: { value: '  hi there  ' } })
+    fireEvent.change(input, { target: { value: ' hi there ' } })
     fireEvent.submit(input.closest('form')!)
     expect(onSendMessage).toHaveBeenCalledWith('hi there')
   })
@@ -99,7 +99,7 @@ describe('ChatPanel — message sending', () => {
     const onSendMessage = vi.fn()
     render(<ChatPanel {...defaultProps} onSendMessage={onSendMessage} />)
     const input = screen.getByPlaceholderText('Type a message...')
-    fireEvent.change(input, { target: { value: '   ' } })
+    fireEvent.change(input, { target: { value: ' ' } })
     fireEvent.submit(input.closest('form')!)
     expect(onSendMessage).not.toHaveBeenCalled()
   })
@@ -128,11 +128,9 @@ describe('ChatPanel — collapsible mode', () => {
 
   it('collapses to a button when the chevron is clicked', () => {
     render(<ChatPanel {...defaultProps} isCollapsible={true} />)
-    // Find the collapse button (not the send button)
-    const allButtons = screen.getAllByRole('button')
-    const collapseBtn = allButtons.find((b) => b.querySelector('svg'))!
     // Click the collapse button (first one with SVG but not submit)
     // The header collapse button is the one without disabled state
+    const allButtons = screen.getAllByRole('button')
     const headerBtn = allButtons.find((b) => !b.hasAttribute('type'))
     if (headerBtn) fireEvent.click(headerBtn)
     // After collapse, should show a single "Chat" toggle button

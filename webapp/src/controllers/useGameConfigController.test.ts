@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { useGameConfigController } from './useGameConfigController'
 import { useAuth } from '@/contexts/AuthContext'
 import { gameService } from '@/services/gameyService'
@@ -161,6 +161,7 @@ describe('useGameConfigController', () => {
         'mock-token',
         undefined
       )
+
       expect(mockNavigate).toHaveBeenCalledWith('/games/y/play/game-abc')
     })
 
@@ -238,8 +239,8 @@ describe('useGameConfigController', () => {
 
       expect(gameService.createGame).toHaveBeenCalledWith(
         expect.anything(),
-        undefined,        // token is undefined for guests
-        'guest-xyz'      // guestId is user.id
+        undefined,   // token is undefined for guests
+        'guest-xyz'  // guestId is user.id
       )
     })
 
@@ -270,7 +271,8 @@ describe('useGameConfigController', () => {
     })
 
     it('sets isLoading true during game creation and false when done', async () => {
-      let resolveCreate!: (v: unknown) => void
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let resolveCreate!: (v: any) => void
       vi.mocked(gameService.createGame).mockReturnValue(
         new Promise((resolve) => { resolveCreate = resolve })
       )
