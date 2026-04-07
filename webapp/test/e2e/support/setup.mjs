@@ -32,7 +32,7 @@ setWorldConstructor(YoviWorld)
 setDefaultTimeout(30_000)
 
 Before(async function () {
-  this.browser = await chromium.launch({ headless: true })
+  this.browser = await chromium.launch({ headless: true, args: ['--disable-web-security'], })
   const ctx = await this.browser.newContext()
   this.page = await ctx.newPage()
 })

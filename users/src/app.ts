@@ -21,7 +21,6 @@ const PORT = process.env.PORT || 3000;
 
 console.log(`Starting nodejs server with env: ` + process.env.APP_ENV);
 
-app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 app.use(helmet({
