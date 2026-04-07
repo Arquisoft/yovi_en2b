@@ -3,7 +3,7 @@ import type { MatchRecord, StatsData } from '@/types'
 import { USERS_API_URL } from '@/config/api'
 
 class StatsService {
-  constructor(private baseUrl: string) { }
+  constructor(private readonly baseUrl: string) { }
 
   private async request<T>(endpoint: string, token: string): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
