@@ -16,7 +16,7 @@ pub mod smart_bot;
 pub mod ybot;
 pub mod ybot_registry;
 pub use fast_bot::*;
-pub use minimax::choose_move_with_minimax;
+pub use minimax::{choose_move_with_minimax, choose_pie_opening_with_minimax, decide_pie_with_minimax};
 pub use random::*;
 pub use smart_bot::*;
 pub use ybot::*;

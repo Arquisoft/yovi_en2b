@@ -34,6 +34,7 @@ function makeGame(overrides: Partial<GameState> = {}): GameState {
   return {
     id: 'game-1',
     status: 'finished',
+    phase: 'playing',
     currentTurn: 'player1',
     winner: 'player1',
     moves: [

@@ -21,11 +21,15 @@
 
 pub mod choose;
 pub mod error;
+pub mod pie_decide;
+pub mod pie_opening;
 pub mod state;
 pub mod version;
 use axum::response::IntoResponse;
 pub use choose::MoveResponse;
 pub use error::ErrorResponse;
+pub use pie_decide::PieDecideResponse;
+pub use pie_opening::PieOpeningResponse;
 use std::sync::Arc;
 pub use version::*;
 
@@ -40,6 +44,14 @@ pub fn create_router(state: AppState) -> axum::Router {
         .route(
             "/{api_version}/ybot/choose/{bot_id}",
             axum::routing::post(choose::choose),
+        )
+        .route(
+            "/{api_version}/ybot/pie-decide/{bot_id}",
+            axum::routing::post(pie_decide::pie_decide),
+        )
+        .route(
+            "/{api_version}/ybot/pie-opening/{bot_id}",
+            axum::routing::post(pie_opening::pie_opening),
         )
         .with_state(state)
 }

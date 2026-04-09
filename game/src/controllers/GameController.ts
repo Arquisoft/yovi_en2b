@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../types/request';
 import { GameService } from '../services/GameService';
-import type { GameConfig, PlayerColor } from '../types/game';
+import type { GameConfig, PieDecision, PlayerColor } from '../types/game';
 
 const gameService = new GameService();
 
@@ -59,6 +59,23 @@ export const playMove = async (req: AuthRequest, res: Response) => {
 
     const token = req.headers.authorization?.split(' ')[1];
     const game = await gameService.playMove(id, row, col, player, token);
+    return res.json(game);
+  } catch (err: any) {
+    return res.status(err.status || 500).json({ error: err.message });
+  }
+};
+
+export const decidePie = async (req: AuthRequest, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { decision } = req.body as { decision: PieDecision };
+
+    if (decision !== 'keep' && decision !== 'swap') {
+      return res.status(400).json({ error: 'decision must be "keep" or "swap"' });
+    }
+
+    const token = req.headers.authorization?.split(' ')[1];
+    const game = await gameService.decidePie(id, decision, token);
     return res.json(game);
   } catch (err: any) {
     return res.status(err.status || 500).json({ error: err.message });

@@ -27,6 +27,7 @@ interface SavedConfig {
   timerEnabled: boolean
   botLevel: BotLevel
   playerColor: PlayerColor
+  pieRule: boolean
 }
 
 function storageKey(mode: string) {
@@ -61,6 +62,7 @@ export function useGameConfigController() {
   const [timerEnabled, setTimerEnabled] = useState(saved?.timerEnabled ?? false)
   const [botLevel, setBotLevel] = useState<BotLevel>(saved?.botLevel ?? 'medium')
   const [playerColor, setPlayerColor] = useState<PlayerColor>(saved?.playerColor ?? 'player1')
+  const [pieRule, setPieRule] = useState(saved?.pieRule ?? false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -74,6 +76,7 @@ export function useGameConfigController() {
     setTimerEnabled(s.timerEnabled)
     setBotLevel(s.botLevel)
     setPlayerColor(s.playerColor)
+    setPieRule(s.pieRule ?? false)
   }, [mode])
 
   const boardSizeError =
@@ -118,9 +121,10 @@ export function useGameConfigController() {
         timerSeconds: timerEnabled && timerMinutes ? timerMinutes * 60 : undefined,
         botLevel: mode === 'pve' ? botLevel : undefined,
         playerColor: mode === 'pve' ? playerColor : undefined,
+        pieRule: pieRule || undefined,
       }
 
-      saveConfig(mode, { boardSizeInput, timerInput, timerEnabled, botLevel, playerColor })
+      saveConfig(mode, { boardSizeInput, timerInput, timerEnabled, botLevel, playerColor, pieRule })
 
       const guestId = isGuest ? user?.id : undefined
       const game = await gameService.createGame(config, effectiveToken, guestId)
@@ -130,7 +134,7 @@ export function useGameConfigController() {
     } finally {
       setIsLoading(false)
     }
-  }, [mode, user, effectiveToken, isGuest, boardSizeInput, timerEnabled, timerInput, botLevel, playerColor, navigate])
+  }, [mode, user, effectiveToken, isGuest, boardSizeInput, timerEnabled, timerInput, botLevel, playerColor, pieRule, navigate])
 
   return {
     mode: mode as GameMode,
@@ -148,6 +152,8 @@ export function useGameConfigController() {
     setBotLevel,
     playerColor,
     setPlayerColor,
+    pieRule,
+    setPieRule,
     isLoading,
     error,
     handleStartGame,

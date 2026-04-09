@@ -37,6 +37,8 @@ export function GameConfigPage() {
     setBotLevel,
     playerColor,
     setPlayerColor,
+    pieRule,
+    setPieRule,
     isLoading,
     error,
     handleStartGame,
@@ -192,6 +194,23 @@ export function GameConfigPage() {
                 </div>
               )}
             </div>
+
+            {/* Pie Rule — available for pvp-local and pve */}
+            {mode !== 'pvp-online' && (
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="pieRule">Pie Rule</Label>
+                  <p className="text-xs text-muted-foreground">
+                    After the first move, the second player may swap sides
+                  </p>
+                </div>
+                <Switch
+                  id="pieRule"
+                  checked={pieRule}
+                  onCheckedChange={setPieRule}
+                />
+              </div>
+            )}
 
             <Button
               className="w-full"

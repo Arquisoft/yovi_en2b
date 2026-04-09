@@ -5,6 +5,10 @@ export type BotLevel = 'easy' | 'medium' | 'hard'
 export type BoardSize = 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16
 export type PlayerColor = 'player1' | 'player2'
 export type GameStatus = 'waiting' | 'playing' | 'finished' | 'abandoned'
+// Sub-phase within a 'playing' game. 'pie-decision' is entered after the first
+// move when Pie Rule is enabled, and exits once player2 chooses keep or swap.
+export type GamePhase = 'playing' | 'pie-decision'
+export type PieDecision = 'keep' | 'swap'
 
 export interface GameConfig {
   mode: GameMode
@@ -13,6 +17,7 @@ export interface GameConfig {
   timerSeconds?: number
   botLevel?: BotLevel
   playerColor?: PlayerColor
+  pieRule?: boolean
 }
 
 export interface Player {
@@ -47,6 +52,7 @@ export interface GameState {
   id: string
   config: GameConfig
   status: GameStatus
+  phase: GamePhase
   board: BoardCell[][]
   players: {
     player1: Player

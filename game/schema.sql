@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS games (
   player1_id INT NULL,
   config JSON NOT NULL,
   status ENUM('waiting', 'playing', 'finished', 'abandoned') NOT NULL DEFAULT 'playing',
+  phase VARCHAR(20) NOT NULL DEFAULT 'playing',
   board_state JSON NOT NULL,
   players JSON NOT NULL,
   current_turn ENUM('player1', 'player2') NOT NULL DEFAULT 'player1',
