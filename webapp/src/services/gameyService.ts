@@ -3,6 +3,7 @@ import type {
   GameState,
   GameConfig,
   ChatMessage,
+  PieDecision,
   PlayerColor,
 } from '@/types'
 import { AVAILABLE_GAMES } from '@/mocks/mockData'
@@ -62,6 +63,22 @@ class GameService {
     if (!response.ok) {
       const err = await response.json().catch(() => ({ error: 'Failed to play move' }))
       throw new Error(err.error || `Failed to play move: ${response.status}`)
+    }
+    return response.json()
+  }
+
+  async decidePie(gameId: string, decision: PieDecision, token?: string): Promise<GameState> {
+    const response = await fetch(`${this.baseUrl}/games/${gameId}/pie-decision`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ decision }),
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: 'Failed to decide' }))
+      throw new Error(err.error || `Failed to decide: ${response.status}`)
     }
     return response.json()
   }

@@ -2,6 +2,7 @@ import { useGameYController } from '@/controllers/useGameYController'
 import { GameYBoard } from '@/components/game-y/GameYBoard'
 import { GameSidebar } from '@/components/game-y/GameSidebar'
 import { GameOverlay } from '@/components/game-y/GameOverlay'
+import { PieRuleDecisionPanel } from '@/components/game-y/PieRuleDecisionPanel'
 import { AlertCircle, ChevronLeft, ChevronRight, XCircle } from 'lucide-react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useState, useRef, useCallback } from 'react'
@@ -10,8 +11,9 @@ import { useNavigate } from 'react-router-dom'
 export function GameYPage() {
   const {
     game, liveTimer, chatMessages, isLoading, error, moveError, lastMove,
-    isBotThinking, canPlay, handleCellClick, handleSurrender, handleSendMessage,
-    handlePlayAgain, currentUserId,
+    isBotThinking, isPieDecisionPending, isBotDecidingPie, isPieDecisionLoading, isSwapAnimating,
+    canPlay, handleCellClick, handlePieDecision, handleSurrender,
+    handleSendMessage, handlePlayAgain, currentUserId,
   } = useGameYController()
 
   const navigate = useNavigate()
@@ -78,13 +80,23 @@ export function GameYPage() {
           </div>
         )}
         {/* Board */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden relative">
           <GameYBoard
             game={game}
             lastMove={lastMove}
             isInteractive={canPlay}
             onCellClick={handleCellClick}
+            pieDecisionStone={isPieDecisionPending ? lastMove : null}
+            isSwapAnimating={isSwapAnimating}
           />
+          {isPieDecisionPending && (
+            <PieRuleDecisionPanel
+              game={game}
+              isBotDeciding={isBotDecidingPie}
+              onDecide={handlePieDecision}
+              isLoading={isPieDecisionLoading}
+            />
+          )}
         </div>
 
         {/* Sidebar deslizable desde abajo */}
@@ -144,13 +156,23 @@ export function GameYPage() {
       )}
       <div className="flex-1 min-h-0 flex relative">
       {/* Board */}
-      <div className="flex-1 min-w-0 overflow-hidden">
+      <div className="flex-1 min-w-0 overflow-hidden relative">
         <GameYBoard
           game={game}
           lastMove={lastMove}
           isInteractive={canPlay}
           onCellClick={handleCellClick}
+          pieDecisionStone={isPieDecisionPending ? lastMove : null}
+          isSwapAnimating={isSwapAnimating}
         />
+        {isPieDecisionPending && (
+          <PieRuleDecisionPanel
+            game={game}
+            isBotDeciding={isBotDecidingPie}
+            onDecide={handlePieDecision}
+            isLoading={isPieDecisionLoading}
+          />
+        )}
       </div>
 
       {/* Botón chevron pegado al borde del sidebar */}
