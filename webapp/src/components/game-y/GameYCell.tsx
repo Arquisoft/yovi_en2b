@@ -56,8 +56,8 @@ export const GameYCell = memo(function GameYCell({
   const redRingOpacity  = isPieDecisionStone ? (ringPhase % 2 === 0 ? 0.08 : 1) : 0
 
   const getFillColor = (): string => {
-    if (owner === 'player1') return 'hsl(var(--player1))'
-    if (owner === 'player2') return 'hsl(var(--player2))'
+    if (owner === 'player1') return isLastMove ? 'hsl(var(--player1) / 0.9)' : 'hsl(var(--player1))'
+    if (owner === 'player2') return isLastMove ? 'hsl(var(--player2) / 0.9)' : 'hsl(var(--player2))'
     if (isHovered && isClickable) return 'hsl(var(--accent))'
     return 'hsl(var(--card))'
   }
