@@ -12,14 +12,12 @@ import {
 import { getBotMove, getBotPieOpening, getBotPieDecision } from './BotService';
 import type {
   GameConfig,
-  GamePhase,
   GameState,
   PieDecision,
   Player,
   PlayerColor,
   TimerState,
   Move,
-  BoardSize,
   BotLevel,
 } from '../types/game';
 
@@ -217,17 +215,17 @@ export class GameService {
         game.config.pieRule === true && existingMoves.length === 0;
       const { row, col } = usePieOpening
         ? await getBotPieOpening(
-            game.boardState,
-            game.config.boardSize,
-            game.currentTurn,
-            botLevel
-          )
+          game.boardState,
+          game.config.boardSize,
+          game.currentTurn,
+          botLevel
+        )
         : await getBotMove(
-            game.boardState,
-            game.config.boardSize,
-            game.currentTurn,
-            botLevel
-          );
+          game.boardState,
+          game.config.boardSize,
+          game.currentTurn,
+          botLevel
+        );
 
       if (!isValidMove(game.boardState, row, col)) {
         console.error('Bot returned invalid move, skipping');
