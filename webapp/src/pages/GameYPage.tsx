@@ -51,6 +51,11 @@ export function GameYPage() {
     }
   }, [mobileHeight])
 
+  const toggleMobileSidebar = useCallback(() => {
+    if (sidebarOpen) { setMobileHeight(48); setSidebarOpen(false) }
+    else { setMobileHeight(SIDEBAR_HEIGHT); setSidebarOpen(true) }
+  }, [sidebarOpen])
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -71,6 +76,14 @@ export function GameYPage() {
     )
   }
 
+  const showPiePanel = (isPieDecisionPending && !isSwapAnimating && !swapCommitted) || isBotResolvingPie
+  const pieDecisionStoneMobile = (isPieDecisionPending && !swapCommitted) || isSwapAnimating
+    ? swapAnimationStone ?? lastMove
+    : null
+  const pieDecisionStoneDesktop = (isPieDecisionPending && !swapCommitted) || isSwapAnimating
+    ? lastMove
+    : null
+
   if (isMobile) {
     return (
       <div className="h-full min-h-0 flex flex-col relative">
@@ -87,11 +100,11 @@ export function GameYPage() {
             lastMove={lastMove}
             isInteractive={canPlay && !isSwapAnimating}
             onCellClick={handleCellClick}
-            pieDecisionStone={(isPieDecisionPending && !swapCommitted || isSwapAnimating) ? (swapAnimationStone ?? lastMove) : null}
+            pieDecisionStone={pieDecisionStoneMobile}
             isSwapAnimating={isSwapAnimating}
             swapCommitted={swapCommitted}
           />
-          {(isPieDecisionPending && !isSwapAnimating && !swapCommitted || isBotResolvingPie) && (
+          {showPiePanel && (
             <PieRuleDecisionPanel
               game={game}
               isBotDeciding={isBotDecidingPie || isBotResolvingPie}
@@ -111,10 +124,7 @@ export function GameYPage() {
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
-            onClick={() => {
-              if (sidebarOpen) { setMobileHeight(48); setSidebarOpen(false) }
-              else { setMobileHeight(SIDEBAR_HEIGHT); setSidebarOpen(true) }
-            }}
+            onClick={toggleMobileSidebar}
           >
             <div className="w-10 h-1 rounded-full bg-muted-foreground/40" />
           </div>
@@ -164,11 +174,11 @@ export function GameYPage() {
           lastMove={lastMove}
           isInteractive={canPlay && !isSwapAnimating}
           onCellClick={handleCellClick}
-          pieDecisionStone={(isPieDecisionPending && !swapCommitted || isSwapAnimating) ? lastMove : null}
+          pieDecisionStone={pieDecisionStoneDesktop}
           isSwapAnimating={isSwapAnimating}
           swapCommitted={swapCommitted}
         />
-        {(isPieDecisionPending && !isSwapAnimating && !swapCommitted || isBotResolvingPie) && (
+        {showPiePanel && (
           <PieRuleDecisionPanel
             game={game}
             isBotDeciding={isBotDecidingPie || isBotResolvingPie}

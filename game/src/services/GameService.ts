@@ -45,7 +45,7 @@ export class GameService {
       player1Id: userId,
       config,
       status: 'playing',
-      phase: 'playing' as GamePhase,
+      phase: 'playing',
       boardState: board,
       players: { player1, player2 },
       currentTurn: 'player1',
@@ -102,7 +102,7 @@ export class GameService {
 
     const moveObj: Move = { row, col, player, timestamp: now };
     const newBoard = applyMove(game.boardState, moveObj);
-    const boardWinner = checkWinner(newBoard, game.config.boardSize as BoardSize);
+    const boardWinner = checkWinner(newBoard, game.config.boardSize);
     const winner = boardWinner ?? timedOutWinner;
     const nextTurn = getOppositePlayer(player);
 
@@ -133,7 +133,7 @@ export class GameService {
       if (botPlayer?.color === nextTurn) {
         const decision = await getBotPieDecision(
           game.boardState,
-          game.config.boardSize as BoardSize,
+          game.config.boardSize,
           nextTurn,
           game.config.botLevel ?? 'medium',
         );
@@ -218,13 +218,13 @@ export class GameService {
       const { row, col } = usePieOpening
         ? await getBotPieOpening(
             game.boardState,
-            game.config.boardSize as BoardSize,
+            game.config.boardSize,
             game.currentTurn,
             botLevel
           )
         : await getBotMove(
             game.boardState,
-            game.config.boardSize as BoardSize,
+            game.config.boardSize,
             game.currentTurn,
             botLevel
           );
@@ -249,7 +249,7 @@ export class GameService {
 
       const moveObj: Move = { row, col, player: game.currentTurn, timestamp: now };
       const newBoard = applyMove(game.boardState, moveObj);
-      const boardWinner = checkWinner(newBoard, game.config.boardSize as BoardSize);
+      const boardWinner = checkWinner(newBoard, game.config.boardSize);
       const winner = boardWinner ?? timedOutWinner;
       const nextTurn = getOppositePlayer(game.currentTurn);
 
@@ -410,7 +410,7 @@ export class GameService {
       game.boardState = game.boardState.map(row =>
         row.map(cell =>
           cell.row === firstMove.rowIndex && cell.col === firstMove.colIndex
-            ? { ...cell, owner: 'player2' as PlayerColor }
+            ? { ...cell, owner: 'player2' }
             : cell
         )
       );
@@ -443,7 +443,7 @@ export class GameService {
       id: game.id,
       config: game.config,
       status: game.status,
-      phase: (game.phase ?? 'playing') as GamePhase,
+      phase: game.phase ?? 'playing',
       board: game.boardState,
       players: game.players,
       currentTurn: game.currentTurn,

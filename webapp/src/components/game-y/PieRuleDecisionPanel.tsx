@@ -16,7 +16,7 @@ interface Props {
  * On desktop it renders as a compact bottom bar.
  * On mobile it renders as a taller card so touch targets are comfortable.
  */
-export function PieRuleDecisionPanel({ game, isBotDeciding, onDecide, isLoading }: Props) {
+export function PieRuleDecisionPanel({ game, isBotDeciding, onDecide, isLoading }: Readonly<Props>) {
   const deciderName = game.players.player2.name
 
   return (

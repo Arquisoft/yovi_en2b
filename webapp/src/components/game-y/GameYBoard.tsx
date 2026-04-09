@@ -29,7 +29,7 @@ interface PieStoneHighlightProps {
   swapCommitted: boolean
 }
 
-function PieStoneHighlight({ row, col, cellSize, size, isSwapAnimating, swapCommitted }: PieStoneHighlightProps) {
+function PieStoneHighlight({ row, col, cellSize, size, isSwapAnimating, swapCommitted }: Readonly<PieStoneHighlightProps>) {
   const { x, y } = getGameYPosition(row, col, cellSize, size)
   const stonePath = getGameYPath(cellSize * 0.95)
 
@@ -54,20 +54,28 @@ function PieStoneHighlight({ row, col, cellSize, size, isSwapAnimating, swapComm
 
   // During swap: stone fill flickers between Blue and Red.
   // After animation ends but before API responds (swapCommitted): pre-color as Red.
-  const stoneFill = isSwapAnimating
-    ? (flashPhase % 2 === 1 ? 'hsl(var(--player2))' : 'hsl(var(--player1))')
-    : swapCommitted
-      ? 'hsl(var(--player2))'
-      : 'hsl(var(--player1))'
+  let stoneFill: string
+  if (isSwapAnimating) {
+    stoneFill = flashPhase % 2 === 1 ? 'hsl(var(--player2))' : 'hsl(var(--player1))'
+  } else if (swapCommitted) {
+    stoneFill = 'hsl(var(--player2))'
+  } else {
+    stoneFill = 'hsl(var(--player1))'
+  }
+
+  let haloFill: string
+  if (isSwapAnimating) {
+    haloFill = flashPhase % 2 === 1 ? 'hsl(var(--player2) / 0.25)' : 'hsl(var(--player1) / 0.25)'
+  } else {
+    haloFill = 'hsl(var(--foreground) / 0.12)'
+  }
 
   return (
     <g transform={`translate(${x}, ${y})`}>
       {/* Glow halo so the stone pops against any background */}
       <circle
         r={cellSize * 0.72}
-        fill={isSwapAnimating
-          ? (flashPhase % 2 === 1 ? 'hsl(var(--player2) / 0.25)' : 'hsl(var(--player1) / 0.25)')
-          : 'hsl(var(--foreground) / 0.12)'}
+        fill={haloFill}
       />
 
       {/* Stone at full brightness — visible through the dim */}
@@ -163,9 +171,8 @@ export function GameYBoard({
         const isHovered = hoveredCell?.row === row && hoveredCell?.col === col
         const isClickable = isInteractive && cell.owner === null
         const isPieDecisionStoneCell =
-          pieDecisionStone != null &&
-          pieDecisionStone.row === row &&
-          pieDecisionStone.col === col
+          pieDecisionStone?.row === row &&
+          pieDecisionStone?.col === col
 
         result.push(
           <GameYCell
