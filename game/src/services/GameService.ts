@@ -9,7 +9,7 @@ import {
   isValidMove,
   getOppositePlayer,
 } from '../utils/gameY';
-import { getBotMove } from './BotService';
+import { getBotMove, getBotPieOpening, getBotPieDecision } from './BotService';
 import type {
   GameConfig,
   GamePhase,
@@ -126,6 +126,20 @@ export class GameService {
         game.timerState = { ...game.timerState, activePlayer: null };
       }
       await this.gameRepo.save(game);
+
+      // If the deciding player (P2) is a bot, resolve the pie decision
+      // automatically in the same request so the human never waits.
+      const botPlayer = this.getPveBot(game);
+      if (botPlayer?.color === nextTurn) {
+        const decision = await getBotPieDecision(
+          game.boardState,
+          game.config.boardSize as BoardSize,
+          nextTurn,
+          game.config.botLevel ?? 'medium',
+        );
+        return this.decidePie(gameId, decision, token);
+      }
+
       return this.toGameState(game, allMoves);
     }
 
@@ -199,12 +213,21 @@ export class GameService {
     token?: string
   ): Promise<GameState> {
     try {
-      const { row, col } = await getBotMove(
-        game.boardState,
-        game.config.boardSize as BoardSize,
-        game.currentTurn,
-        botLevel
-      );
+      const usePieOpening =
+        game.config.pieRule === true && existingMoves.length === 0;
+      const { row, col } = usePieOpening
+        ? await getBotPieOpening(
+            game.boardState,
+            game.config.boardSize as BoardSize,
+            game.currentTurn,
+            botLevel
+          )
+        : await getBotMove(
+            game.boardState,
+            game.config.boardSize as BoardSize,
+            game.currentTurn,
+            botLevel
+          );
 
       if (!isValidMove(game.boardState, row, col)) {
         console.error('Bot returned invalid move, skipping');

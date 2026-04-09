@@ -498,8 +498,12 @@ describe('Game API', () => {
       expect(moveRes.body.moves).toHaveLength(2);
     });
 
-    it('pie-decision phase with bot as player2 (PvE, human is player1): game enters pie-decision and stays there', async () => {
-      // Human is player1, bot is player2 — bot should be the one deciding (unfinished path)
+    it('pie-decision phase with bot as player2 (PvE, human is player1): bot auto-resolves pie decision', async () => {
+      // Mock: first fetch = pie-decide (bot decides keep), second fetch = bot move
+      vi.mocked(fetch)
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ decision: 'keep' }) } as any)
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ coords: { x: 3, y: 1, z: 0 } }) } as any);
+
       const createRes = await request(app)
         .post('/api/games')
         .set('Authorization', `Bearer ${token}`)
@@ -516,15 +520,15 @@ describe('Game API', () => {
       const gameId = createRes.body.id;
       expect(createRes.body.players.player2.isBot).toBe(true);
 
-      // Human (player1) plays first move
+      // Human (player1) plays first move — bot auto-resolves pie decision
       const moveRes = await request(app)
         .post(`/api/games/${gameId}/move`)
         .set('Authorization', `Bearer ${token}`)
         .send({ row: 0, col: 0, player: 'player1' });
 
       expect(moveRes.status).toBe(200);
-      expect(moveRes.body.phase).toBe('pie-decision');
-      // Bot is player2 — frontend should show "bot is deciding" state
+      // Bot auto-resolved the pie decision, game is back to playing
+      expect(moveRes.body.phase).toBe('playing');
       expect(moveRes.body.players.player2.isBot).toBe(true);
     });
 

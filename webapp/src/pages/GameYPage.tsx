@@ -12,6 +12,7 @@ export function GameYPage() {
   const {
     game, liveTimer, chatMessages, isLoading, error, moveError, lastMove,
     isBotThinking, isPieDecisionPending, isBotDecidingPie, isPieDecisionLoading, isSwapAnimating,
+    isBotResolvingPie, swapAnimationStone, swapCommitted,
     canPlay, handleCellClick, handlePieDecision, handleSurrender,
     handleSendMessage, handlePlayAgain, currentUserId,
   } = useGameYController()
@@ -84,15 +85,16 @@ export function GameYPage() {
           <GameYBoard
             game={game}
             lastMove={lastMove}
-            isInteractive={canPlay}
+            isInteractive={canPlay && !isSwapAnimating}
             onCellClick={handleCellClick}
-            pieDecisionStone={isPieDecisionPending ? lastMove : null}
+            pieDecisionStone={(isPieDecisionPending && !swapCommitted || isSwapAnimating) ? (swapAnimationStone ?? lastMove) : null}
             isSwapAnimating={isSwapAnimating}
+            swapCommitted={swapCommitted}
           />
-          {isPieDecisionPending && (
+          {(isPieDecisionPending && !isSwapAnimating && !swapCommitted || isBotResolvingPie) && (
             <PieRuleDecisionPanel
               game={game}
-              isBotDeciding={isBotDecidingPie}
+              isBotDeciding={isBotDecidingPie || isBotResolvingPie}
               onDecide={handlePieDecision}
               isLoading={isPieDecisionLoading}
             />
@@ -160,15 +162,16 @@ export function GameYPage() {
         <GameYBoard
           game={game}
           lastMove={lastMove}
-          isInteractive={canPlay}
+          isInteractive={canPlay && !isSwapAnimating}
           onCellClick={handleCellClick}
-          pieDecisionStone={isPieDecisionPending ? lastMove : null}
+          pieDecisionStone={(isPieDecisionPending && !swapCommitted || isSwapAnimating) ? lastMove : null}
           isSwapAnimating={isSwapAnimating}
+          swapCommitted={swapCommitted}
         />
-        {isPieDecisionPending && (
+        {(isPieDecisionPending && !isSwapAnimating && !swapCommitted || isBotResolvingPie) && (
           <PieRuleDecisionPanel
             game={game}
-            isBotDeciding={isBotDecidingPie}
+            isBotDeciding={isBotDecidingPie || isBotResolvingPie}
             onDecide={handlePieDecision}
             isLoading={isPieDecisionLoading}
           />

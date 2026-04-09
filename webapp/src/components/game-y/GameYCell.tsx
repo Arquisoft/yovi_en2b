@@ -78,7 +78,7 @@ export const GameYCell = memo(function GameYCell({
       }}
       onFocus={(e) => e.currentTarget.style.outline = 'none'}
     >
-      {/* Stone fill — transition extended to 700 ms for the pie stone so the
+      {/* Stone fill — transition extended to 500 ms for the pie stone so the
           Blue→Red colour change is clearly visible on swap. */}
       <path
         d={cellPath}
@@ -88,7 +88,7 @@ export const GameYCell = memo(function GameYCell({
         style={{
           outline: 'none',
           transition: isPieDecisionStone
-            ? 'fill 700ms ease'
+            ? 'fill 500ms ease'
             : 'fill 150ms, color 150ms',
         }}
       />

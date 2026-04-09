@@ -8,10 +8,12 @@ interface GameYBoardProps {
   lastMove: Move | null
   isInteractive: boolean
   onCellClick: (row: number, col: number) => void
-  /** Stone being contested by the Pie Rule decision. */
-  pieDecisionStone?: Move | null
+  /** Stone being contested by the Pie Rule decision. Only row/col are used. */
+  pieDecisionStone?: { row: number; col: number } | null
   /** True while the swap flash animation is playing. */
   isSwapAnimating?: boolean
+  /** True after human commits to swap but before the API responds — pre-colors the stone red. */
+  swapCommitted?: boolean
 }
 
 // ─── Pie stone highlight ──────────────────────────────────────────────────────
@@ -24,9 +26,10 @@ interface PieStoneHighlightProps {
   cellSize: number
   size: number
   isSwapAnimating: boolean
+  swapCommitted: boolean
 }
 
-function PieStoneHighlight({ row, col, cellSize, size, isSwapAnimating }: PieStoneHighlightProps) {
+function PieStoneHighlight({ row, col, cellSize, size, isSwapAnimating, swapCommitted }: PieStoneHighlightProps) {
   const { x, y } = getGameYPosition(row, col, cellSize, size)
   const stonePath = getGameYPath(cellSize * 0.95)
 
@@ -50,12 +53,23 @@ function PieStoneHighlight({ row, col, cellSize, size, isSwapAnimating }: PieSto
   const redRing  = ringPhase % 2 === 0 ? 0.08 : 1
 
   // During swap: stone fill flickers between Blue and Red.
-  const stoneFill = isSwapAnimating && flashPhase % 2 === 1
-    ? 'hsl(var(--player2))'
-    : 'hsl(var(--player1))'
+  // After animation ends but before API responds (swapCommitted): pre-color as Red.
+  const stoneFill = isSwapAnimating
+    ? (flashPhase % 2 === 1 ? 'hsl(var(--player2))' : 'hsl(var(--player1))')
+    : swapCommitted
+      ? 'hsl(var(--player2))'
+      : 'hsl(var(--player1))'
 
   return (
     <g transform={`translate(${x}, ${y})`}>
+      {/* Glow halo so the stone pops against any background */}
+      <circle
+        r={cellSize * 0.72}
+        fill={isSwapAnimating
+          ? (flashPhase % 2 === 1 ? 'hsl(var(--player2) / 0.25)' : 'hsl(var(--player1) / 0.25)')
+          : 'hsl(var(--foreground) / 0.12)'}
+      />
+
       {/* Stone at full brightness — visible through the dim */}
       <path
         d={stonePath}
@@ -66,33 +80,42 @@ function PieStoneHighlight({ row, col, cellSize, size, isSwapAnimating }: PieSto
 
       {/* Blue ring (player1) */}
       <circle
-        r={cellSize * 0.5}
+        r={cellSize * 0.62}
         fill="none"
         stroke="hsl(var(--player1))"
-        strokeWidth={4}
+        strokeWidth={5}
         opacity={isSwapAnimating ? 0 : blueRing}
         style={{ transition: 'opacity 0.48s ease' }}
       />
 
       {/* Red ring (player2) */}
       <circle
-        r={cellSize * 0.61}
+        r={cellSize * 0.76}
         fill="none"
         stroke="hsl(var(--player2))"
-        strokeWidth={4}
+        strokeWidth={5}
         opacity={isSwapAnimating ? 0 : redRing}
         style={{ transition: 'opacity 0.48s ease' }}
       />
 
-      {/* Swap flash: a single bright ring that pulses while flashing */}
+      {/* Swap flash: alternating rings that pulse while flashing */}
       {isSwapAnimating && (
-        <circle
-          r={cellSize * 0.56}
-          fill="none"
-          stroke={flashPhase % 2 === 1 ? 'hsl(var(--player2))' : 'hsl(var(--player1))'}
-          strokeWidth={5}
-          opacity={0.95}
-        />
+        <>
+          <circle
+            r={cellSize * 0.62}
+            fill="none"
+            stroke={flashPhase % 2 === 1 ? 'hsl(var(--player2))' : 'hsl(var(--player1))'}
+            strokeWidth={5}
+            opacity={0.95}
+          />
+          <circle
+            r={cellSize * 0.76}
+            fill="none"
+            stroke={flashPhase % 2 === 1 ? 'hsl(var(--player1))' : 'hsl(var(--player2))'}
+            strokeWidth={5}
+            opacity={0.95}
+          />
+        </>
       )}
     </g>
   )
@@ -107,6 +130,7 @@ export function GameYBoard({
   onCellClick,
   pieDecisionStone,
   isSwapAnimating = false,
+  swapCommitted = false,
 }: GameYBoardProps) {
   const size = game.config.boardSize
   const board = game.board
@@ -199,6 +223,7 @@ export function GameYBoard({
               cellSize={cellSize}
               size={size}
               isSwapAnimating={isSwapAnimating}
+              swapCommitted={swapCommitted}
             />
           </svg>
         </div>
