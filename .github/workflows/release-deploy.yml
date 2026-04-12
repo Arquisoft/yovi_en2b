@@ -37,7 +37,7 @@ jobs:
 
     strategy:
       matrix:
-        service: [ webapp, users, game ]
+        service: [ webapp, users, game, interop ]
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -202,10 +202,30 @@ jobs:
         registry: ghcr.io
         workdir: game
 
+docker-push-interop:
+    name: Publish interop image
+    runs-on: ubuntu-latest
+    needs: [ test-node, test-rust, e2e ]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+ 
+    - name: Publish to Registry (interop)
+      uses: elgohr/Publish-Docker-Github-Action@v5
+      with:
+        name: ${{ github.repository_owner }}/${{ github.event.repository.name }}-interop
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: ghcr.io
+        workdir: interop
+        
   deploy:
     name: Deploy over SSH
     runs-on: ubuntu-latest
-    needs: [ docker-push-users, docker-push-webapp, docker-push-gamey, docker-push-game, e2e ]
+    needs: [ docker-push-users, docker-push-webapp, docker-push-gamey, docker-push-game, docker-push-interop, e2e ]
     steps:
     - name: Checkout solo deploy.sh
       uses: actions/checkout@v4

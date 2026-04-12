@@ -113,6 +113,33 @@ services:
     networks:
       - monitor-net
 
+  # ── Interop service ──────────────────────────────────────────────────────────
+  # Bridges external bot clients (YEN notation) to the Rust gamey engine.
+  # Exposes POST /games/play and is reachable inside the cluster at
+  # http://interop:3001 or from the host at http://localhost:3001.
+  interop:
+    build: ./interop
+    container_name: interop
+    image: ghcr.io/arquisoft/yovi_en2b-interop:latest
+    ports:
+      - "3001:3001"
+    environment:
+      WEBAPP_PORT: 3001
+      # Must match the gamey service name on monitor-net
+      RUST_INTERNAL_URL: http://gamey:4000
+    depends_on:
+      gamey:
+        condition: service_started
+    networks:
+      - monitor-net
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:3001/health || wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    restart: unless-stopped
+
   prometheus:
     image: prom/prometheus
     container_name: prometheus
