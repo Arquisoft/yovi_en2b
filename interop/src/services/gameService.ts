@@ -27,16 +27,7 @@ import { applyMove } from './yenService';
 
 const RUST_URL = process.env.RUST_INTERNAL_URL ?? 'http://localhost:4000';
 const RUST_TIMEOUT_MS = 2_000;
-
-// Pre-built URLs using only server-controlled string literals.
-// User input selects one of these constants — it never reaches the URL itself.
-const ENGINE_URLS = {
-  random_bot: `${RUST_URL}/v1/ybot/choose/random_bot`,
-  fast_bot:   `${RUST_URL}/v1/ybot/choose/fast_bot`,
-  smart_bot:  `${RUST_URL}/v1/ybot/choose/smart_bot`,
-} as const;
-
-type BotId = keyof typeof ENGINE_URLS;
+const DEFAULT_BOT_ID = 'random_bot';
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -64,9 +55,9 @@ export const play = async (
   botId?: string,
   strategy?: string
 ): Promise<PlayResponse> => {
-  const { url, name } = resolveEngine(botId, strategy);
+  const resolvedBotId = resolveBotId(botId, strategy);
 
-  const rustResponse = await callRustEngine(position, url);
+  const rustResponse = await callRustEngine(position, resolvedBotId);
 
   const botCoords = rustResponse.coords;
   const botToken = position.players[position.turn];
@@ -81,36 +72,42 @@ export const play = async (
   return {
     move: `${botCoords.x},${botCoords.y},${botCoords.z}`,
     position: updatedLayout,
-    bot_id: name,
+    bot_id: resolvedBotId,
   };
 };
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
 /**
- * Map user-supplied identifiers to a pre-built engine URL and bot name.
- * All returned values are string literals — user input is never interpolated
- * into the URL.
+ * Map user-supplied identifiers to a known bot ID.
+ * Returns a safe string literal — never the raw user-supplied value.
  */
-function resolveEngine(botId?: string, strategy?: string): { url: string; name: BotId } {
+function resolveBotId(botId?: string, strategy?: string): string {
   switch (botId ?? strategy?.toUpperCase()) {
-    case 'random_bot': case 'EASY':   return { url: ENGINE_URLS.random_bot, name: 'random_bot' };
-    case 'fast_bot':   case 'MEDIUM': return { url: ENGINE_URLS.fast_bot,   name: 'fast_bot'   };
-    case 'smart_bot':  case 'HARD':   return { url: ENGINE_URLS.smart_bot,  name: 'smart_bot'  };
+    case 'random_bot': case 'EASY':   return 'random_bot';
+    case 'fast_bot':   case 'MEDIUM': return 'fast_bot';
+    case 'smart_bot':  case 'HARD':   return 'smart_bot';
     default:
       if (botId) throw makeError('BOT_NOT_FOUND', `Bot '${botId}' is not registered in the engine.`, 404);
-      return { url: ENGINE_URLS.random_bot, name: 'random_bot' };
+      return DEFAULT_BOT_ID;
   }
 }
 
 /**
  * Forward a YEN position to the Rust engine and return its move response.
- * Receives a pre-validated URL — no user data involved.
+ *
+ * The guard clause validates `botId` against string literals immediately before
+ * URL construction — this acts as a Sonar-recognised sanitiser that proves no
+ * user-controlled data can reach the URL path.
  */
-async function callRustEngine(yen: YEN, url: string): Promise<RustMoveResponse> {
+async function callRustEngine(yen: YEN, botId: string): Promise<RustMoveResponse> {
+  if (botId !== 'random_bot' && botId !== 'fast_bot' && botId !== 'smart_bot') {
+    throw makeError('BOT_NOT_FOUND', 'Invalid bot identifier.', 404);
+  }
+
   try {
     const response = await axios.post<RustMoveResponse>(
-      url,
+      `${RUST_URL}/v1/ybot/choose/${botId}`,
       yen,
       {
         timeout: RUST_TIMEOUT_MS,
