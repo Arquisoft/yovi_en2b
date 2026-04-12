@@ -26,10 +26,17 @@ import { applyMove } from './yenService';
 // ── Configuration ─────────────────────────────────────────────────────────────
 
 const RUST_URL = process.env.RUST_INTERNAL_URL ?? 'http://localhost:4000';
-const RUST_API_VERSION = 'v1';
 const RUST_TIMEOUT_MS = 2_000;
 
-const DEFAULT_BOT_ID = 'random_bot';
+// Pre-built URLs using only server-controlled string literals.
+// User input selects one of these constants — it never reaches the URL itself.
+const ENGINE_URLS = {
+  random_bot: `${RUST_URL}/v1/ybot/choose/random_bot`,
+  fast_bot:   `${RUST_URL}/v1/ybot/choose/fast_bot`,
+  smart_bot:  `${RUST_URL}/v1/ybot/choose/smart_bot`,
+} as const;
+
+type BotId = keyof typeof ENGINE_URLS;
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -57,14 +64,13 @@ export const play = async (
   botId?: string,
   strategy?: string
 ): Promise<PlayResponse> => {
-  const resolvedBotId = resolveBotId(botId, strategy);
+  const { url, name } = resolveEngine(botId, strategy);
 
-  const rustResponse = await callRustEngine(position, resolvedBotId);
+  const rustResponse = await callRustEngine(position, url);
 
   const botCoords = rustResponse.coords;
-  const botToken = position.players[position.turn]; // current player's token
+  const botToken = position.players[position.turn];
 
-  // Apply the bot's move to produce the updated layout string
   const updatedLayout = applyMove(
     position.layout,
     botCoords,
@@ -75,37 +81,36 @@ export const play = async (
   return {
     move: `${botCoords.x},${botCoords.y},${botCoords.z}`,
     position: updatedLayout,
-    bot_id: resolvedBotId,
+    bot_id: name,
   };
 };
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
 /**
- * Resolve the effective bot ID from the caller-supplied options.
- * Priority: explicit bot_id > strategy mapping > default.
+ * Map user-supplied identifiers to a pre-built engine URL and bot name.
+ * All returned values are string literals — user input is never interpolated
+ * into the URL.
  */
-// Returns a safe string literal — never the raw user-supplied value — so
-// user-controlled data never reaches the Rust engine URL path.
-function resolveBotId(botId?: string, strategy?: string): string {
+function resolveEngine(botId?: string, strategy?: string): { url: string; name: BotId } {
   switch (botId ?? strategy?.toUpperCase()) {
-    case 'random_bot': case 'EASY':   return 'random_bot';
-    case 'fast_bot':   case 'MEDIUM': return 'fast_bot';
-    case 'smart_bot':  case 'HARD':   return 'smart_bot';
+    case 'random_bot': case 'EASY':   return { url: ENGINE_URLS.random_bot, name: 'random_bot' };
+    case 'fast_bot':   case 'MEDIUM': return { url: ENGINE_URLS.fast_bot,   name: 'fast_bot'   };
+    case 'smart_bot':  case 'HARD':   return { url: ENGINE_URLS.smart_bot,  name: 'smart_bot'  };
     default:
       if (botId) throw makeError('BOT_NOT_FOUND', `Bot '${botId}' is not registered in the engine.`, 404);
-      return DEFAULT_BOT_ID;
+      return { url: ENGINE_URLS.random_bot, name: 'random_bot' };
   }
 }
 
 /**
  * Forward a YEN position to the Rust engine and return its move response.
- * Maps Rust/network failures to structured errors the controller can handle.
+ * Receives a pre-validated URL — no user data involved.
  */
-async function callRustEngine(yen: YEN, botId: string): Promise<RustMoveResponse> {
+async function callRustEngine(yen: YEN, url: string): Promise<RustMoveResponse> {
   try {
     const response = await axios.post<RustMoveResponse>(
-      `${RUST_URL}/${RUST_API_VERSION}/ybot/choose/${botId}`,
+      url,
       yen,
       {
         timeout: RUST_TIMEOUT_MS,
@@ -122,7 +127,7 @@ async function callRustEngine(yen: YEN, botId: string): Promise<RustMoveResponse
       }
 
       if (axiosErr.response?.status === 404) {
-        throw makeError('BOT_NOT_FOUND', `Bot '${botId}' is not registered in the engine.`, 404);
+        throw makeError('BOT_NOT_FOUND', 'The requested bot is not registered in the engine.', 404);
       }
 
       const body = axiosErr.response?.data as any;
