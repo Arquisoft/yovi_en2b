@@ -4,9 +4,11 @@ import { MemoryRouter } from 'react-router-dom'
 import { AppNavbar } from './AppNavbar'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: vi.fn() }))
 vi.mock('@/contexts/ThemeContext', () => ({ useTheme: vi.fn() }))
+vi.mock('@/i18n/LanguageContext', () => ({ useLanguage: vi.fn() }))
 
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -38,6 +40,11 @@ function renderNavbar(
     setTheme: vi.fn(),
     ...themeOverrides,
   } as any)
+  vi.mocked(useLanguage).mockReturnValue({
+     locale: 'en',
+     toggleLanguage: vi.fn(),
+     setLanguage: vi.fn(),
+   } as any)
   return render(
     <MemoryRouter>
       <AppNavbar />

@@ -22,7 +22,7 @@ const STORAGE_KEY = 'yovi_language'
 
 // ─── Mock de i18n.ts ──────────────────────────────────────────────────────────
 
-vi.mock('./i18n', () => ({
+vi.mock('../i18n/i18n', () => ({
   SUPPORTED_LOCALES: ['en', 'es'],
   DEFAULT_LOCALE: 'en',
   getLocale: vi.fn(() => 'en' as 'en' | 'es'),
