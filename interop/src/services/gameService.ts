@@ -39,6 +39,11 @@ const STRATEGY_TO_BOT: Record<string, string> = {
   HARD: 'smart_bot',
 };
 
+// Allowlist of bot IDs accepted in the URL path. Must stay in sync with
+// STRATEGY_TO_BOT values. Prevents user-controlled data from being injected
+// into the Rust engine URL.
+const VALID_BOT_IDS = new Set(Object.values(STRATEGY_TO_BOT));
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
@@ -94,7 +99,12 @@ export const play = async (
  * Priority: explicit bot_id > strategy mapping > default.
  */
 function resolveBotId(botId?: string, strategy?: string): string {
-  if (botId) return botId;
+  if (botId) {
+    if (!VALID_BOT_IDS.has(botId)) {
+      throw makeError('BOT_NOT_FOUND', `Bot '${botId}' is not registered in the engine.`, 404);
+    }
+    return botId;
+  }
   if (strategy && STRATEGY_TO_BOT[strategy.toUpperCase()]) {
     return STRATEGY_TO_BOT[strategy.toUpperCase()];
   }

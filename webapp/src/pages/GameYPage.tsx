@@ -119,15 +119,16 @@ export function GameYPage() {
           className="flex-shrink-0 border-t border-border bg-card overflow-hidden transition-[height] duration-150"
           style={{ height: mobileHeight }}
         >
-          <div
-            className="flex items-center justify-center h-8 cursor-ns-resize touch-none select-none"
+          <button
+            type="button"
+            className="flex items-center justify-center w-full h-8 cursor-ns-resize touch-none select-none bg-transparent border-0 p-0"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
             onClick={toggleMobileSidebar}
           >
             <div className="w-10 h-1 rounded-full bg-muted-foreground/40" />
-          </div>
+          </button>
 
           <div className={`overflow-y-auto transition-opacity duration-150 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
             style={{ height: mobileHeight - 32 }}

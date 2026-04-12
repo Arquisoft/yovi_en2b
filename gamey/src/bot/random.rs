@@ -54,19 +54,32 @@ mod tests {
     use super::*;
     use crate::{Movement, PlayerId};
 
+    // The bot name is the registry key used in HTTP routes.
+    // A mismatch silently breaks all PvE games at easy difficulty.
     #[test]
-    fn test_random_bot_name() {
-        let bot = RandomBot;
-        assert_eq!(bot.name(), "random_bot");
+    fn test_random_bot_is_findable_in_registry() {
+        use crate::YBotRegistry;
+        use std::sync::Arc;
+        let registry = YBotRegistry::new().with_bot(Arc::new(RandomBot));
+        assert!(
+            registry.find("random_bot").is_some(),
+            "RandomBot must be retrievable by its own name — name/key mismatch breaks the HTTP API"
+        );
     }
 
+    // choose_move must return a cell that is actually available; an occupied or
+    // out-of-bounds index would crash the game service on move application.
     #[test]
-    fn test_random_bot_returns_move_on_empty_board() {
-        let bot = RandomBot;
+    fn test_random_bot_choose_move_returns_available_cell() {
         let game = GameY::new(5);
-
-        let chosen_move = bot.choose_move(&game);
-        assert!(chosen_move.is_some());
+        let coords = RandomBot
+            .choose_move(&game)
+            .expect("bot must return a move on a non-empty board");
+        let idx = coords.to_index(game.board_size());
+        assert!(
+            game.available_cells().contains(&idx),
+            "chosen cell index {idx} is not in available_cells"
+        );
     }
 
     #[test]
@@ -146,5 +159,33 @@ mod tests {
             assert!(index < 28);
             assert!(game.available_cells().contains(&index));
         }
+    }
+
+    // RandomBot.decide_pie is a fair 50/50 coin flip.  Across enough trials
+    // both outcomes must appear; if only one is ever returned the random
+    // source is broken or the implementation is hardcoded.
+    // P(seeing only one outcome in 50 trials) ≈ 2 × 0.5^50 < 10^-14.
+    #[test]
+    fn test_random_bot_decide_pie_eventually_returns_both_choices() {
+        let mut game = GameY::new(5);
+        game.add_move(Movement::Placement {
+            player: PlayerId::new(0),
+            coords: Coordinates::new(2, 1, 1),
+        })
+        .unwrap();
+
+        let mut saw_keep = false;
+        let mut saw_swap = false;
+        for _ in 0..50 {
+            match RandomBot.decide_pie(&game) {
+                PieChoice::Keep => saw_keep = true,
+                PieChoice::Swap => saw_swap = true,
+            }
+            if saw_keep && saw_swap {
+                break;
+            }
+        }
+        assert!(saw_keep, "RandomBot.decide_pie never returned Keep across 50 trials");
+        assert!(saw_swap, "RandomBot.decide_pie never returned Swap across 50 trials");
     }
 }

@@ -12,7 +12,7 @@ export function cn(...inputs: ClassValue[]) {
  * Generate a unique ID
  */
 export function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+  return crypto.randomUUID()
 }
 
 /**
@@ -51,7 +51,8 @@ export function delay(ms: number): Promise<void> {
  * Check if an email is valid
  */
 export function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (email.length > 254) return false
+  const emailRegex = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/
   return emailRegex.test(email)
 }
 

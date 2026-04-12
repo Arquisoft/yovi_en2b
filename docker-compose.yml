@@ -124,7 +124,9 @@ services:
     ports:
       - "3001:3001"
     environment:
+      APP_ENV: ${APP_ENV:-production}
       WEBAPP_PORT: 3001
+      PUBLIC_URL: ${VITE_INTEROP_API_URL}
       # Must match the gamey service name on monitor-net
       RUST_INTERNAL_URL: http://gamey:4000
     depends_on:

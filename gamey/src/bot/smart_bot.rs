@@ -34,40 +34,103 @@ impl YBot for SmartBot {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{Coordinates, Movement, PlayerId, YBotRegistry};
+    use std::sync::Arc;
 
+    // The bot name is the registry key used in HTTP routes.
+    // A mismatch silently breaks all PvE games at hard difficulty.
     #[test]
-    fn test_smart_bot_name() {
-        assert_eq!(SmartBot.name(), "smart_bot");
+    fn test_smart_bot_is_findable_in_registry() {
+        let registry = YBotRegistry::new().with_bot(Arc::new(SmartBot));
+        assert!(
+            registry.find("smart_bot").is_some(),
+            "SmartBot must be retrievable by its own name — name/key mismatch breaks the HTTP API"
+        );
     }
 
+    // choose_move must return a cell that actually exists in available_cells;
+    // returning an occupied or out-of-bounds index would crash the game service.
     #[test]
-    fn test_smart_bot_returns_valid_move() {
+    fn test_smart_bot_choose_move_returns_available_cell() {
         let game = GameY::new(3);
-        let coords = SmartBot.choose_move(&game);
-        assert!(coords.is_some());
-        assert!(coords.unwrap().is_valid(3));
+        let coords = SmartBot.choose_move(&game).expect("bot must return a move on a non-empty board");
+        let idx = coords.to_index(game.board_size());
+        assert!(
+            game.available_cells().contains(&idx),
+            "chosen cell index {idx} is not in available_cells"
+        );
     }
 
+    // After an opponent stone is placed, the bot must not select that cell.
     #[test]
-    fn test_smart_bot_pie_opening_returns_valid_move() {
-        let game = GameY::new(3);
-        let coords = SmartBot.choose_pie_opening(&game);
-        assert!(coords.is_some());
-        assert!(coords.unwrap().is_valid(3));
-    }
-
-    #[test]
-    fn test_smart_bot_decide_pie_returns_a_choice() {
-        use crate::{Coordinates, Movement, PlayerId};
-
-        let mut game = GameY::new(5);
+    fn test_smart_bot_choose_move_avoids_occupied_cell() {
+        let mut game = GameY::new(4);
+        let occupied = Coordinates::new(1, 1, 1);
         game.add_move(Movement::Placement {
             player: PlayerId::new(0),
-            coords: Coordinates::new(2, 1, 1),
+            coords: occupied,
+        })
+        .unwrap();
+
+        let chosen = SmartBot.choose_move(&game).expect("bot must return a move");
+        assert_ne!(chosen, occupied, "bot must not choose the already-occupied cell");
+        let idx = chosen.to_index(game.board_size());
+        assert!(game.available_cells().contains(&idx));
+    }
+
+    // choose_pie_opening must also respect the available cells constraint.
+    #[test]
+    fn test_smart_bot_pie_opening_returns_available_cell() {
+        let game = GameY::new(3);
+        let coords = SmartBot
+            .choose_pie_opening(&game)
+            .expect("pie opening must return a move on a fresh board");
+        let idx = coords.to_index(game.board_size());
+        assert!(
+            game.available_cells().contains(&idx),
+            "pie-opening cell index {idx} is not in available_cells"
+        );
+    }
+
+    // The unique interior cell of a size-4 board is strongly dominant.
+    // A deeper search (SmartBot uses 2 000 ms per scenario) should confidently
+    // identify this as a swap.
+    #[test]
+    fn test_smart_bot_swaps_strong_center_opening() {
+        let mut game = GameY::new(4);
+        game.add_move(Movement::Placement {
+            player: PlayerId::new(0),
+            coords: Coordinates::new(1, 1, 1),
         })
         .unwrap();
 
         let choice = SmartBot.decide_pie(&game);
-        assert!(choice == PieChoice::Keep || choice == PieChoice::Swap);
+        assert_eq!(
+            choice,
+            PieChoice::Swap,
+            "the unique interior cell on a size-4 board is too strong to keep for the opponent"
+        );
+    }
+
+    // A corner cell like (4,0,0) touches sides B and C simultaneously.
+    // SmartBot runs minimax with a 2 000 ms budget and finds a forced win for
+    // the player who keeps their colour — meaning the corner is counterable
+    // with deep enough search.  FastBot (500 ms) does not see far enough and
+    // swaps it; SmartBot's deeper search correctly identifies it as Keep.
+    #[test]
+    fn test_smart_bot_keeps_corner_opening() {
+        let mut game = GameY::new(5);
+        game.add_move(Movement::Placement {
+            player: PlayerId::new(0),
+            coords: Coordinates::new(4, 0, 0), // corner: touches sides B and C
+        })
+        .unwrap();
+
+        let choice = SmartBot.decide_pie(&game);
+        assert_eq!(
+            choice,
+            PieChoice::Keep,
+            "SmartBot's minimax finds the corner counterable — keeping is the optimal response"
+        );
     }
 }
