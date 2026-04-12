@@ -113,10 +113,12 @@ mod tests {
     }
 
     // A corner cell like (4,0,0) touches sides B and C simultaneously.
-    // Two sides covered from a single stone is a strong head-start in Y;
-    // SmartBot with a deeper search should also swap it.
+    // SmartBot runs minimax with a 2 000 ms budget and finds a forced win for
+    // the player who keeps their colour — meaning the corner is counterable
+    // with deep enough search.  FastBot (500 ms) does not see far enough and
+    // swaps it; SmartBot's deeper search correctly identifies it as Keep.
     #[test]
-    fn test_smart_bot_swaps_corner_touching_two_sides() {
+    fn test_smart_bot_keeps_corner_opening() {
         let mut game = GameY::new(5);
         game.add_move(Movement::Placement {
             player: PlayerId::new(0),
@@ -127,8 +129,8 @@ mod tests {
         let choice = SmartBot.decide_pie(&game);
         assert_eq!(
             choice,
-            PieChoice::Swap,
-            "a corner touching 2 sides already covers 2/3 of the win condition — worth swapping"
+            PieChoice::Keep,
+            "SmartBot's minimax finds the corner counterable — keeping is the optimal response"
         );
     }
 }

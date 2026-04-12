@@ -118,9 +118,9 @@ mod tests {
     }
 
     // A corner cell like (4,0,0) on a size-5 board touches sides B and C
-    // simultaneously (y=0 and z=0).  Two sides already covered from a single
-    // stone means you only need to reach side A to win — that is a strong
-    // head-start.  The rational second player should swap it.
+    // simultaneously (y=0 and z=0).  FastBot runs minimax with a 500 ms budget
+    // and concludes the corner is worth swapping.  Note that SmartBot (2 000 ms)
+    // reaches the opposite conclusion — deeper search reveals it is counterable.
     #[test]
     fn test_fast_bot_swaps_corner_touching_two_sides() {
         let mut game = GameY::new(5);
