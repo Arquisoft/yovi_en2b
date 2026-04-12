@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { GameState, ChatMessage, PlayerColor, TimerState } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { TimerPanel } from './TimerPanel'
@@ -29,6 +30,7 @@ export function GameSidebar({
   isBotThinking = false,
   isMobile = false,
 }: GameSidebarProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const showChat = game.config.mode !== 'pvp-local'
 
@@ -39,8 +41,6 @@ export function GameSidebar({
         ? 'player2'
         : null
 
-  // In PvE while the bot is thinking, show the bot as the active player so
-  // the sidebar behaves the same as in local two-player mode.
   const botColor: PlayerColor | null =
     game.config.mode === 'pve'
       ? (game.players.player1.isBot ? 'player1' : 'player2')
@@ -55,9 +55,9 @@ export function GameSidebar({
           game.winner === 'player1'
             ? game.players.player1.name
             : game.players.player2.name
-        return `${winnerName} wins!`
+        return t('game.wins', { name: winnerName })
       }
-      return 'Game Over'
+      return t('game.gameOver')
     }
 
     const currentPlayer =
@@ -65,7 +65,7 @@ export function GameSidebar({
         ? game.players.player1
         : game.players.player2
 
-    return `${currentPlayer.name}'s turn`
+    return t('game.turn', { name: currentPlayer.name })
   }
 
   return (
@@ -74,7 +74,7 @@ export function GameSidebar({
       {/* Game info */}
       <div className="flex-shrink-0 space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg">Game Y</h2>
+          <h2 className="font-semibold text-lg">{t('game.gameY')}</h2>
           <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded">
             {game.config.boardSize}×{game.config.boardSize}
           </span>
@@ -100,7 +100,7 @@ export function GameSidebar({
         )}
       </div>
 
-      {/* Timers — usa liveTimer para display fluido */}
+      {/* Timers */}
       {liveTimer && (
         <div className="flex-shrink-0 space-y-2">
           <TimerPanel
@@ -118,7 +118,7 @@ export function GameSidebar({
         </div>
       )}
 
-      {/* Player indicators sin timer */}
+      {/* Player indicators without timer */}
       {!liveTimer && (
         <div className="flex-shrink-0 space-y-2">
           <div className={cn(
@@ -140,10 +140,10 @@ export function GameSidebar({
 
       {/* Moves counter */}
       <p className="flex-shrink-0 text-sm text-muted-foreground text-center">
-        Moves: {game.moves.length}
+        {t('game.moves', { count: game.moves.length })}
       </p>
 
-      {/* Chat — crece para llenar espacio restante */}
+      {/* Chat */}
       {showChat && (
         <div className="flex-1 min-h-0 flex flex-col">
           <ChatPanel
@@ -155,22 +155,21 @@ export function GameSidebar({
         </div>
       )}
 
-      {/* Spacer cuando no hay chat */}
       {!showChat && <div className="flex-1" />}
 
-      {/* Acciones — siempre al fondo */}
+      {/* Actions */}
       <div className="flex-shrink-0 space-y-2 border-t border-border pt-4">
         {game.status === 'playing' && (
           <Button variant="destructive" className="w-full" onClick={onSurrender}>
             <Flag className="w-4 h-4 mr-2" />
-            Surrender
+            {t('game.surrender')}
           </Button>
         )}
         {game.status === 'finished' && (
           <>
             <Button className="w-full" onClick={onPlayAgain}>
               <RotateCcw className="w-4 h-4 mr-2" />
-              Play Again
+              {t('game.playAgain')}
             </Button>
             <Button
               variant="outline"
@@ -178,7 +177,7 @@ export function GameSidebar({
               onClick={() => navigate('/games')}
             >
               <Home className="w-4 h-4 mr-2" />
-              Back to Games
+              {t('game.backToGames')}
             </Button>
           </>
         )}

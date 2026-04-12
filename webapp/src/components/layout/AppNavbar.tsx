@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useLanguage } from '@/i18n/LanguageContext'
 import { Button } from '@/components/ui/Button'
-import { Sun, Moon, LogOut, User, Hexagon, BarChart2, Trophy } from 'lucide-react'
+import { Sun, Moon, LogOut, User, Hexagon, BarChart2, Trophy, Languages } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -12,13 +13,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/Dialog'
-
-
+import { useTranslation } from 'react-i18next'
 
 
 export function AppNavbar() {
   const { user, logout, isGuest } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const { toggleLanguage } = useLanguage()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
 
@@ -32,11 +34,23 @@ export function AppNavbar() {
       <div className="w-full flex h-14 items-center justify-between px-4">
         <Link to="/games" className="flex items-center gap-2">
           <Hexagon className="h-6 w-6 text-primary" />
-          <span className="font-bold text-lg">YOVI</span>
+          <span className="font-bold text-lg">{t('app.name')}</span>
         </Link>
 
         <nav className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
+          {/* Language toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleLanguage}
+            aria-label={t('language.ariaLabel')}
+            title={t('language.switchTo')}
+          >
+            <Languages className="h-5 w-5" />
+          </Button>
+
+          {/* Theme toggle */}
+          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={t('nav.toggleTheme')}>
             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
@@ -47,16 +61,16 @@ export function AppNavbar() {
                 <span>{user.username}</span>
                 {isGuest && (
                   <span className="text-xs px-1.5 py-0.5 rounded-full border border-border bg-muted text-muted-foreground leading-none">
-                    Guest
+                    {t('nav.guestBadge')}
                   </span>
                 )}
               </div>
 
-              <Button variant="ghost" size="icon" onClick={() => navigate('/stats')} aria-label="Statistics">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/stats')} aria-label={t('nav.statistics')}>
                 <BarChart2 className="h-5 w-5" />
               </Button>
 
-              <Button variant="ghost" size="icon" onClick={() => navigate('/ranking')} aria-label="Ranking">
+              <Button variant="ghost" size="icon" onClick={() => navigate('/ranking')} aria-label={t('nav.ranking')}>
                 <Trophy className="h-5 w-5" />
               </Button>
               
@@ -64,7 +78,7 @@ export function AppNavbar() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowLogoutDialog(true)}
-                aria-label="Logout"
+                aria-label={t('nav.logout')}
               >
                 <LogOut className="h-5 w-5" />
               </Button>
@@ -78,15 +92,15 @@ export function AppNavbar() {
           <DialogHeader>
             <DialogTitle>Sign out</DialogTitle>
             <DialogDescription>
-              Are you sure you want to sign out of your account?
+              {t('nav.signOutConfirmDescription')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-3">
             <Button variant="outline" onClick={() => setShowLogoutDialog(false)}>
-              Cancel
+               {t('common.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleLogoutConfirm}>
-              Sign out
+              {t('nav.signOut')}
             </Button>
           </DialogFooter>
         </DialogContent>

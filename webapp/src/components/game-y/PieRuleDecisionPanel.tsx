@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { GameState, PieDecision } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { Loader2, ArrowLeftRight, Shield } from 'lucide-react'
@@ -17,6 +18,7 @@ interface Props {
  * On mobile it renders as a taller card so touch targets are comfortable.
  */
 export function PieRuleDecisionPanel({ game, isBotDeciding, onDecide, isLoading }: Readonly<Props>) {
+  const { t } = useTranslation()
   const deciderName = game.players.player2.name
 
   return (
@@ -38,15 +40,14 @@ export function PieRuleDecisionPanel({ game, isBotDeciding, onDecide, isLoading 
 
         {/* Label */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold leading-tight">Pie Rule</p>
+          <p className="text-sm font-semibold leading-tight">{t('game.pieRule')}</p>
           {isBotDeciding ? (
             <p className="text-xs text-muted-foreground mt-0.5">
-              {deciderName} is deciding whether to swap…
+              {t('game.pieDeciding', { name: deciderName })}
             </p>
           ) : (
             <p className="text-xs text-muted-foreground mt-0.5">
-              <span className="font-medium text-foreground">{deciderName}</span>
-              {' — keep your side or take the first stone?'}
+              {t('game.piePrompt', { name: deciderName })}
             </p>
           )}
         </div>
@@ -64,7 +65,7 @@ export function PieRuleDecisionPanel({ game, isBotDeciding, onDecide, isLoading 
               disabled={isLoading}
             >
               <Shield className="w-3.5 h-3.5" />
-              Keep
+              {t('game.keep') }
             </Button>
             <Button
               size="sm"
@@ -74,7 +75,7 @@ export function PieRuleDecisionPanel({ game, isBotDeciding, onDecide, isLoading 
               isLoading={isLoading}
             >
               <ArrowLeftRight className="w-3.5 h-3.5" />
-              Swap
+              {t('game.swap') }
             </Button>
           </div>
         )}
