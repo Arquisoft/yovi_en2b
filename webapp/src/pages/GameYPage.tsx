@@ -2,6 +2,7 @@ import { useGameYController } from '@/controllers/useGameYController'
 import { GameYBoard } from '@/components/game-y/GameYBoard'
 import { GameSidebar } from '@/components/game-y/GameSidebar'
 import { GameOverlay } from '@/components/game-y/GameOverlay'
+import { PieRuleDecisionPanel } from '@/components/game-y/PieRuleDecisionPanel'
 import { AlertCircle, ChevronLeft, ChevronRight, XCircle } from 'lucide-react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useState, useRef, useCallback } from 'react'
@@ -10,8 +11,10 @@ import { useNavigate } from 'react-router-dom'
 export function GameYPage() {
   const {
     game, liveTimer, chatMessages, isLoading, error, moveError, lastMove,
-    isBotThinking, canPlay, handleCellClick, handleSurrender, handleSendMessage,
-    handlePlayAgain, currentUserId,
+    isBotThinking, isPieDecisionPending, isBotDecidingPie, isPieDecisionLoading, isSwapAnimating,
+    isBotResolvingPie, swapAnimationStone, swapCommitted,
+    canPlay, handleCellClick, handlePieDecision, handleSurrender,
+    handleSendMessage, handlePlayAgain, currentUserId,
   } = useGameYController()
 
   const navigate = useNavigate()
@@ -48,6 +51,11 @@ export function GameYPage() {
     }
   }, [mobileHeight])
 
+  const toggleMobileSidebar = useCallback(() => {
+    if (sidebarOpen) { setMobileHeight(48); setSidebarOpen(false) }
+    else { setMobileHeight(SIDEBAR_HEIGHT); setSidebarOpen(true) }
+  }, [sidebarOpen])
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -68,6 +76,14 @@ export function GameYPage() {
     )
   }
 
+  const showPiePanel = (isPieDecisionPending && !isSwapAnimating && !swapCommitted) || isBotResolvingPie
+  const pieDecisionStoneMobile = (isPieDecisionPending && !swapCommitted) || isSwapAnimating
+    ? swapAnimationStone ?? lastMove
+    : null
+  const pieDecisionStoneDesktop = (isPieDecisionPending && !swapCommitted) || isSwapAnimating
+    ? lastMove
+    : null
+
   if (isMobile) {
     return (
       <div className="h-full min-h-0 flex flex-col relative">
@@ -78,13 +94,24 @@ export function GameYPage() {
           </div>
         )}
         {/* Board */}
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden relative">
           <GameYBoard
             game={game}
             lastMove={lastMove}
-            isInteractive={canPlay}
+            isInteractive={canPlay && !isSwapAnimating}
             onCellClick={handleCellClick}
+            pieDecisionStone={pieDecisionStoneMobile}
+            isSwapAnimating={isSwapAnimating}
+            swapCommitted={swapCommitted}
           />
+          {showPiePanel && (
+            <PieRuleDecisionPanel
+              game={game}
+              isBotDeciding={isBotDecidingPie || isBotResolvingPie}
+              onDecide={handlePieDecision}
+              isLoading={isPieDecisionLoading}
+            />
+          )}
         </div>
 
         {/* Sidebar deslizable desde abajo */}
@@ -97,10 +124,7 @@ export function GameYPage() {
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
-            onClick={() => {
-              if (sidebarOpen) { setMobileHeight(48); setSidebarOpen(false) }
-              else { setMobileHeight(SIDEBAR_HEIGHT); setSidebarOpen(true) }
-            }}
+            onClick={toggleMobileSidebar}
           >
             <div className="w-10 h-1 rounded-full bg-muted-foreground/40" />
           </div>
@@ -144,13 +168,24 @@ export function GameYPage() {
       )}
       <div className="flex-1 min-h-0 flex relative">
       {/* Board */}
-      <div className="flex-1 min-w-0 overflow-hidden">
+      <div className="flex-1 min-w-0 overflow-hidden relative">
         <GameYBoard
           game={game}
           lastMove={lastMove}
-          isInteractive={canPlay}
+          isInteractive={canPlay && !isSwapAnimating}
           onCellClick={handleCellClick}
+          pieDecisionStone={pieDecisionStoneDesktop}
+          isSwapAnimating={isSwapAnimating}
+          swapCommitted={swapCommitted}
         />
+        {showPiePanel && (
+          <PieRuleDecisionPanel
+            game={game}
+            isBotDeciding={isBotDecidingPie || isBotResolvingPie}
+            onDecide={handlePieDecision}
+            isLoading={isPieDecisionLoading}
+          />
+        )}
       </div>
 
       {/* Botón chevron pegado al borde del sidebar */}

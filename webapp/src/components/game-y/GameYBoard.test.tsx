@@ -21,6 +21,7 @@ function makeGame(overrides: Partial<GameState> = {}): GameState {
     id: 'game-1',
     config: { mode: 'pve', boardSize: size, timerEnabled: false, botLevel: 'easy' },
     status: 'playing',
+    phase: 'playing',
     board: makeBoard(size),
     players: {
       player1: { id: 'user-1', name: 'Alice', color: 'player1' },

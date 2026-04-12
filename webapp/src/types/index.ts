@@ -43,11 +43,14 @@ export interface GameConfig {
   timerSeconds?: number
   botLevel?: BotLevel
   playerColor?: PlayerColor
+  pieRule?: boolean
 }
 
 // ==================== Game State ====================
 
 export type GameStatus = 'waiting' | 'playing' | 'finished' | 'abandoned'
+export type GamePhase = 'playing' | 'pie-decision'
+export type PieDecision = 'keep' | 'swap'
 
 export interface Player {
   id: string
@@ -81,6 +84,7 @@ export interface GameState {
   id: string
   config: GameConfig
   status: GameStatus
+  phase: GamePhase
   board: BoardCell[][]
   players: {
     player1: Player

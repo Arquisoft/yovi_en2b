@@ -8,7 +8,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { GameMove } from './GameMove';
-import type { GameConfig, GameStatus, PlayerColor, BoardCell, Player, TimerState } from '../types/game';
+import type { GameConfig, GameStatus, GamePhase, PlayerColor, BoardCell, Player, TimerState } from '../types/game';
 
 @Entity('games')
 export class Game {
@@ -27,6 +27,11 @@ export class Game {
     default: 'playing',
   })
   status!: GameStatus;
+
+  // Sub-phase within the 'playing' status for Pie Rule support.
+  // Stored as varchar to avoid enum migration complexity.
+  @Column({ type: 'varchar', length: 20, default: 'playing' })
+  phase!: GamePhase;
 
   @Column({ type: 'simple-json', name: 'board_state' })
   boardState!: BoardCell[][];
