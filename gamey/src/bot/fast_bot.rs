@@ -36,41 +36,105 @@ impl YBot for FastBot {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{Coordinates, Movement, PlayerId, YBotRegistry};
+    use std::sync::Arc;
 
+    // The bot name is used as the HTTP route parameter and as the registry key.
+    // A mismatch silently breaks all PvE games at medium difficulty.
     #[test]
-    fn test_fast_bot_name() {
-        assert_eq!(FastBot.name(), "fast_bot");
+    fn test_fast_bot_is_findable_in_registry() {
+        let registry = YBotRegistry::new().with_bot(Arc::new(FastBot));
+        assert!(
+            registry.find("fast_bot").is_some(),
+            "FastBot must be retrievable by its own name — name/key mismatch breaks the HTTP API"
+        );
     }
 
+    // choose_move must return a cell that actually exists on the board and has
+    // not been played yet; returning an occupied or out-of-bounds index would
+    // crash the game service when it tries to apply the move.
     #[test]
-    fn test_fast_bot_returns_valid_move() {
+    fn test_fast_bot_choose_move_returns_available_cell() {
         let game = GameY::new(3);
-        let coords = FastBot.choose_move(&game);
-        assert!(coords.is_some());
-        assert!(coords.unwrap().is_valid(3));
+        let coords = FastBot.choose_move(&game).expect("bot must return a move on a non-empty board");
+        let idx = coords.to_index(game.board_size());
+        assert!(
+            game.available_cells().contains(&idx),
+            "chosen cell index {idx} is not in available_cells"
+        );
     }
 
+    // After a stone is placed, the bot must not choose the occupied cell.
+    // This verifies it reads the live available_cells set, not a stale copy.
     #[test]
-    fn test_fast_bot_pie_opening_returns_valid_move() {
-        let game = GameY::new(3);
-        let coords = FastBot.choose_pie_opening(&game);
-        assert!(coords.is_some());
-        assert!(coords.unwrap().is_valid(3));
-    }
-
-    #[test]
-    fn test_fast_bot_decide_pie_returns_a_choice() {
-        use crate::{Coordinates, Movement, PlayerId};
-
-        let mut game = GameY::new(5);
-        // Place one stone for player 0 (the opponent).
+    fn test_fast_bot_choose_move_avoids_occupied_cell() {
+        let mut game = GameY::new(4);
+        let occupied = Coordinates::new(1, 1, 1); // sole interior cell on size-4
         game.add_move(Movement::Placement {
             player: PlayerId::new(0),
-            coords: Coordinates::new(2, 1, 1),
+            coords: occupied,
+        })
+        .unwrap();
+
+        let chosen = FastBot.choose_move(&game).expect("bot must return a move");
+        assert_ne!(chosen, occupied, "bot must not choose the already-occupied cell");
+        let idx = chosen.to_index(game.board_size());
+        assert!(game.available_cells().contains(&idx));
+    }
+
+    // choose_pie_opening must also respect the available cells constraint.
+    #[test]
+    fn test_fast_bot_pie_opening_returns_available_cell() {
+        let game = GameY::new(5);
+        let coords = FastBot
+            .choose_pie_opening(&game)
+            .expect("pie opening must return a move on a fresh board");
+        let idx = coords.to_index(game.board_size());
+        assert!(
+            game.available_cells().contains(&idx),
+            "pie-opening cell index {idx} is not in available_cells"
+        );
+    }
+
+    // On a size-4 board, (1,1,1) is the unique interior cell: it touches no
+    // side directly, is maximally connected, and has the lowest connection cost
+    // to all three sides.  The rational second player should always swap it
+    // because owning that stone is better than playing next without it.
+    #[test]
+    fn test_fast_bot_swaps_strong_center_opening() {
+        let mut game = GameY::new(4);
+        game.add_move(Movement::Placement {
+            player: PlayerId::new(0),
+            coords: Coordinates::new(1, 1, 1),
         })
         .unwrap();
 
         let choice = FastBot.decide_pie(&game);
-        assert!(choice == PieChoice::Keep || choice == PieChoice::Swap);
+        assert_eq!(
+            choice,
+            PieChoice::Swap,
+            "the unique interior cell on a size-4 board is too strong to keep for the opponent"
+        );
+    }
+
+    // A corner cell like (4,0,0) on a size-5 board touches sides B and C
+    // simultaneously (y=0 and z=0).  Two sides already covered from a single
+    // stone means you only need to reach side A to win — that is a strong
+    // head-start.  The rational second player should swap it.
+    #[test]
+    fn test_fast_bot_swaps_corner_touching_two_sides() {
+        let mut game = GameY::new(5);
+        game.add_move(Movement::Placement {
+            player: PlayerId::new(0),
+            coords: Coordinates::new(4, 0, 0), // corner: touches sides B and C
+        })
+        .unwrap();
+
+        let choice = FastBot.decide_pie(&game);
+        assert_eq!(
+            choice,
+            PieChoice::Swap,
+            "a corner touching 2 sides already covers 2/3 of the win condition — worth swapping"
+        );
     }
 }
