@@ -121,10 +121,13 @@ export function GameYPage() {
         >
           <div
             className="flex items-center justify-center h-8 cursor-ns-resize touch-none select-none"
+            role="button"
+            tabIndex={0}
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
             onClick={toggleMobileSidebar}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleMobileSidebar(); }}
           >
             <div className="w-10 h-1 rounded-full bg-muted-foreground/40" />
           </div>

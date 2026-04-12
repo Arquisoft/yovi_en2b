@@ -1,30 +1,32 @@
-// ──────────────────────────────────────────────────────────────────────────────
-// server.ts
-//
-// Express entry point for the webapp backend (Game API / BFF).
-//
-// Port: read from WEBAPP_PORT env var, defaults to 3001.
-//       (The users service occupies 3000; see docker-compose.yml)
-// ──────────────────────────────────────────────────────────────────────────────
-
 import express from 'express';
-import cors from 'cors';
+import helmet from 'helmet';
 import gameRoutes from './routes/gameRoutes';
 
 const app = express();
+const PORT = parseInt(process.env.WEBAPP_PORT ?? '3001', 10);
+
+console.log(`Starting interop service with env: ${process.env.APP_ENV}`);
 
 // ── Middleware ────────────────────────────────────────────────────────────────
-app.use(cors());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "script-src": ["'self'", "'unsafe-inline'"],
+      "style-src": ["'self'", "'unsafe-inline'", "https:"],
+      "img-src": ["'self'", "data:", "validator.swagger.io"]
+    }
+  },
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+  crossOriginEmbedderPolicy: false
+}));
 app.use(express.json());
 
 // ── Routes ───────────────────────────────────────────────────────────────────
-
-// Game API — all endpoints are under /games (matches webapp/openapi.yaml paths)
 app.use('/games', gameRoutes);
 
-// Health check endpoint — used by Docker Compose healthcheck and monitoring
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date() });
+  res.json({ status: 'ok', timestamp: new Date(), uptime: process.uptime() });
 });
 
 // 404 fallback
@@ -36,11 +38,10 @@ app.use((req, res) => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
-const PORT = parseInt(process.env.WEBAPP_PORT ?? '3001', 10);
-
 app.listen(PORT, () => {
-  console.log(`YOVI Game API running on http://localhost:${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
+  const base = process.env.PUBLIC_URL;
+  console.log(`Interop service API at ${base}/interop`);
+  console.log(`Health check: ${base}/health`);
 });
 
 export default app;
