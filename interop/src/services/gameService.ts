@@ -31,19 +31,6 @@ const RUST_TIMEOUT_MS = 2_000;
 
 const DEFAULT_BOT_ID = 'random_bot';
 
-// Single source of truth for all accepted identifiers (both raw bot_id values
-// and strategy names).  The value returned from this map is always one of our
-// own string literals — never the raw user-supplied string — so user-controlled
-// data never reaches the Rust engine URL path.
-const BOT_LOOKUP: Record<string, string> = {
-  random_bot: 'random_bot',
-  fast_bot:   'fast_bot',
-  smart_bot:  'smart_bot',
-  EASY:       'random_bot',
-  MEDIUM:     'fast_bot',
-  HARD:       'smart_bot',
-};
-
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
@@ -98,18 +85,17 @@ export const play = async (
  * Resolve the effective bot ID from the caller-supplied options.
  * Priority: explicit bot_id > strategy mapping > default.
  */
+// Returns a safe string literal — never the raw user-supplied value — so
+// user-controlled data never reaches the Rust engine URL path.
 function resolveBotId(botId?: string, strategy?: string): string {
-  if (botId) {
-    const resolved = BOT_LOOKUP[botId];
-    if (!resolved) {
-      throw makeError('BOT_NOT_FOUND', `Bot '${botId}' is not registered in the engine.`, 404);
-    }
-    return resolved;
+  switch (botId ?? strategy?.toUpperCase()) {
+    case 'random_bot': case 'EASY':   return 'random_bot';
+    case 'fast_bot':   case 'MEDIUM': return 'fast_bot';
+    case 'smart_bot':  case 'HARD':   return 'smart_bot';
+    default:
+      if (botId) throw makeError('BOT_NOT_FOUND', `Bot '${botId}' is not registered in the engine.`, 404);
+      return DEFAULT_BOT_ID;
   }
-  if (strategy) {
-    return BOT_LOOKUP[strategy.toUpperCase()] ?? DEFAULT_BOT_ID;
-  }
-  return DEFAULT_BOT_ID;
 }
 
 /**
