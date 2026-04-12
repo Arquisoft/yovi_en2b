@@ -31,18 +31,18 @@ const RUST_TIMEOUT_MS = 2_000;
 
 const DEFAULT_BOT_ID = 'random_bot';
 
-// Optional strategy → bot_id mapping for callers that pass a strategy name
-// instead of a raw bot_id.  Additional difficulty levels can be added here.
-const STRATEGY_TO_BOT: Record<string, string> = {
-  EASY: 'random_bot',
-  MEDIUM: 'fast_bot',
-  HARD: 'smart_bot',
+// Single source of truth for all accepted identifiers (both raw bot_id values
+// and strategy names).  The value returned from this map is always one of our
+// own string literals — never the raw user-supplied string — so user-controlled
+// data never reaches the Rust engine URL path.
+const BOT_LOOKUP: Record<string, string> = {
+  random_bot: 'random_bot',
+  fast_bot:   'fast_bot',
+  smart_bot:  'smart_bot',
+  EASY:       'random_bot',
+  MEDIUM:     'fast_bot',
+  HARD:       'smart_bot',
 };
-
-// Allowlist of bot IDs accepted in the URL path. Must stay in sync with
-// STRATEGY_TO_BOT values. Prevents user-controlled data from being injected
-// into the Rust engine URL.
-const VALID_BOT_IDS = new Set(Object.values(STRATEGY_TO_BOT));
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -100,13 +100,14 @@ export const play = async (
  */
 function resolveBotId(botId?: string, strategy?: string): string {
   if (botId) {
-    if (!VALID_BOT_IDS.has(botId)) {
+    const resolved = BOT_LOOKUP[botId];
+    if (!resolved) {
       throw makeError('BOT_NOT_FOUND', `Bot '${botId}' is not registered in the engine.`, 404);
     }
-    return botId;
+    return resolved;
   }
-  if (strategy && STRATEGY_TO_BOT[strategy.toUpperCase()]) {
-    return STRATEGY_TO_BOT[strategy.toUpperCase()];
+  if (strategy) {
+    return BOT_LOOKUP[strategy.toUpperCase()] ?? DEFAULT_BOT_ID;
   }
   return DEFAULT_BOT_ID;
 }
