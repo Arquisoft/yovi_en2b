@@ -27,15 +27,8 @@ import { applyMove } from './yenService';
 
 const RUST_URL = process.env.RUST_INTERNAL_URL ?? 'http://localhost:4000';
 const RUST_TIMEOUT_MS = 2_000;
-const DEFAULT_BOT_ID = 'random_bot';
 
-// Pre-built engine URLs keyed by bot ID. callRustEngine extracts the URL from
-// this map instead of interpolating user input, cutting the taint chain.
-const ENGINE_URLS = new Map([
-  ['random_bot', `${RUST_URL}/v1/ybot/choose/random_bot`],
-  ['fast_bot',   `${RUST_URL}/v1/ybot/choose/fast_bot`],
-  ['smart_bot',  `${RUST_URL}/v1/ybot/choose/smart_bot`],
-]);
+type BotId = 'random_bot' | 'fast_bot' | 'smart_bot';
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -90,14 +83,14 @@ export const play = async (
  * Map user-supplied identifiers to a known bot ID.
  * Returns a safe string literal — never the raw user-supplied value.
  */
-function resolveBotId(botId?: string, strategy?: string): string {
+function resolveBotId(botId?: string, strategy?: string): BotId {
   switch (botId ?? strategy?.toUpperCase()) {
     case 'random_bot': case 'EASY':   return 'random_bot';
     case 'fast_bot':   case 'MEDIUM': return 'fast_bot';
     case 'smart_bot':  case 'HARD':   return 'smart_bot';
     default:
       if (botId) throw makeError('BOT_NOT_FOUND', `Bot '${botId}' is not registered in the engine.`, 404);
-      return DEFAULT_BOT_ID;
+      return 'random_bot';
   }
 }
 
@@ -108,15 +101,10 @@ function resolveBotId(botId?: string, strategy?: string): string {
  * URL construction — this acts as a Sonar-recognised sanitiser that proves no
  * user-controlled data can reach the URL path.
  */
-async function callRustEngine(yen: YEN, botId: string): Promise<RustMoveResponse> {
-  const engineUrl = ENGINE_URLS.get(botId);
-  if (!engineUrl) {
-    throw makeError('BOT_NOT_FOUND', 'Invalid bot identifier.', 404);
-  }
-
+async function callRustEngine(yen: YEN, botId: BotId): Promise<RustMoveResponse> {
   try {
     const response = await axios.post<RustMoveResponse>(
-      engineUrl,
+      `${RUST_URL}/v1/ybot/choose/${botId}`,
       yen,
       {
         timeout: RUST_TIMEOUT_MS,
