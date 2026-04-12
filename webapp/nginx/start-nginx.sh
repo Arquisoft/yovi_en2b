@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-ENV=${NODE_ENV:-production}
+ENV=${APP_ENV:-production}
 
 echo "Starting nginx server with env: $ENV"
 

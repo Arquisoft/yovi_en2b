@@ -34,134 +34,79 @@ There you will find links and examples about ADR.
 endif::arc42help[]
 
 
-=== ADR-001: BFF + internal services (REST)
+=== ADR-001: Dedicated game service owns all session state
 
 [options="header",cols="1,3"]
 |===
 |Field |Description
 |Status |icon:check-circle[] APPROVED
-|Context |Browser-facing API should be centralized; system is split into webapp (frontend + backend), users, and gamey.
-|Decision |Use webapp-backend as a Backend-for-Frontend (BFF); the BFF calls users and gamey via REST.
-|Consequences |Browser talks only to BFF; orchestration and cross-cutting concerns (auth, validation, timeouts) are centralized.
+|Context |Game session state (board, turns, moves, timers) must live on the server to prevent cheating and keep the browser thin. We needed to decide which component owns this state.
+|Decision |A dedicated `game` service owns all game session state. It validates moves, calls `gamey` for bot moves, and writes match results to the `users` service when a game ends. The browser only renders what the server returns.
+|Consequences |Clear ownership of game logic; the browser cannot modify game state directly. Adding game features means touching the `game` service, not the frontend.
 |===
 
-=== ADR-002: Internal endpoints between BFF and gamey
-
-[options="header",cols="1,3"]
-|===
-|Field |Description
-|Status |icon:check-circle[] APPROVED
-|Context |gamey provides core game logic (win verification + bot move selection); BFF must check health and request moves.
-|Decision |Expose a minimal internal HTTP API in gamey: `GET /status` (health), `POST /ybot/choose/{botId}` (YEN/JSON in, move out as JSON).
-|Consequences |Small, stable internal surface; requires consistent contracts for YEN and coordinate encoding.
-|===
-
-=== ADR-003: YEN/JSON as game state contract + validation in gamey
+=== ADR-002: Nginx as single public entry point with path-based routing
 
 [options="header",cols="1,3"]
 |===
 |Field |Description
 |Status |icon:check-circle[] APPROVED
-|Context |Game state must follow YEN notation; invalid states must be rejected.
-|Decision |Exchange game state as JSON following YEN; validate YEN in gamey and return a JSON error on invalid input.
-|Consequences |Single source of truth for domain validation; BFF maps validation failures to 4xx for clients.
+|Context |The system has two backend services and a frontend SPA. Clients need a single address to reach all of them.
+|Decision |Nginx routes requests by path prefix: `/users/` → users service, `/game/` → game service, `/` → SPA static files. The bot engine port (4000) is never exposed through Nginx.
+|Consequences |One public entry point with simple routing rules. The bot engine stays internal. Adding a new service requires a new Nginx route.
 |===
 
-=== ADR-004: Stateless engine + no game state persistence in M1
-
-[options="header",cols="1,3"]
-|===
-|Field |Description
-|Status |icon:check-circle[] APPROVED
-|Context |M1 prioritizes end-to-end functionality; persisting full game states is out of scope for M1.
-|Decision |Keep gamey stateless; do not persist game state in M1.
-|Consequences |Each request must carry full required state; simpler deployment/testing for M1.
-|===
-
-=== ADR-005: API versioning
-
-[options="header",cols="1,3"]
-|===
-|Field |Description
-|Status |icon:times-circle[] NOT APPROVED
-|Context |Breaking changes may happen; a versioning policy was proposed early.
-|Decision |(Not approved) URL-based versioning and “major bump rules” are not decided yet; avoid committing to `/v1` paths until requirements stabilize.
-|Consequences |No premature coupling to a versioning scheme; versioning can be introduced later (or via headers) if needed.
-|===
-
-=== ADR-006: JWT signing algorithm
+=== ADR-003: Shared JWT secret with local token verification
 
 [options="header",cols="1,3"]
 |===
 |Field |Description
 |Status |icon:check-circle[] APPROVED
-|Context |The users service acts as the auth server: it issues tokens and also verifies them; the webapp (BFF and/or frontend) receives tokens and may verify them when needed.
-|Decision |Use HS256 for JWT signing/verification (shared secret) for M1.
-|Consequences |Simple setup and fast verification; secret must be protected across components that verify tokens.
+|Context |Both `game` and `users` need to verify user identity. Calling `users` on every authenticated request adds latency and a runtime dependency.
+|Decision |`game` and `users` share the same `JWT_SECRET` and verify tokens locally using the same algorithm (HS256). No inter-service call is made per request.
+|Consequences |No extra round-trip for authentication. The shared secret must be identical across both services and kept confidential.
 |===
 
-=== ADR-007: Secrets/config injection mechanism
-
-[options="header",cols="1,3"]
-|===
-|Field |Description
-|Status |icon:check-circle[] APPROVED
-|Context |Secrets must not be stored in git; configuration must work locally and in CI/CD.
-|Decision |Use environment variables for configuration; store sensitive values as GitHub Actions Secrets and inject them into the deployment as env vars; local dev uses dotenv (`.env` not committed).
-|Consequences |Consistent secret values across deployments; requires discipline to avoid leaking env values in logs.
-|===
-
-=== ADR-008: Error response envelope
+=== ADR-004: One MariaDB instance with strict table ownership per service
 
 [options="header",cols="1,3"]
 |===
 |Field |Description
 |Status |icon:check-circle[] APPROVED
-|Context |Multiple services/clients need consistent error handling.
-|Decision |Standardize JSON error responses with: `errorCode`, `message`, `requestId`.
-|Consequences |Simpler client-side mapping and debugging; requires stable error codes over time.
+|Context |Both services need persistent storage. Running two separate database instances adds operational overhead for an academic project.
+|Decision |Both services connect to the same MariaDB instance (`users_db`). Table ownership is strict: `users` and `match_records` belong to the users service; `games` and `game_moves` belong to the game service. Neither service queries the other's tables directly.
+|Consequences |One database container to manage. The services remain logically independent as long as table boundaries are respected.
 |===
 
-=== ADR-009: BFF -> Game Service timeouts
-
-[options="header",cols="1,3"]
-|===
-|Field |Description
-|Status |icon:question-circle[] PROPOSED
-|Context |Bot computation and network calls may be slow/fail; BFF must stay responsive.
-|Decision |Apply timeouts for BFF → gamey requests; allow strictly bounded retries only for safe idempotent operations.
-|Consequences |Prevents hanging requests; retries must be conservative to avoid overload during outages.
-|===
-
-=== ADR-010: User persistence and minimal user entity
+=== ADR-005: Stateless bot engine (gamey)
 
 [options="header",cols="1,3"]
 |===
 |Field |Description
 |Status |icon:check-circle[] APPROVED
-|Context |users must persist accounts; we need credentials and basic authorization.
-|Decision |Persist user accounts; minimal user entity includes: `id`, `username`, `email`, `passwordHash`, `role` (`player`/`admin`) (extra fields TBD).
-|Consequences |Enables authentication and basic admin features; requires clear password hashing rules and role-based authorization checks.
+|Context |The bot only needs the current board position to compute a move. Storing session state in the Rust service would complicate deployment and testing.
+|Decision |`gamey` is stateless. Each request carries the full board state in YEN format; the engine computes one move and discards the state.
+|Consequences |Simple deployment and testing for the Rust service. The `game` service is responsible for sending the full board on every bot request.
 |===
 
-=== ADR-011: Client/Server entrypoint and public APIs
+=== ADR-006: HS256 for JWT signing
 
 [options="header",cols="1,3"]
 |===
 |Field |Description
 |Status |icon:check-circle[] APPROVED
-|Context |Client/server architecture: browser client (SPA) calls server APIs over HTTP; we want a single public entrypoint.
-|Decision |Expose: `/` for the SPA, plus two public API surfaces: one for user management (register/login/profile/history) and one for game interaction (create/join room, play, etc.); exact path prefixes are stable but versioning is not decided.
-|Consequences |Clear boundaries between “user management” and “game” concerns; simpler documentation and security rules per API.
+|Context |`users` issues tokens and `game` verifies them. A signing algorithm must be chosen.
+|Decision |Use HMAC-SHA256 (HS256) with a shared secret for JWT signing and verification.
+|Consequences |Simple setup and fast verification. Asymmetric keys are not needed since both services are internal and controlled by the same team.
 |===
 
-=== ADR-012: Reverse proxy for path-based routing (Nginx)
+=== ADR-007: Secrets and configuration via environment variables
 
 [options="header",cols="1,3"]
 |===
 |Field |Description
-|Status |icon:question-circle[] PROPOSED
-|Context |Single public port must serve the SPA and route requests to backend APIs; full API gateway is overkill.
-|Decision |Use Nginx to route by path: `/` → SPA static assets, `/api/...` → BFF (covering both public APIs), optional `/ws/...` → BFF for WebSockets; no API version prefix is assumed.
-|Consequences |One clean entrypoint with simple routing rules; adds a lightweight component to configure and maintain.
+|Status |icon:check-circle[] APPROVED
+|Context |Sensitive values (JWT key, database password) must not be stored in the repository or baked into container images.
+|Decision |All sensitive configuration is injected at runtime via environment variables. Locally, a gitignored `.env` file is used. In CI and production, values come from GitHub Secrets.
+|Consequences |Secrets never enter version control. Developers must copy `.env.example` to get started locally.
 |===

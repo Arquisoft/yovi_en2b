@@ -219,4 +219,37 @@ describe('GameService', () => {
       expect(games.length).toBeGreaterThan(0)
     })
   })
+
+  describe('error handling when response body is not valid JSON', () => {
+    it('createGame falls back to generic error when json() rejects', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => { throw new Error('not json') },
+      } as any)
+
+      const config = { mode: 'pve' as const, boardSize: 5 as const, timerEnabled: false }
+      await expect(gameService.createGame(config)).rejects.toThrow('Failed to create game')
+    })
+
+    it('playMove falls back to generic error when json() rejects', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => { throw new Error('not json') },
+      } as any)
+
+      await expect(gameService.playMove('game-1', 0, 0, 'player1')).rejects.toThrow('Failed to play move')
+    })
+
+    it('surrender falls back to generic error when json() rejects', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => { throw new Error('not json') },
+      } as any)
+
+      await expect(gameService.surrender('game-1', 'player1')).rejects.toThrow('Failed to surrender')
+    })
+  })
 })

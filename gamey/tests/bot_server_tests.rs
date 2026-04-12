@@ -2,7 +2,7 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
 };
-use gamey::{YBotRegistry, YEN, create_default_state, create_router, state::AppState, RandomBot, MoveResponse, ErrorResponse};
+use gamey::{YBotRegistry, YEN, PieChoice, create_default_state, create_router, state::AppState, RandomBot, MoveResponse, ErrorResponse, PieDecideResponse, PieOpeningResponse};
 use http_body_util::BodyExt;
 use std::sync::Arc;
 use tower::ServiceExt;
@@ -259,6 +259,167 @@ async fn test_choose_with_empty_bot_registry() {
     let error_response: ErrorResponse = serde_json::from_slice(&body).unwrap();
 
     assert!(error_response.message.contains("Bot not found"));
+}
+
+// ============================================================================
+// Pie-decide endpoint tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_pie_decide_with_valid_request() {
+    let app = test_app();
+
+    // Board with one Blue stone at (0,0) — Red (player 1/turn=1) decides
+    let yen = YEN::new(5, 1, vec!['B', 'R'], "B/../.../..../.....".to_string());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/ybot/pie-decide/fast_bot")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_string(&yen).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let pie_response: PieDecideResponse = serde_json::from_slice(&body).unwrap();
+
+    assert_eq!(pie_response.api_version, "v1");
+    assert_eq!(pie_response.bot_id, "fast_bot");
+    assert!(pie_response.decision == PieChoice::Keep || pie_response.decision == PieChoice::Swap);
+}
+
+#[tokio::test]
+async fn test_pie_decide_with_unknown_bot() {
+    let app = test_app();
+
+    let yen = YEN::new(3, 1, vec!['B', 'R'], "B/../...".to_string());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/ybot/pie-decide/nonexistent_bot")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_string(&yen).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let error_response: ErrorResponse = serde_json::from_slice(&body).unwrap();
+
+    assert!(error_response.message.contains("Bot not found"));
+}
+
+#[tokio::test]
+async fn test_pie_decide_with_invalid_api_version() {
+    let app = test_app();
+
+    let yen = YEN::new(3, 1, vec!['B', 'R'], "B/../...".to_string());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v99/ybot/pie-decide/fast_bot")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_string(&yen).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let error_response: ErrorResponse = serde_json::from_slice(&body).unwrap();
+
+    assert!(error_response.message.contains("Unsupported API version"));
+}
+
+// ============================================================================
+// Pie-opening endpoint tests
+// ============================================================================
+
+#[tokio::test]
+async fn test_pie_opening_with_valid_request() {
+    let app = test_app();
+
+    // Empty board — bot picks a pie-aware first move
+    let yen = YEN::new(5, 0, vec!['B', 'R'], "./../.../..../.....".to_string());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/ybot/pie-opening/fast_bot")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_string(&yen).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let pie_response: PieOpeningResponse = serde_json::from_slice(&body).unwrap();
+
+    assert_eq!(pie_response.api_version, "v1");
+    assert_eq!(pie_response.bot_id, "fast_bot");
+}
+
+#[tokio::test]
+async fn test_pie_opening_with_unknown_bot() {
+    let app = test_app();
+
+    let yen = YEN::new(3, 0, vec!['B', 'R'], "./../...".to_string());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/ybot/pie-opening/nonexistent_bot")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_string(&yen).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let error_response: ErrorResponse = serde_json::from_slice(&body).unwrap();
+
+    assert!(error_response.message.contains("Bot not found"));
+}
+
+#[tokio::test]
+async fn test_pie_opening_with_invalid_api_version() {
+    let app = test_app();
+
+    let yen = YEN::new(3, 0, vec!['B', 'R'], "./../...".to_string());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v99/ybot/pie-opening/fast_bot")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_string(&yen).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let error_response: ErrorResponse = serde_json::from_slice(&body).unwrap();
+
+    assert!(error_response.message.contains("Unsupported API version"));
 }
 
 // ============================================================================

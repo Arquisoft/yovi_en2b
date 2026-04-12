@@ -3,13 +3,12 @@ import type {
   GameState,
   GameConfig,
   ChatMessage,
+  PieDecision,
   PlayerColor,
 } from '@/types'
 import { AVAILABLE_GAMES } from '@/mocks/mockData'
 import { generateId } from '@/utils'
-
-//const GAME_API_BASE = 'http://api.localhost/game/api'
-const GAME_API_BASE = "https://api.micrati.com/game/api";
+import { GAME_API_URL } from '@/config/api'
 
 class GameService {
   private baseUrl: string
@@ -68,6 +67,22 @@ class GameService {
     return response.json()
   }
 
+  async decidePie(gameId: string, decision: PieDecision, token?: string): Promise<GameState> {
+    const response = await fetch(`${this.baseUrl}/games/${gameId}/pie-decision`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ decision }),
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: 'Failed to decide' }))
+      throw new Error(err.error || `Failed to decide: ${response.status}`)
+    }
+    return response.json()
+  }
+
   async surrender(gameId: string, player: PlayerColor, token?: string): Promise<GameState> {
     const response = await fetch(`${this.baseUrl}/games/${gameId}/surrender`, {
       method: 'POST',
@@ -109,4 +124,4 @@ class GameService {
   }
 }
 
-export const gameService = new GameService(GAME_API_BASE)
+export const gameService = new GameService(GAME_API_URL)

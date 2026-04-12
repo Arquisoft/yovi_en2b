@@ -36,7 +36,7 @@ paths:
         The bot to use is resolved with the following priority:
 
         1. **`bot_id`** – explicit identifier of a registered Rust bot
-           (e.g. `"random_bot"`, `"minimax_bot"`).
+           (e.g. `"random_bot"`, `"fast_bot"`, `"smart_bot"`).
         2. **`strategy`** – difficulty hint that maps internally to a bot.
            Consulted only when `bot_id` is absent.
         3. **Default** – `random_bot` is used when neither field is provided.
@@ -44,9 +44,8 @@ paths:
         | `strategy` value | Resolved bot   |
         |------------------|----------------|
         | `EASY`           | `random_bot`   |
-        | `MEDIUM`         | `random_bot`   |
-        | `HARD`           | `minimax_bot`  |
-        | `EXPERT`         | `minimax_bot`  |
+        | `MEDIUM`         | `fast_bot`   |
+        | `HARD`           | `smart_bot`  |
 
         Strategy matching is case-insensitive. Both fields may be provided
         simultaneously; `bot_id` always takes precedence over `strategy`.
@@ -114,7 +113,7 @@ paths:
                     layout: "./../..."
                   bot_id: random_bot
               with_strategy:
-                summary: Difficulty strategy — maps to minimax_bot
+                summary: Difficulty strategy — maps to smart_bot
                 value:
                   position:
                     size: 4
@@ -130,7 +129,7 @@ paths:
                     turn: 0
                     players: ["B", "R"]
                     layout: "./../..."
-                  bot_id: minimax_bot
+                  bot_id: fast_bot
                   strategy: EASY
       responses:
         '200':
@@ -151,12 +150,12 @@ paths:
                     move: "0,0,2"
                     position: "B/../..."
                     bot_id: random_bot
-                minimax_bot_move:
-                  summary: minimax_bot plays a mid-game move on a size-4 board
+                smart_bot_move:
+                  summary: smart_bot plays a mid-game move on a size-4 board
                   value:
                     move: "1,1,1"
                     position: "B/.B/RBB/B..R"
-                    bot_id: minimax_bot
+                    bot_id: smart_bot
         '400':
           description: |
             **INVALID_POSITION** — the `position` field is absent or the YEN
@@ -314,8 +313,10 @@ components:
 
             Available bots:
             - `random_bot` — selects a random legal move.
-            - `minimax_bot` — uses Minimax with alpha-beta pruning and
-              iterative deepening within a configurable time limit.
+            - `fast_bot` — uses Minimax with alpha-beta pruning and
+              iterative deepening within a time limit.
+            - `smart_bot` — uses Minimax with alpha-beta pruning and
+              iterative deepening with more freadom to get deeper.
           example: minimax_bot
         strategy:
           type: string
@@ -326,13 +327,12 @@ components:
             | Value    | Resolved bot   |
             |----------|----------------|
             | `EASY`   | `random_bot`   |
-            | `MEDIUM` | `random_bot`   |
-            | `HARD`   | `minimax_bot`  |
-            | `EXPERT` | `minimax_bot`  |
+            | `MEDIUM` | `fast_bot`   |
+            | `HARD`   | `smart_bot`  |
 
             Matching is **case-insensitive** (`"hard"` and `"HARD"` are
             equivalent).
-          enum: [EASY, MEDIUM, HARD, EXPERT]
+          enum: [EASY, MEDIUM, HARD]
           example: HARD
 
     PlayResponse:
@@ -369,7 +369,7 @@ components:
             Identifier of the bot that was actually used to generate the move.
             Useful when the caller did not specify `bot_id` explicitly (e.g.
             when `strategy` was used or the default bot was applied).
-          example: minimax_bot
+          example: fast_bot
 
     ApiError:
       type: object

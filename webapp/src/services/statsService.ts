@@ -1,12 +1,12 @@
 // webapp/src/services/statsService.ts
 import type { MatchRecord, StatsData } from '@/types'
-
-//const API_BASE_URL = "http://api.localhost/users/api"
-const API_BASE_URL = 'https://api.micrati.com/users/api'
+import { USERS_API_URL } from '@/config/api'
 
 class StatsService {
+  constructor(private readonly baseUrl: string) { }
+
   private async request<T>(endpoint: string, token: string): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
@@ -28,4 +28,4 @@ class StatsService {
   }
 }
 
-export const statsService = new StatsService()
+export const statsService = new StatsService(USERS_API_URL)

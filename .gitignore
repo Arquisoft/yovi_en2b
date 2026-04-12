@@ -4,8 +4,6 @@ gamey/target/
 lcov.info
 docs/build/
 .env
-.env.test
-webapp/.env
 .vscode/
 dist/
 certs/

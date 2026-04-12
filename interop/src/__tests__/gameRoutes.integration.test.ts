@@ -38,7 +38,7 @@ app.use('/games', gameRoutes);
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
-const validPosition: YEN = emptyYEN(3); // "./../..."
+const validPosition: YEN = emptyYEN(3);
 
 const mockPlayResponse: PlayResponse = {
   move: '0,0,2',
@@ -65,8 +65,12 @@ describe('POST /games/play — happy paths', () => {
     expect(mockedService.play).toHaveBeenCalledWith(validPosition, 'random_bot', undefined);
   });
 
-  it('returns 200 and forwards strategy when provided without bot_id', async () => {
-    const hardResponse: PlayResponse = { ...mockPlayResponse, bot_id: 'minimax_bot' };
+  it('returns 200 and forwards strategy HARD; service resolves it to smart_bot', async () => {
+    // The controller passes the raw strategy string to the service unchanged.
+    // Resolution (HARD → smart_bot) is the service's responsibility — verified
+    // in gameService.test.ts.  Here we only assert the controller wires things
+    // correctly and returns whatever the service produces.
+    const hardResponse: PlayResponse = { ...mockPlayResponse, bot_id: 'smart_bot' };
     mockedService.play.mockResolvedValue(hardResponse);
 
     const res = await request(app)
@@ -74,7 +78,7 @@ describe('POST /games/play — happy paths', () => {
       .send({ position: validPosition, strategy: 'HARD' });
 
     expect(res.status).toBe(200);
-    expect(res.body.bot_id).toBe('minimax_bot');
+    expect(res.body.bot_id).toBe('smart_bot');
     expect(mockedService.play).toHaveBeenCalledWith(validPosition, undefined, 'HARD');
   });
 
@@ -134,7 +138,7 @@ describe('POST /games/play — request validation', () => {
   });
 
   it('returns 400 INVALID_POSITION when position has a layout with wrong row count', async () => {
-    const badPosition = { ...validPosition, layout: 'B/..' }; // size 3 needs 3 rows
+    const badPosition = { ...validPosition, layout: 'B/..' };
 
     const res = await request(app)
       .post('/games/play')

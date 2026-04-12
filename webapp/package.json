@@ -14,10 +14,11 @@
     "test:coverage": "vitest run --coverage",
     "test:coverage:ci": "vitest run --coverage",
     "test:watch": "vitest --watch",
-    "test:e2e:run": "cucumber-js --import test/e2e/support/setup.mjs --import test/e2e/steps/**/*.mjs test/e2e/features --format progress",
-    "test:e2e:ci": "start-server-and-test start:all http://localhost:3000/health test:e2e:run",
-    "test:e2e": "npm run test:db:up && npm run test:e2e:ci; npm run test:db:down",
-    "test:e2e:install-browsers": "npx playwright install"
+    "start:all": "concurrently -k \"PORT=3001 npm run --prefix ../users dev\" \"npm run --prefix ../game dev\" \"vite --mode e2e\"",
+    "test:e2e:run": "cucumber-js --import test/e2e/support/setup.mjs --import 'test/e2e/steps/**/*.mjs' test/e2e/features --format progress",
+    "test:e2e:ci": "start-server-and-test start:all 'http-get://localhost:3000|http-get://localhost:3001/health|http-get://localhost:5000/health' test:e2e:run",
+    "test:e2e": "npm run test:db:up && DB_PASSWORD=test_password npm run test:e2e:ci; npm run test:db:down",
+    "test:e2e:install-browsers": "npx playwright install chromium"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.2",
@@ -66,6 +67,10 @@
     "ts-node-dev": "^2.0.0",
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.16",
+    "@cucumber/cucumber": "^11.0.0",
+    "@playwright/test": "^1.49.0",
+    "concurrently": "^9.0.0",
+    "start-server-and-test": "^2.0.0"
   }
 }

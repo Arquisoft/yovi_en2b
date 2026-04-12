@@ -20,10 +20,10 @@ They can include many different topics, such as
 
 
 .Motivation
-Concepts form the basis for _conceptual integrity_ (consistency, homogeneity) of the architecture. 
+Concepts form the basis for _conceptual integrity_ (consistency, homogeneity) of the architecture.
 Thus, they are an important contribution to achieve inner qualities of your system.
 
-Some of these concepts cannot be assigned to individual building blocks, e.g. security or safety. 
+Some of these concepts cannot be assigned to individual building blocks, e.g. security or safety.
 
 
 .Form
@@ -57,14 +57,13 @@ See https://docs.arc42.org/section-8/[Concepts] in the arc42 documentation.
 ****
 endif::arc42help[]
 
-=== YEN - JSON Game State (domain contract)
+=== YEN — Game State Format
 
 Purpose::
-Represent the state of a Game Y match at a particular point of time. Domain contract between +
-`webapp-backend` <--> `gamey`.
+A shared format for representing a Game Y board at a specific point in time. Used as the data contract between the `game` service and `gamey`.
 
 Format::
-The game state is serialized as JSON using YEN notation.
+The game state is encoded as JSON following YEN notation.
 
 .Example:
 [source,json]
@@ -77,75 +76,73 @@ The game state is serialized as JSON using YEN notation.
 }
 ----
 
-Minimal invariants::
-* _size_: integer > 0.
-* _turn_: must be a player ID from the players list.
-* _players_: an array holding player IDs, currently "B" and "R".
-* _layout_: string representation of the board, '/' is the separator and '.' represents an empty cell.
-* The system  responds with a 4xx error for invalid states (see 8.2 / 8.2.1).
+Rules::
+* `size`: integer greater than 0.
+* `turn`: must be one of the player IDs listed in `players`.
+* `players`: list of player identifiers (currently `"B"` and `"R"`).
+* `layout`: board encoded as a string; `/` separates rows, `.` marks an empty cell.
+* Invalid states are rejected with a 4xx error.
 
 Compatibility::
-* We only publish one version of the API as part of M1, and we're not too concerned about backward compatibility.
-* Any breaking change must be reflected in the documentation and contract tests.
+* One version of the API is published. Any breaking change must be reflected in the documentation and contract tests.
 
-=== REST conventions
+=== REST Conventions
 
 Scope::
-- Applies to:
-  * `webapp-backend` -> `frontend`
-  * `webapp-backend` -> `users`
-  * `webapp-backend` -> `gamey`
+- Browser → `users` service (authentication, stats, ranking)
+- Browser → `game` service (game sessions and moves)
+- `game` service → `gamey` (bot move requests, internal only)
 
 Conventions::
-- JSON as the default payload format.
-- HTTP status codes:
-  * 2xx success, 4xx client/request/validation/auth error, 5xx internal/server error.
-- Timeouts and retries:
-  * Calls to `gamey`/`users` must use finite timeouts.
-  * Do not automatically retry non-idempotent operations (if any exist).
-- Recommended headers
-  * Content-Type: application/json
-  * Accept: application/json
+- JSON is the default payload format.
+- HTTP status codes: 2xx for success, 4xx for client errors, 5xx for server errors.
+- Calls from `game` to `gamey` must use finite timeouts.
+- Non-idempotent operations are not retried automatically.
+- Recommended headers: `Content-Type: application/json`, `Accept: application/json`.
 
-=== Authentication and authorization
+=== Authentication
 
 Scope::
-- Applies to public endpoints exposed by `users` (authentication/user management) and to protected endpoints in `webapp-backend` (game interaction).
+All endpoints exposed by `users` (registration, login, profile) and `game` (game sessions and moves).
 
-Authentication::
-- `users` acts as the auth server: it issues JWTs and verifies them (HS256).
-- Clients send JWTs in `Authorization: Bearer <token>`; `webapp-backend` may also verify them when protecting endpoints.
+How it works::
+- `users` issues JWTs signed with HS256. Clients send them as `Authorization: Bearer <token>`.
+- `game` and `users` share the same secret key and verify tokens locally — no inter-service call is made per request.
+- `game` endpoints use optional authentication: requests without a token are accepted as guest sessions; requests with an invalid or expired token are rejected with 401.
 
 Authorization::
-- Role-based access control with roles: `player` and `admin`.
-- Default rule: a user can only access/modify their own data; admin-only operations (if any) require `admin`.
+- Role-based: `player` and `admin`. A user can only read or modify their own data by default.
 
-=== Backend for Frontend (BFF)
+=== Service Routing and Orchestration
 
-Principles::
-- The frontend only consumes `webapp-backend`.
-- `users` and `gamey` are not accessible from the browser (no direct routing and no CORS exposure).
+How requests flow::
+- Nginx is the single public entry point. It routes requests by path prefix: `/users/` → users service, `/game/` → game service, `/` → SPA static files.
+- The `game` service is the only component that calls `gamey`. The browser never reaches the bot engine directly, and its port is not exposed through Nginx.
+- This keeps game logic and bot calls on the server side, preventing clients from interfering with game state.
 
-Motivation::
-- Simplifies the frontend and centralizes auth and service composition in one place.
-
-=== Development concepts
+=== Development Workflow
 
 Rules::
-- Trunk-based development with short-lived branches.
-- Changes reach trunk (master) only via Pull Request.
-- Mandatory checks before merge: at least 1 human approval + green CI.
-- Pull Requests are merged using squash merge to keep a linear history.
-- Merge without feature flags to prioritize simplicity.
+- Short-lived branches merged into master via Pull Request.
+- Each PR requires at least one human approval and a passing CI run before merging.
+- PRs are merged using squash merge to keep a linear history.
+- No feature flags — changes go straight to master once approved.
 
 === User Experience (UX)
-TBD
 
-...
+Goals::
+- Players should be able to start a game with as little friction as possible.
+- The UI must give clear feedback at every step, especially when waiting for the bot.
 
-=== Configuration and secrets
+Key principles::
+- *Guest-first access* — Players can start a game without registering. An account is only required to save match history and appear in the ranking. This lowers the barrier to try the game.
+- *Server-authoritative rendering* — The board state shown to the player always comes from the server. The UI does not maintain its own copy of the game logic; it only renders what the `game` service returns. This keeps the frontend simple and prevents the display from going out of sync.
+- *Visible bot feedback* — When the bot is computing a move (which can take up to 3 seconds on large boards), the UI shows a "thinking…" indicator. The player cannot interact with the board during this time. This avoids confusion about whether the game is frozen.
+- *Accessible components* — UI primitives are built with Radix UI, which provides keyboard navigation and screen-reader support out of the box.
+
+=== Configuration and Secrets
 
 Rules::
-- Environment-specific configuration is injected from the outside (e.g., environment variables in compose/CI).
-- Secrets (keys, tokens, passwords) are never committed to the repo and never baked into images; local dev uses a non-committed `.env`.
-- Do not log secret, mask if needed.
+- All environment-specific configuration is injected via environment variables (Docker Compose locally, GitHub Secrets in CI).
+- Sensitive values (JWT key, database password) are never committed to the repository and never baked into container images. Local development uses a gitignored `.env` file.
+- Secrets must never appear in logs.

@@ -9,19 +9,19 @@ import {
   isValidMove,
   getOppositePlayer,
 } from '../utils/gameY';
-import { getBotMove } from './BotService';
+import { getBotMove, getBotPieOpening, getBotPieDecision } from './BotService';
 import type {
   GameConfig,
   GameState,
+  PieDecision,
   Player,
   PlayerColor,
   TimerState,
   Move,
-  BoardSize,
   BotLevel,
 } from '../types/game';
 
-const USERS_SERVICE_URL = process.env.USERS_SERVICE_URL || 'http://localhost:3000';
+const USERS_PUBLIC_URL = process.env.USERS_PUBLIC_URL || 'http://localhost:3000';
 
 export class GameService {
   private gameRepo: Repository<Game>;
@@ -43,6 +43,7 @@ export class GameService {
       player1Id: userId,
       config,
       status: 'playing',
+      phase: 'playing',
       boardState: board,
       players: { player1, player2 },
       currentTurn: 'player1',
@@ -77,10 +78,7 @@ export class GameService {
     token?: string
   ): Promise<GameState> {
     const game = await this.gameRepo.findOne({ where: { id: gameId } });
-    if (!game) throw Object.assign(new Error('Game not found'), { status: 404 });
-    if (game.status !== 'playing') throw Object.assign(new Error('Game is not active'), { status: 409 });
-    if (game.currentTurn !== player) throw Object.assign(new Error('Not your turn'), { status: 409 });
-    if (!isValidMove(game.boardState, row, col)) throw Object.assign(new Error('Invalid move'), { status: 409 });
+    this.assertPlayMoveValid(game, row, col, player);
 
     const moves = await this.moveRepo.find({
       where: { game: { id: gameId } },
@@ -102,7 +100,7 @@ export class GameService {
 
     const moveObj: Move = { row, col, player, timestamp: now };
     const newBoard = applyMove(game.boardState, moveObj);
-    const boardWinner = checkWinner(newBoard, game.config.boardSize as BoardSize);
+    const boardWinner = checkWinner(newBoard, game.config.boardSize);
     const winner = boardWinner ?? timedOutWinner;
     const nextTurn = getOppositePlayer(player);
 
@@ -110,12 +108,40 @@ export class GameService {
     game.currentTurn = nextTurn;
     game.winner = winner;
     game.status = winner ? 'finished' : 'playing';
-    game.timerState = updatedTimer
-      ? { ...updatedTimer, activePlayer: winner ? null : nextTurn, lastSyncTimestamp: now }
-      : null;
-    await this.gameRepo.save(game);
+    game.timerState = this.computePostMoveTimer(updatedTimer, winner, nextTurn, now);
 
+    // Enter pie-decision phase after the first move when Pie Rule is enabled.
+    // The timer is paused (activePlayer set to null) during the decision.
     const allMoves = [...moves, moveRecord];
+    const isPieDecisionTrigger =
+      !winner &&
+      game.config.pieRule === true &&
+      allMoves.length === 1; // only one move has been played
+
+    if (isPieDecisionTrigger) {
+      game.phase = 'pie-decision';
+      if (game.timerState) {
+        game.timerState = { ...game.timerState, activePlayer: null };
+      }
+      await this.gameRepo.save(game);
+
+      // If the deciding player (P2) is a bot, resolve the pie decision
+      // automatically in the same request so the human never waits.
+      const botPlayer = this.getPveBot(game);
+      if (botPlayer?.color === nextTurn) {
+        const decision = await getBotPieDecision(
+          game.boardState,
+          game.config.boardSize,
+          nextTurn,
+          game.config.botLevel ?? 'medium',
+        );
+        return this.decidePie(gameId, decision, token);
+      }
+
+      return this.toGameState(game, allMoves);
+    }
+
+    await this.gameRepo.save(game);
 
     if (game.status === 'finished' && token) {
       await this.recordMatch(game, token).catch((e) =>
@@ -123,12 +149,9 @@ export class GameService {
       );
     }
 
-    // Bot responds in PvE
-    if (!winner && game.config.mode === 'pve') {
-      const botPlayer = game.players.player1.isBot ? game.players.player1 : game.players.player2;
-      if (botPlayer.color === nextTurn) {
-        return this.applyBotMove(game, allMoves, game.config.botLevel ?? 'medium', token);
-      }
+    const botPlayer = this.getPveBot(game);
+    if (!winner && botPlayer?.color === nextTurn) {
+      return this.applyBotMove(game, allMoves, game.config.botLevel ?? 'medium', token);
     }
 
     return this.toGameState(game, allMoves);
@@ -163,6 +186,24 @@ export class GameService {
 
   // --- Private helpers ---
 
+  private assertPlayMoveValid(game: Game | null, row: number, col: number, player: PlayerColor): asserts game is Game {
+    if (!game) throw Object.assign(new Error('Game not found'), { status: 404 });
+    if (game.status !== 'playing') throw Object.assign(new Error('Game is not active'), { status: 409 });
+    if ((game.phase ?? 'playing') === 'pie-decision') throw Object.assign(new Error('Waiting for Pie Rule decision'), { status: 409 });
+    if (game.currentTurn !== player) throw Object.assign(new Error('Not your turn'), { status: 409 });
+    if (!isValidMove(game.boardState, row, col)) throw Object.assign(new Error('Invalid move'), { status: 409 });
+  }
+
+  private computePostMoveTimer(timer: TimerState | null, winner: PlayerColor | null, nextTurn: PlayerColor, now: number): TimerState | null {
+    if (!timer) return null;
+    return { ...timer, activePlayer: winner ? null : nextTurn, lastSyncTimestamp: now };
+  }
+
+  private getPveBot(game: Game): Player | undefined {
+    if (game.config.mode !== 'pve') return undefined;
+    return game.players.player1.isBot ? game.players.player1 : game.players.player2;
+  }
+
   private async applyBotMove(
     game: Game,
     existingMoves: GameMove[],
@@ -170,12 +211,21 @@ export class GameService {
     token?: string
   ): Promise<GameState> {
     try {
-      const { row, col } = await getBotMove(
-        game.boardState,
-        game.config.boardSize as BoardSize,
-        game.currentTurn,
-        botLevel
-      );
+      const usePieOpening =
+        game.config.pieRule === true && existingMoves.length === 0;
+      const { row, col } = usePieOpening
+        ? await getBotPieOpening(
+          game.boardState,
+          game.config.boardSize,
+          game.currentTurn,
+          botLevel
+        )
+        : await getBotMove(
+          game.boardState,
+          game.config.boardSize,
+          game.currentTurn,
+          botLevel
+        );
 
       if (!isValidMove(game.boardState, row, col)) {
         console.error('Bot returned invalid move, skipping');
@@ -197,7 +247,7 @@ export class GameService {
 
       const moveObj: Move = { row, col, player: game.currentTurn, timestamp: now };
       const newBoard = applyMove(game.boardState, moveObj);
-      const boardWinner = checkWinner(newBoard, game.config.boardSize as BoardSize);
+      const boardWinner = checkWinner(newBoard, game.config.boardSize);
       const winner = boardWinner ?? timedOutWinner;
       const nextTurn = getOppositePlayer(game.currentTurn);
 
@@ -208,9 +258,25 @@ export class GameService {
       game.timerState = updatedTimer
         ? { ...updatedTimer, activePlayer: winner ? null : nextTurn, lastSyncTimestamp: now }
         : null;
-      await this.gameRepo.save(game);
 
       const allMoves = [...existingMoves, moveRecord];
+
+      // If this bot move is the very first move and pie rule is on, enter pie-decision.
+      const isPieDecisionTrigger =
+        !winner &&
+        game.config.pieRule === true &&
+        allMoves.length === 1;
+
+      if (isPieDecisionTrigger) {
+        game.phase = 'pie-decision';
+        if (game.timerState) {
+          game.timerState = { ...game.timerState, activePlayer: null };
+        }
+        await this.gameRepo.save(game);
+        return this.toGameState(game, allMoves);
+      }
+
+      await this.gameRepo.save(game);
 
       if (game.status === 'finished' && token) {
         await this.recordMatch(game, token).catch((e) =>
@@ -308,7 +374,7 @@ export class GameService {
       (game.updatedAt.getTime() - game.createdAt.getTime()) / 1000
     );
 
-    await fetch(`${USERS_SERVICE_URL}/api/stats/record`, {
+    await fetch(`${USERS_PUBLIC_URL}/api/stats/record`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -322,11 +388,60 @@ export class GameService {
     });
   }
 
+  async decidePie(gameId: string, decision: PieDecision, token?: string): Promise<GameState> {
+    const game = await this.gameRepo.findOne({ where: { id: gameId } });
+    if (!game) throw Object.assign(new Error('Game not found'), { status: 404 });
+    if ((game.phase ?? 'playing') !== 'pie-decision') {
+      throw Object.assign(new Error('Game is not in Pie Rule decision phase'), { status: 409 });
+    }
+
+    const moves = await this.moveRepo.find({
+      where: { game: { id: gameId } },
+      order: { playedAt: 'ASC' },
+    });
+
+    if (decision === 'swap') {
+      // The first stone changes colour: player1 (Blue) → player2 (Red).
+      // Player identities and colours do NOT change; only the stone ownership flips.
+      // After the swap player1 (Blue) plays next — they get to respond to losing their stone.
+      const firstMove = moves[0];
+      game.boardState = game.boardState.map(row =>
+        row.map(cell =>
+          cell.row === firstMove.rowIndex && cell.col === firstMove.colIndex
+            ? { ...cell, owner: 'player2' }
+            : cell
+        )
+      );
+      game.currentTurn = 'player1';
+    }
+    // keep: currentTurn is already 'player2' (set after the first move), nothing to change.
+
+    game.phase = 'playing';
+    // Resume timer pointing at whoever plays next.
+    if (game.timerState) {
+      game.timerState = {
+        ...game.timerState,
+        activePlayer: game.currentTurn,
+        lastSyncTimestamp: Date.now(),
+      };
+    }
+    await this.gameRepo.save(game);
+
+    // In PvE, after a swap the bot may now be the current player.
+    const botPlayer = this.getPveBot(game);
+    if (botPlayer?.color === game.currentTurn) {
+      return this.applyBotMove(game, moves, game.config.botLevel ?? 'medium', token);
+    }
+
+    return this.toGameState(game, moves);
+  }
+
   private toGameState(game: Game, moves: GameMove[]): GameState {
     return {
       id: game.id,
       config: game.config,
       status: game.status,
+      phase: game.phase ?? 'playing',
       board: game.boardState,
       players: game.players,
       currentTurn: game.currentTurn,

@@ -5,9 +5,11 @@ import { useAuth } from '@/contexts/AuthContext'
 import { gameService } from '@/services/gameyService'
 
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: vi.fn() }))
+
+const mockNavigate = vi.fn()
 vi.mock('react-router-dom', () => ({
   useParams:   () => ({ gameId: 'game-123' }),
-  useNavigate: () => vi.fn(),
+  useNavigate: () => mockNavigate,
 }))
 vi.mock('@/services/gameyService', () => ({
   gameService: {
@@ -60,6 +62,7 @@ function makeAuthMock(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mockNavigate.mockReset()
   vi.mocked(useAuth).mockReturnValue(makeAuthMock() as any)
   vi.mocked(gameService.getGameState).mockResolvedValue(mockGame as any)
   vi.mocked(gameService.getChatMessages).mockResolvedValue([])
@@ -340,5 +343,102 @@ describe('useGameYController — guest mode (effectiveToken)', () => {
     expect(gameService.surrender).toHaveBeenCalledWith(
       'game-123', 'player1', 'mock-token',
     )
+  })
+})
+
+describe('useGameYController — missing branch coverage', () => {
+  it('handleCellClick sets moveError on failure and reverts board', async () => {
+    vi.mocked(gameService.playMove).mockRejectedValue(new Error('Invalid move'))
+
+    const gameWithBoard = {
+      ...mockGame,
+      board: [[{ row: 0, col: 0, owner: null }]],
+    }
+    vi.mocked(gameService.getGameState).mockResolvedValue(gameWithBoard as any)
+
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.handleCellClick(0, 0)
+    })
+
+    expect(result.current.moveError).toBe('Invalid move')
+    // Board reverts to snapshot (owner is null again)
+    expect(result.current.game?.board[0][0].owner).toBeNull()
+  })
+
+  it('handleCellClick sets generic moveError for non-Error rejections', async () => {
+    vi.mocked(gameService.playMove).mockRejectedValue('unknown')
+
+    const gameWithBoard = {
+      ...mockGame,
+      board: [[{ row: 0, col: 0, owner: null }]],
+    }
+    vi.mocked(gameService.getGameState).mockResolvedValue(gameWithBoard as any)
+
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.handleCellClick(0, 0)
+    })
+
+    expect(result.current.moveError).toBe('Failed to play move')
+  })
+
+  it('handleSendMessage does nothing when user is null', async () => {
+    vi.mocked(useAuth).mockReturnValue(makeAuthMock({ user: null }) as any)
+
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      await result.current.handleSendMessage('hello')
+    })
+
+    expect(gameService.sendChatMessage).not.toHaveBeenCalled()
+  })
+
+  it('handlePlayAgain does nothing when game is null', async () => {
+    vi.mocked(gameService.getGameState).mockResolvedValue(null)
+
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    // game is null (error state), handlePlayAgain should early-return without navigating
+    act(() => { result.current.handlePlayAgain() })
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it('handlePlayAgain navigates to config route with game mode', async () => {
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => { result.current.handlePlayAgain() })
+
+    expect(mockNavigate).toHaveBeenCalledWith('/games/y/config/pve')
+  })
+
+  it('canPlay is true for pvp-local regardless of user id', async () => {
+    vi.mocked(gameService.getGameState).mockResolvedValue({
+      ...mockGame,
+      config: { ...mockGame.config, mode: 'pvp-local' },
+      currentTurn: 'player2',
+    } as any)
+
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.canPlay).toBe(true)
+  })
+
+  it('currentUserId is empty string when user is null', async () => {
+    vi.mocked(useAuth).mockReturnValue(makeAuthMock({ user: null }) as any)
+
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.currentUserId).toBe('')
   })
 })

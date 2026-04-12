@@ -4,6 +4,8 @@
 //! It is useful for testing and as a baseline opponent.
 
 use crate::{Coordinates, GameY, YBot};
+use crate::bot::ybot::PieChoice;
+use rand::Rng;
 use rand::prelude::IndexedRandom;
 
 /// A bot that chooses moves randomly from the available cells.
@@ -36,6 +38,14 @@ impl YBot for RandomBot {
         let cell = available_cells.choose(&mut rand::rng())?;
         let coordinates = Coordinates::from_index(*cell, board.board_size());
         Some(coordinates)
+    }
+
+    fn decide_pie(&self, _board: &GameY) -> PieChoice {
+        if rand::rng().random_bool(0.5) {
+            PieChoice::Swap
+        } else {
+            PieChoice::Keep
+        }
     }
 }
 

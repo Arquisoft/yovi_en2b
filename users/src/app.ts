@@ -19,7 +19,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-console.log(`Starting nodejs server with env: ` + process.env.NODE_ENV);
+console.log(`Starting nodejs server with env: ` + process.env.APP_ENV);
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -87,11 +87,10 @@ const startServer = async () => {
         console.log('MariaDB database connected');
 
         app.listen(PORT, () => {
-            console.log(`Server running at http://api.localhost/users`);
-            console.log(`Swagger documentation: http://api.localhost/users/api-docs`);
-            console.log(`Health check: http://api.localhost/users/health`);
-            console.log(`Prometheus metrics: http://monitoring.localhost/prometheus`);
-            console.log(`Grafana dashboard: http://monitoring.localhost/grafana`);
+            const base = process.env.PUBLIC_URL
+            console.log(`Server API at ${base}/api`);
+            console.log(`Swagger documentation: ${base}/api-docs`);
+            console.log(`Health check: ${base}/health`);
         });
     } catch (error) {
         console.error('Error starting server:', error);

@@ -1,11 +1,12 @@
 import 'reflect-metadata';
 import express from 'express';
+import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'js-yaml';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { AppDataSource } from './config/database';
 import gameRoutes from './routes/gameRoutes';
 import { jsonErrorHandler, globalErrorHandler } from './middleware/errorHandler';
@@ -15,7 +16,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-console.log(`Starting game service with env: ${process.env.NODE_ENV}`);
+console.log(`Starting game service with env: ${process.env.APP_ENV}`);
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -64,9 +65,10 @@ const startServer = async () => {
     console.log('MariaDB database connected');
 
     app.listen(PORT, () => {
-      console.log(`Game service running at http://api.localhost/game`);
-      console.log(`Swagger documentation: http://api.localhost/game/api-docs`);
-      console.log(`Health check: http://api.localhost/game/health`);
+      const base = process.env.PUBLIC_URL
+      console.log(`Game service API at ${base}/api`);
+      console.log(`Swagger documentation: ${base}/api-docs`);
+      console.log(`Health check: ${base}/health`);
     });
   } catch (error) {
     console.error('Error starting game service:', error);

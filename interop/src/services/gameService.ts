@@ -25,7 +25,7 @@ import { applyMove } from './yenService';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
-const RUST_URL = process.env.RUST_ENGINE_URL ?? 'http://localhost:4000';
+const RUST_URL = process.env.RUST_INTERNAL_URL ?? 'http://localhost:4000';
 const RUST_API_VERSION = 'v1';
 const RUST_TIMEOUT_MS = 2_000;
 
@@ -35,9 +35,8 @@ const DEFAULT_BOT_ID = 'random_bot';
 // instead of a raw bot_id.  Additional difficulty levels can be added here.
 const STRATEGY_TO_BOT: Record<string, string> = {
   EASY: 'random_bot',
-  MEDIUM: 'random_bot',
-  HARD: 'minimax_bot',
-  EXPERT: 'minimax_bot',
+  MEDIUM: 'fast_bot',
+  HARD: 'smart_bot',
 };
 
 // ── Public API ────────────────────────────────────────────────────────────────
