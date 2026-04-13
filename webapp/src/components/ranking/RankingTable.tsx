@@ -5,7 +5,7 @@ import { Trophy } from 'lucide-react'
  
 const medalColors: Record<number, string> = { 1: 'text-yellow-400', 2: 'text-gray-400', 3: 'text-amber-600' }
  
-export function RankingTable({ entries, currentUsername }: { entries: RankingEntry[]; currentUsername: string | null }) {
+export function RankingTable({ entries, currentUsername }: { readonly entries: RankingEntry[]; readonly currentUsername: string | null }) {
   const { t } = useTranslation()
  
   if (entries.length === 0) {

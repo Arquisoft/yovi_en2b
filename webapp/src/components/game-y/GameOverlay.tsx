@@ -201,6 +201,12 @@ function getModeI18nKey(mode: GameMode): string {
   if (mode === 'pvp-local') return 'overlay.modeLocal'
   return 'overlay.modeOnline'
 }
+// Fuera del componente, junto a getResultI18nKey y getModeI18nKey:
+function getTitleClassName(isVictory: boolean, hasWinner: boolean): string {
+  if (isVictory)  return 'go-title-victory'
+  if (hasWinner)  return 'go-title-defeat'
+  return 'go-title-draw'
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -229,11 +235,7 @@ export function GameOverlay({ game, currentUserId, onPlayAgain, onGoHome }: Game
     { label: t('overlay.modeStat'),  value: t(modeI18nKey) },
   ]
 
-  const titleClassName = isVictory
-  ? 'go-title-victory'
-  : game.winner
-    ? 'go-title-defeat'
-    : 'go-title-draw'
+  const titleClassName = getTitleClassName(isVictory, !!game.winner)
   return (
     <>
       <style>{`
