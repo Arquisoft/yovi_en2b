@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
  
 const PAGE_SIZE = 5
  
-export function MatchHistoryTable({ history }: { history: MatchRecord[] }) {
+export function MatchHistoryTable({ history }: Readonly<{ history: readonly MatchRecord[] }>) {
   const { t } = useTranslation()
   const [page, setPage] = useState(0)
   const totalPages = Math.ceil(history.length / PAGE_SIZE)

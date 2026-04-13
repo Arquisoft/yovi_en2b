@@ -190,6 +190,17 @@ function drawParticleShape(ctx: CanvasRenderingContext2D, p: Particle) {
     ctx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.6)
   }
 }
+function getResultI18nKey(resultLabel: string): string {
+  if (resultLabel === 'VICTORY') return 'overlay.victory'
+  if (resultLabel === 'DEFEAT')  return 'overlay.defeat'
+  return 'overlay.draw'
+}
+
+function getModeI18nKey(mode: GameMode): string {
+  if (mode === 'pve')       return 'overlay.modeVsBot'
+  if (mode === 'pvp-local') return 'overlay.modeLocal'
+  return 'overlay.modeOnline'
+}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -209,17 +220,8 @@ export function GameOverlay({ game, currentUserId, onPlayAgain, onGoHome }: Game
   const { isVictory, resultLabel, winnerName, opponentName } = resolveResult(game, currentUserId)
   const accentColor = getAccentColor(isVictory, !!game.winner)
   const isLocalGame = game.config.mode === 'pvp-local'
-
-  // Map internal result keys to translation keys
-  const resultI18nKey =
-    resultLabel === 'VICTORY' ? 'overlay.victory' :
-    resultLabel === 'DEFEAT'  ? 'overlay.defeat'  :
-    'overlay.draw'
-
-  const modeI18nKey =
-    game.config.mode === 'pve'       ? 'overlay.modeVsBot'  :
-    game.config.mode === 'pvp-local' ? 'overlay.modeLocal'  :
-    'overlay.modeOnline'
+  const resultI18nKey = getResultI18nKey(resultLabel)
+  const modeI18nKey   = getModeI18nKey(game.config.mode)
 
   const stats = [
     { label: t('overlay.movesStat'), value: game.moves.length },
@@ -227,6 +229,11 @@ export function GameOverlay({ game, currentUserId, onPlayAgain, onGoHome }: Game
     { label: t('overlay.modeStat'),  value: t(modeI18nKey) },
   ]
 
+  const titleClassName = isVictory
+  ? 'go-title-victory'
+  : game.winner
+    ? 'go-title-defeat'
+    : 'go-title-draw'
   return (
     <>
       <style>{`
@@ -279,8 +286,7 @@ export function GameOverlay({ game, currentUserId, onPlayAgain, onGoHome }: Game
 
           <div
             style={{ fontSize: 56, fontWeight: 900, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 16 }}
-            className={isVictory ? 'go-title-victory' : game.winner ? 'go-title-defeat' : 'go-title-draw'}
-          >
+            className={titleClassName}          >
             {t(resultI18nKey)}
           </div>
 

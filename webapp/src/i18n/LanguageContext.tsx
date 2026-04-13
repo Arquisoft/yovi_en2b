@@ -9,8 +9,8 @@
  * guards so every page (including the login screen) is covered.
  */
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
-import { setLocale, getLocale, SUPPORTED_LOCALES, type SupportedLocale } from './i18n'
+import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react'
+import { setLocale as setI18nLocale, getLocale, SUPPORTED_LOCALES, type SupportedLocale } from './i18n'
 
 interface LanguageContextValue {
   /** Currently active locale, e.g. "en" | "es" */
@@ -23,12 +23,12 @@ interface LanguageContextValue {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null)
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<SupportedLocale>(getLocale)
+export function LanguageProvider({ children }: Readonly<{ children: ReactNode }>) {
+  const [locale, setLocale] = useState<SupportedLocale>(getLocale)
 
   const setLanguage = useCallback((next: SupportedLocale) => {
-    setLocale(next)
-    setLocaleState(next)
+    setI18nLocale(next)
+    setLocale(next)       
   }, [])
 
   const toggleLanguage = useCallback(() => {
@@ -37,8 +37,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLanguage(SUPPORTED_LOCALES[nextIndex])
   }, [locale, setLanguage])
 
+const value = useMemo(
+    () => ({ locale, toggleLanguage, setLanguage }),
+    [locale, toggleLanguage, setLanguage],
+  )
+
   return (
-    <LanguageContext.Provider value={{ locale, toggleLanguage, setLanguage }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   )

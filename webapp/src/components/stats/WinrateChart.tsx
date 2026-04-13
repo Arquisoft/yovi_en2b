@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { WinrateStat } from '@/types'
  
-export function WinrateChart({ data, title }: { data: WinrateStat; title: string }) {
+export function WinrateChart({ data, title }: Readonly<{ data: WinrateStat; title: string }>) {
   const { t } = useTranslation()
   const total = data.wins + data.losses
  
