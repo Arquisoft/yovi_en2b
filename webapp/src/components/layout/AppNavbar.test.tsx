@@ -4,9 +4,11 @@ import { MemoryRouter } from 'react-router-dom'
 import { AppNavbar } from './AppNavbar'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: vi.fn() }))
 vi.mock('@/contexts/ThemeContext', () => ({ useTheme: vi.fn() }))
+vi.mock('@/i18n/LanguageContext', () => ({ useLanguage: vi.fn() }))
 
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -38,6 +40,11 @@ function renderNavbar(
     setTheme: vi.fn(),
     ...themeOverrides,
   } as any)
+  vi.mocked(useLanguage).mockReturnValue({
+     locale: 'en',
+     toggleLanguage: vi.fn(),
+     setLanguage: vi.fn(),
+   } as any)
   return render(
     <MemoryRouter>
       <AppNavbar />
@@ -55,6 +62,19 @@ describe('AppNavbar — branding', () => {
     expect(screen.getByText('YOVI')).toBeDefined()
   })
 })
+
+describe('AppNavbar — language toggle button', () => {
+  it('renders the language toggle button', () => {
+    renderNavbar()
+    expect(screen.getByLabelText('Switch language')).toBeDefined()
+  })
+ 
+  it('language button is always visible (not gated behind user auth)', () => {
+    renderNavbar({ user: null })
+    expect(screen.getByLabelText('Switch language')).toBeDefined()
+  })
+})
+
 
 describe('AppNavbar — user section', () => {
   it('shows username when a user is logged in', () => {
@@ -136,5 +156,55 @@ describe('AppNavbar — logout flow', () => {
     fireEvent.click(screen.getByLabelText('Logout'))
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(logout).not.toHaveBeenCalled()
+  })
+})
+
+describe('AppNavbar — i18n string rendering', () => {
+  it('renders the brand name from t("app.name")', () => {
+    renderNavbar()
+    expect(screen.getByText('YOVI')).toBeDefined()
+  })
+ 
+  it('theme toggle button uses t("nav.toggleTheme") as aria-label', () => {
+    renderNavbar()
+    expect(screen.getByLabelText('Toggle theme')).toBeDefined()
+  })
+ 
+  it('statistics button uses t("nav.statistics") as aria-label', () => {
+    renderNavbar()
+    expect(screen.getByLabelText('Statistics')).toBeDefined()
+  })
+ 
+  it('ranking button uses t("nav.ranking") as aria-label', () => {
+    renderNavbar()
+    expect(screen.getByLabelText('Ranking')).toBeDefined()
+  })
+ 
+  it('logout button uses t("nav.logout") as aria-label', () => {
+    renderNavbar()
+    expect(screen.getByLabelText('Logout')).toBeDefined()
+  })
+ 
+  it('shows t("nav.guestBadge") for guest users', () => {
+    renderNavbar({ isGuest: true })
+    expect(screen.getByText('Guest')).toBeDefined()
+  })
+ 
+  it('logout dialog uses t("nav.signOutConfirmDescription")', () => {
+    renderNavbar()
+    fireEvent.click(screen.getByLabelText('Logout'))
+    expect(screen.getByText('Are you sure you want to sign out of your account?')).toBeDefined()
+  })
+ 
+  it('logout dialog cancel button uses t("common.cancel")', () => {
+    renderNavbar()
+    fireEvent.click(screen.getByLabelText('Logout'))
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined()
+  })
+ 
+  it('logout dialog confirm button uses t("nav.signOut")', () => {
+    renderNavbar()
+    fireEvent.click(screen.getByLabelText('Logout'))
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeDefined()
   })
 })

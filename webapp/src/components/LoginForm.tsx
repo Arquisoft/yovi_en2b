@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
@@ -15,6 +16,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSubmit, onGuestLogin, isLoading, error }: LoginFormProps) {
+  const { t } = useTranslation()  
   const [email, setEmail]               = useState('')
   const [password, setPassword]         = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -25,9 +27,9 @@ export function LoginForm({ onSubmit, onGuestLogin, isLoading, error }: LoginFor
 
   const validate = (): boolean => {
     const errors: { email?: string; password?: string } = {}
-    if (!email)                    errors.email    = 'Email is required'
-    else if (!isValidEmail(email)) errors.email    = 'Invalid email format'
-    if (!password)                 errors.password = 'Password is required'
+    if (!email)                    errors.email    = t('auth.emailRequired')
+    else if (!isValidEmail(email)) errors.email    = t('auth.emailInvalid')
+    if (!password)                 errors.password = t('auth.passwordRequired')
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -45,8 +47,8 @@ export function LoginForm({ onSubmit, onGuestLogin, isLoading, error }: LoginFor
           <div className="flex justify-center mb-4">
             <Hexagon className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Welcome to YOVI</CardTitle>
-          <CardDescription>Sign in to your account to continue</CardDescription>
+          <CardTitle className="text-2xl">{t('auth.welcomeTitle')}</CardTitle>
+          <CardDescription>{t('auth.welcomeSubtitle')}</CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
@@ -59,11 +61,11 @@ export function LoginForm({ onSubmit, onGuestLogin, isLoading, error }: LoginFor
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" error={!!validationErrors.email}>Email</Label>
+              <Label htmlFor="email" error={!!validationErrors.email}>{t('auth.email')}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t('auth.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 error={!!validationErrors.email}
@@ -76,12 +78,12 @@ export function LoginForm({ onSubmit, onGuestLogin, isLoading, error }: LoginFor
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" error={!!validationErrors.password}>Password</Label>
+              <Label htmlFor="password" error={!!validationErrors.password}>{t('auth.password')}</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
+                  placeholder={t('auth.passwordPlaceholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   error={!!validationErrors.password}
@@ -93,7 +95,7 @@ export function LoginForm({ onSubmit, onGuestLogin, isLoading, error }: LoginFor
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -106,7 +108,7 @@ export function LoginForm({ onSubmit, onGuestLogin, isLoading, error }: LoginFor
 
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" isLoading={isLoading}>
-              Sign In
+              {t('auth.signIn')}
             </Button>
 
             <div className="relative w-full">
@@ -114,7 +116,7 @@ export function LoginForm({ onSubmit, onGuestLogin, isLoading, error }: LoginFor
                 <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">or</span>
+                <span className="bg-card px-2 text-muted-foreground">{t('common.or')}</span>
               </div>
             </div>
 
@@ -125,13 +127,13 @@ export function LoginForm({ onSubmit, onGuestLogin, isLoading, error }: LoginFor
               onClick={onGuestLogin}
               disabled={isLoading}
             >
-              Play as Guest
+              {t('auth.playAsGuest')}
             </Button>
 
             <p className="text-sm text-center text-muted-foreground">
-              {"Don't have an account? "}
+              {t('auth.noAccount')}{' '}
               <Link to="/register" className="text-primary hover:underline">
-                Create one
+                {t('auth.createOne')}
               </Link>
             </p>
           </CardFooter>

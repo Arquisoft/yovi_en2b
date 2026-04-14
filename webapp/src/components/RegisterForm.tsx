@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
@@ -15,6 +16,7 @@ interface RegisterFormProps {
 }
 
 export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFormProps) {
+  const { t } = useTranslation()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,37 +32,35 @@ export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFo
 
   const validate = (): boolean => {
     const errors: typeof validationErrors = {}
-    
+
     if (!username) {
-      errors.username = 'Username is required'
+      errors.username = t('auth.usernameRequired')
     } else if (username.length < 3) {
-      errors.username = 'Username must be at least 3 characters'
+      errors.username = t('auth.usernameMinLength')
     }
-    
+
     if (!email) {
-      errors.email = 'Email is required'
+      errors.email = t('auth.emailRequired')
     } else if (!isValidEmail(email)) {
-      errors.email = 'Invalid email format'
+      errors.email = t('auth.emailInvalid')
     }
-    
+
     const passwordValidation = validatePassword(password)
     if (!passwordValidation.valid) {
-      errors.password = passwordValidation.message
+      errors.password = t('auth.passwordMinLength')
     }
-    
+
     if (password !== passwordConfirm) {
-      errors.passwordConfirm = 'Passwords do not match'
+      errors.passwordConfirm = t('auth.passwordsDoNotMatch')
     }
-    
+
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     if (!validate()) return
-    
     await onSubmit(username, email, password, passwordConfirm)
   }
 
@@ -72,14 +72,12 @@ export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFo
             <div className="flex justify-center mb-4">
               <CheckCircle className="h-12 w-12 text-green-500" />
             </div>
-            <CardTitle className="text-2xl">Account Created!</CardTitle>
-            <CardDescription>
-              Your account has been created successfully. You can now start playing.
-            </CardDescription>
+            <CardTitle className="text-2xl">{t('auth.accountCreatedTitle')}</CardTitle>
+            <CardDescription>{t('auth.accountCreatedDescription')}</CardDescription>
           </CardHeader>
           <CardFooter>
             <Link to="/games" className="w-full">
-              <Button className="w-full">Start Playing</Button>
+              <Button className="w-full">{t('auth.startPlaying')}</Button>
             </Link>
           </CardFooter>
         </Card>
@@ -94,10 +92,10 @@ export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFo
           <div className="flex justify-center mb-4">
             <Hexagon className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>Join YOVI and start playing strategic games</CardDescription>
+          <CardTitle className="text-2xl">{t('auth.createAccountTitle')}</CardTitle>
+          <CardDescription>{t('auth.createAccountSubtitle')}</CardDescription>
         </CardHeader>
-        
+
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
@@ -106,15 +104,15 @@ export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFo
                 <span>{error}</span>
               </div>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="username" error={!!validationErrors.username}>
-                Username
+                {t('auth.username')}
               </Label>
               <Input
                 id="username"
                 type="text"
-                placeholder="Choose a username"
+                placeholder={t('auth.usernamePlaceholder')}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 error={!!validationErrors.username}
@@ -125,15 +123,15 @@ export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFo
                 <p className="text-sm text-destructive">{validationErrors.username}</p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="email" error={!!validationErrors.email}>
-                Email
+                {t('auth.email')}
               </Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t('auth.emailPlaceholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 error={!!validationErrors.email}
@@ -144,16 +142,16 @@ export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFo
                 <p className="text-sm text-destructive">{validationErrors.email}</p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password" error={!!validationErrors.password}>
-                Password
+                {t('auth.password')}
               </Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Create a password"
+                  placeholder={t('auth.passwordPlaceholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   error={!!validationErrors.password}
@@ -165,29 +163,25 @@ export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFo
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {validationErrors.password && (
                 <p className="text-sm text-destructive">{validationErrors.password}</p>
               )}
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="passwordConfirm" error={!!validationErrors.passwordConfirm}>
-                Confirm Password
+                {t('auth.confirmPassword')}
               </Label>
               <div className="relative">
                 <Input
                   id="passwordConfirm"
                   type={showPasswordConfirm ? 'text' : 'password'}
-                  placeholder="Confirm your password"
+                  placeholder={t('auth.confirmPasswordPlaceholder')}
                   value={passwordConfirm}
                   onChange={(e) => setPasswordConfirm(e.target.value)}
                   error={!!validationErrors.passwordConfirm}
@@ -199,13 +193,9 @@ export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFo
                   type="button"
                   onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showPasswordConfirm ? 'Hide password' : 'Show password'}
+                  aria-label={showPasswordConfirm ? t('auth.hidePassword') : t('auth.showPassword')}
                 >
-                  {showPasswordConfirm ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPasswordConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {validationErrors.passwordConfirm && (
@@ -213,15 +203,15 @@ export function RegisterForm({ onSubmit, isLoading, error, success }: RegisterFo
               )}
             </div>
           </CardContent>
-          
+
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" isLoading={isLoading}>
-              Create Account
+              {t('auth.createAccount')}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
-              Already have an account?{' '}
+              {t('auth.alreadyHaveAccount')}{' '}
               <Link to="/login" className="text-primary hover:underline">
-                Sign in
+                {t('auth.signInLink')}
               </Link>
             </p>
           </CardFooter>

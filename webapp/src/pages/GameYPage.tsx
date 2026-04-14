@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useGameYController } from '@/controllers/useGameYController'
 import { GameYBoard } from '@/components/game-y/GameYBoard'
 import { GameSidebar } from '@/components/game-y/GameSidebar'
@@ -9,6 +10,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 export function GameYPage() {
+  const { t } = useTranslation()
   const {
     game, liveTimer, chatMessages, isLoading, error, moveError, lastMove,
     isBotThinking, isPieDecisionPending, isBotDecidingPie, isPieDecisionLoading, isSwapAnimating,
@@ -61,7 +63,7 @@ export function GameYPage() {
       <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted-foreground">Loading game...</p>
+          <p className="text-muted-foreground">{t('game.loadingGame')}</p>
         </div>
       </div>
     )
@@ -71,7 +73,7 @@ export function GameYPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-4">
         <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-        <p className="text-lg text-destructive">{error || 'Game not found'}</p>
+        <p className="text-lg text-destructive">{error || t('game.gameNotFound')}</p>
       </div>
     )
   }
@@ -198,7 +200,7 @@ export function GameYPage() {
             bg-card border border-border rounded-l-md
             text-muted-foreground hover:text-foreground hover:bg-muted
             transition-colors"
-          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          aria-label={sidebarOpen ? t('game.collapseSidebar') : t('game.expandSidebar')}
         >
           {sidebarOpen ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
         </button>
