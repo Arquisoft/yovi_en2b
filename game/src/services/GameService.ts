@@ -23,6 +23,16 @@ import type {
 
 const USERS_PUBLIC_URL = process.env.USERS_PUBLIC_URL || 'http://localhost:3000';
 
+/**
+ * Maps the internal game config to a ranking mode string.
+ * Only pve games with a known botLevel are ranked.
+ */
+function toRankingMode(config: GameConfig): string {
+  if (config.mode !== 'pve') return 'pvp-local';
+  const level = config.botLevel ?? 'medium';
+  return `pve-${level}`; // 'pve-easy' | 'pve-medium' | 'pve-hard'
+}
+
 export class GameService {
   private gameRepo: Repository<Game>;
   private moveRepo: Repository<GameMove>;
@@ -111,12 +121,11 @@ export class GameService {
     game.timerState = this.computePostMoveTimer(updatedTimer, winner, nextTurn, now);
 
     // Enter pie-decision phase after the first move when Pie Rule is enabled.
-    // The timer is paused (activePlayer set to null) during the decision.
     const allMoves = [...moves, moveRecord];
     const isPieDecisionTrigger =
       !winner &&
       game.config.pieRule === true &&
-      allMoves.length === 1; // only one move has been played
+      allMoves.length === 1;
 
     if (isPieDecisionTrigger) {
       game.phase = 'pie-decision';
@@ -125,8 +134,6 @@ export class GameService {
       }
       await this.gameRepo.save(game);
 
-      // If the deciding player (P2) is a bot, resolve the pie decision
-      // automatically in the same request so the human never waits.
       const botPlayer = this.getPveBot(game);
       if (botPlayer?.color === nextTurn) {
         const decision = await getBotPieDecision(
@@ -261,7 +268,6 @@ export class GameService {
 
       const allMoves = [...existingMoves, moveRecord];
 
-      // If this bot move is the very first move and pie rule is on, enter pie-decision.
       const isPieDecisionTrigger =
         !winner &&
         game.config.pieRule === true &&
@@ -374,6 +380,9 @@ export class GameService {
       (game.updatedAt.getTime() - game.createdAt.getTime()) / 1000
     );
 
+    // Derive ranking mode from game config so the leaderboard can filter by it
+    const gameMode = toRankingMode(game.config);
+
     await fetch(`${USERS_PUBLIC_URL}/api/stats/record`, {
       method: 'POST',
       headers: {
@@ -384,6 +393,7 @@ export class GameService {
         opponentName: opponentPlayer.name,
         result,
         durationSeconds,
+        gameMode,
       }),
     });
   }
@@ -401,9 +411,6 @@ export class GameService {
     });
 
     if (decision === 'swap') {
-      // The first stone changes colour: player1 (Blue) → player2 (Red).
-      // Player identities and colours do NOT change; only the stone ownership flips.
-      // After the swap player1 (Blue) plays next — they get to respond to losing their stone.
       const firstMove = moves[0];
       game.boardState = game.boardState.map(row =>
         row.map(cell =>
@@ -414,10 +421,8 @@ export class GameService {
       );
       game.currentTurn = 'player1';
     }
-    // keep: currentTurn is already 'player2' (set after the first move), nothing to change.
 
     game.phase = 'playing';
-    // Resume timer pointing at whoever plays next.
     if (game.timerState) {
       game.timerState = {
         ...game.timerState,
@@ -427,7 +432,6 @@ export class GameService {
     }
     await this.gameRepo.save(game);
 
-    // In PvE, after a swap the bot may now be the current player.
     const botPlayer = this.getPveBot(game);
     if (botPlayer?.color === game.currentTurn) {
       return this.applyBotMove(game, moves, game.config.botLevel ?? 'medium', token);

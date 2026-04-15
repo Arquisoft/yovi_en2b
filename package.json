@@ -6,6 +6,8 @@
     "axios": "^1.13.6",
     "express": "^5.2.1",
     "i18next": "^26.0.4",
-    "react-i18next": "^17.0.2"
+    "react-i18next": "^17.0.2",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.28"
   }
 }

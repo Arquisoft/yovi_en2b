@@ -23,6 +23,9 @@ export class MatchRecord {
   @Column({ type: 'int', unsigned: true })
   durationSeconds!: number;
 
+  @Column({ type: 'varchar', length: 20, default: 'pve-medium' })
+  gameMode!: string;
+
   @CreateDateColumn({ name: 'played_at' })
   playedAt!: Date;
 }

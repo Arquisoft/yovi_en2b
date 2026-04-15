@@ -1,5 +1,5 @@
 // users/src/services/StatsService.ts
-import { MatchRecord, StatsData } from '../types/stats';
+import { StatsData } from '../types/stats';
 import { AppDataSource } from '../config/database';
 import { MatchRecord as MatchRecordEntity } from '../entities/MatchRecord';
 
@@ -15,7 +15,6 @@ export class StatsService {
       where: { userId },
       order: { playedAt: 'DESC' },
     });
-
   }
 
   /**
@@ -23,15 +22,14 @@ export class StatsService {
    */
   static async getWinrate(userId: number): Promise<StatsData> {
 
-    const toWinrate = async (qb: any) => { //esta funcion acepta un "query builder" como parametro
+    const toWinrate = async (qb: any) => {
       const rows = await qb.getRawMany();
-      const wins = Number(rows.find((r: any) => r.result === 'win')?.count ?? 0); //Aqui separo victorias de derrotas
+      const wins = Number(rows.find((r: any) => r.result === 'win')?.count ?? 0);
       const losses = Number(rows.find((r: any) => r.result === 'loss')?.count ?? 0);
-
       return { wins, losses, total: wins + losses };
     };
 
-    const base = () => //query base
+    const base = () =>
       repo()
         .createQueryBuilder('m')
         .select('m.result', 'result')
@@ -39,7 +37,7 @@ export class StatsService {
         .where('m.user_id = :userId', { userId })
         .groupBy('m.result');
 
-    const recentSubquery = repo() //query recientes
+    const recentSubquery = repo()
       .createQueryBuilder('m')
       .select('m.result', 'result')
       .addSelect('COUNT(*)', 'count')
@@ -63,12 +61,19 @@ export class StatsService {
   }
 
   static async saveMatchRecord(data: {
-  userId: number;
-  opponentName: string;
-  result: 'win' | 'loss';
-  durationSeconds: number;
-}) {
-  const record = repo().create(data);
-  return repo().save(record);
-}
+    userId: number;
+    opponentName: string;
+    result: 'win' | 'loss';
+    durationSeconds: number;
+    gameMode?: string;
+  }) {
+    const record = repo().create({
+      userId: data.userId,
+      opponentName: data.opponentName,
+      result: data.result,
+      durationSeconds: data.durationSeconds,
+      gameMode: data.gameMode ?? 'pve-medium',
+    });
+    return repo().save(record);
+  }
 }

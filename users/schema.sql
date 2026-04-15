@@ -19,7 +19,11 @@ CREATE TABLE IF NOT EXISTS match_records (
   opponent_name VARCHAR(50) NOT NULL,
   result ENUM('win', 'loss') NOT NULL,
   duration_seconds INT UNSIGNED NOT NULL,
+  game_mode VARCHAR(20) NOT NULL DEFAULT 'pve-medium',
   played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Migration: add game_mode to existing tables
+-- ALTER TABLE match_records ADD COLUMN IF NOT EXISTS game_mode VARCHAR(20) NOT NULL DEFAULT 'pve-medium';

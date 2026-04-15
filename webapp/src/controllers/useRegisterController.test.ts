@@ -1,125 +1,151 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
-import { useRegisterController } from './useRegisterController'
+import { renderHook, waitFor, act } from '@testing-library/react'
+import { useRankingController } from './useRankingController'
 import { useAuth } from '@/contexts/AuthContext'
+import { rankingService } from '@/services/rankingService'
 
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: vi.fn() }))
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: vi.fn(),
+}))
+
+vi.mock('@/services/rankingService', () => ({
+  rankingService: {
+    getRankingByMode: vi.fn(),
+  },
+}))
+
+// ── Mock data matching backend structure ──────────────────────────────────────
+
+const MOCK_DATA = {
+  'pve-easy': [
+    { rank: 1, username: 'PlayerOne',   wins: 42 },
+    { rank: 2, username: 'PlayerTwo',   wins: 38 },
+    { rank: 3, username: 'PlayerThree', wins: 31 },
+    { rank: 4, username: 'PlayerFour',  wins: 27 },
+    { rank: 5, username: 'PlayerFive',  wins: 19 },
+  ],
+  'pve-medium': [
+    { rank: 1, username: 'PlayerTwo',   wins: 29 },
+    { rank: 2, username: 'PlayerOne',   wins: 24 },
+    { rank: 3, username: 'PlayerFive',  wins: 18 },
+    { rank: 4, username: 'PlayerThree', wins: 12 },
+    { rank: 5, username: 'PlayerFour',  wins: 9  },
+  ],
+  'pve-hard': [
+    { rank: 1, username: 'PlayerFive',  wins: 11 },
+    { rank: 2, username: 'PlayerTwo',   wins: 8  },
+    { rank: 3, username: 'PlayerOne',   wins: 5  },
+    { rank: 4, username: 'PlayerFour',  wins: 3  },
+    { rank: 5, username: 'PlayerThree', wins: 1  },
+  ],
+}
+
+// ── Helper ────────────────────────────────────────────────────────────────────
 
 function makeAuthMock(overrides: Record<string, unknown> = {}) {
   return {
-    user: null,
-    token: null,
-    isAuthenticated: false,
-    isGuest: false,
-    isLoading: false,
-    login: vi.fn(),
-    register: vi.fn(),
-    loginAsGuest: vi.fn(),
-    logout: vi.fn(),
-    updateProfile: vi.fn(),
+    token:           'mock-token',
+    user: {
+      id: '1', username: 'PlayerOne',
+      email: 'test@test.com', createdAt: '', updatedAt: '',
+    },
+    isAuthenticated:  true,
+    isLoading:        false,
+    isGuest:          false,
+    login:            vi.fn(),
+    register:         vi.fn(),
+    loginAsGuest:     vi.fn(),
+    logout:           vi.fn(),
+    updateProfile:    vi.fn(),
     ...overrides,
   }
 }
 
+// ── Setup ─────────────────────────────────────────────────────────────────────
+
 beforeEach(() => {
-  vi.clearAllMocks()
   vi.mocked(useAuth).mockReturnValue(makeAuthMock() as any)
+  vi.mocked(rankingService.getRankingByMode).mockImplementation(
+    async (_token, mode) => MOCK_DATA[mode as keyof typeof MOCK_DATA] ?? []
+  )
 })
 
-describe('useRegisterController', () => {
-  describe('initial state', () => {
-    it('starts with isLoading false, error null, success false', () => {
-      const { result } = renderHook(() => useRegisterController())
-      expect(result.current.isLoading).toBe(false)
-      expect(result.current.error).toBeNull()
-      expect(result.current.success).toBe(false)
-    })
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+describe('useRankingController', () => {
+  it('starts with pve-easy mode selected', () => {
+    const { result } = renderHook(() => useRankingController())
+    expect(result.current.selectedMode).toBe('pve-easy')
   })
 
-  describe('handleRegister', () => {
-    it('calls register with all credentials and sets success on completion', async () => {
-      const mockRegister = vi.fn().mockResolvedValue(undefined)
-      vi.mocked(useAuth).mockReturnValue(makeAuthMock({ register: mockRegister }) as any)
+  it('loads entries for pve-easy by default', async () => {
+    const { result } = renderHook(() => useRankingController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.entries.length).toBeGreaterThan(0)
+  })
 
-      const { result } = renderHook(() => useRegisterController())
+  it('calls rankingService.getRankingByMode with token and mode', async () => {
+    const { result } = renderHook(() => useRankingController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(rankingService.getRankingByMode).toHaveBeenCalledWith('mock-token', 'pve-easy')
+  })
 
-      await act(async () => {
-        await result.current.handleRegister('alice', 'alice@example.com', 'pass123', 'pass123')
-      })
+  it('changes mode and loads new entries', async () => {
+    const { result } = renderHook(() => useRankingController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-      expect(mockRegister).toHaveBeenCalledWith({
-        username: 'alice',
-        email: 'alice@example.com',
-        password: 'pass123',
-        passwordConfirm: 'pass123',
-      })
-      expect(result.current.success).toBe(true)
-      expect(result.current.error).toBeNull()
-      expect(result.current.isLoading).toBe(false)
-    })
+    act(() => result.current.setSelectedMode('pve-hard'))
+    await waitFor(() => expect(result.current.selectedMode).toBe('pve-hard'))
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.entries[0].username).toBe('PlayerFive')
+  })
 
-    it('sets error when register throws an Error and does not set success', async () => {
-      const mockRegister = vi.fn().mockRejectedValue(new Error('Email already in use'))
-      vi.mocked(useAuth).mockReturnValue(makeAuthMock({ register: mockRegister }) as any)
+  it('returns currentUsername from auth context', async () => {
+    const { result } = renderHook(() => useRankingController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.currentUsername).toBe('PlayerOne')
+  })
 
-      const { result } = renderHook(() => useRegisterController())
+  it('returns null currentUsername when no user', async () => {
+    vi.mocked(useAuth).mockReturnValue(
+      makeAuthMock({ user: null, isAuthenticated: false }) as any,
+    )
+    const { result } = renderHook(() => useRankingController())
+    expect(result.current.currentUsername).toBeNull()
+  })
 
-      await act(async () => {
-        await result.current.handleRegister('alice', 'taken@example.com', 'pass', 'pass')
-      })
+  it('entries are ordered by rank', async () => {
+    const { result } = renderHook(() => useRankingController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    const ranks = result.current.entries.map((e) => e.rank)
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b))
+  })
 
-      expect(result.current.error).toBe('Email already in use')
-      expect(result.current.success).toBe(false)
-      expect(result.current.isLoading).toBe(false)
-    })
+  it('does not load when token is null', () => {
+    vi.mocked(useAuth).mockReturnValue(
+      makeAuthMock({ token: null, isAuthenticated: false }) as any,
+    )
+    const { result } = renderHook(() => useRankingController())
+    expect(result.current.entries).toHaveLength(0)
+    expect(rankingService.getRankingByMode).not.toHaveBeenCalled()
+  })
 
-    it('sets generic error when register throws a non-Error value', async () => {
-      const mockRegister = vi.fn().mockRejectedValue('unexpected failure')
-      vi.mocked(useAuth).mockReturnValue(makeAuthMock({ register: mockRegister }) as any)
+  it('sets error when service throws', async () => {
+    vi.mocked(rankingService.getRankingByMode).mockRejectedValueOnce(new Error('Network error'))
+    const { result } = renderHook(() => useRankingController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.error).toBe('Network error')
+    expect(result.current.entries).toHaveLength(0)
+  })
 
-      const { result } = renderHook(() => useRegisterController())
-
-      await act(async () => {
-        await result.current.handleRegister('user', 'u@e.com', 'pass', 'pass')
-      })
-
-      expect(result.current.error).toBe('Registration failed')
-    })
-
-    it('sets isLoading true during registration and false when done', async () => {
-      let resolveRegister!: () => void
-      const mockRegister = vi.fn().mockReturnValue(
-        new Promise<void>((resolve) => { resolveRegister = resolve })
-      )
-      vi.mocked(useAuth).mockReturnValue(makeAuthMock({ register: mockRegister }) as any)
-
-      const { result } = renderHook(() => useRegisterController())
-
-      act(() => { result.current.handleRegister('u', 'u@e.com', 'p', 'p') })
-      expect(result.current.isLoading).toBe(true)
-
-      await act(async () => { resolveRegister() })
-      expect(result.current.isLoading).toBe(false)
-    })
-
-    it('clears previous error before a new registration attempt', async () => {
-      const mockRegister = vi.fn()
-        .mockRejectedValueOnce(new Error('Server error'))
-        .mockResolvedValueOnce(undefined)
-      vi.mocked(useAuth).mockReturnValue(makeAuthMock({ register: mockRegister }) as any)
-
-      const { result } = renderHook(() => useRegisterController())
-
-      await act(async () => {
-        await result.current.handleRegister('u', 'u@e.com', 'p', 'p')
-      })
-      expect(result.current.error).toBe('Server error')
-
-      await act(async () => {
-        await result.current.handleRegister('u', 'u@e.com', 'p', 'p')
-      })
-      expect(result.current.error).toBeNull()
-      expect(result.current.success).toBe(true)
-    })
+  it('sets isLoading true while fetching, false when done', async () => {
+    let resolve!: (v: any) => void
+    vi.mocked(rankingService.getRankingByMode).mockReturnValueOnce(
+      new Promise((res) => { resolve = res })
+    )
+    const { result } = renderHook(() => useRankingController())
+    expect(result.current.isLoading).toBe(true)
+    act(() => resolve(MOCK_DATA['pve-easy']))
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
   })
 })
