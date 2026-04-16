@@ -63,7 +63,7 @@ describe('MatchHistoryTable — basic rendering', () => {
   it('renders win and loss badges', () => {
     render(<MatchHistoryTable history={mockHistory} />)
     expect(screen.getAllByText('Win').length).toBeGreaterThan(0)
-    expect(screen.getByText('Loss')).toBeDefined()
+    expect(screen.getAllByText('Loss').length).toBeGreaterThan(0)
   })
 
   it('renders duration in MM:SS format', () => {
@@ -135,7 +135,8 @@ describe('MatchHistoryTable — sortable columns', () => {
   it('clicking duration sort orders by duration ascending', () => {
     render(<MatchHistoryTable history={mockHistory} />)
     const durationBtn = screen.getByRole('button', { name: /sort by duration/i })
-    fireEvent.click(durationBtn)
+    fireEvent.click(durationBtn) // desc: longest first (Bot easy 200s)
+    fireEvent.click(durationBtn) // asc: shortest first (PlayerTwo 87s)
     const rows = screen.getAllByRole('row')
     // Shortest: PlayerTwo 87s → first
     expect(rows[1].textContent).toContain('PlayerTwo')
@@ -144,6 +145,7 @@ describe('MatchHistoryTable — sortable columns', () => {
   it('clicking result sort orders alphabetically', () => {
     render(<MatchHistoryTable history={mockHistory} />)
     const resultBtn = screen.getByRole('button', { name: /sort by result/i })
+    fireEvent.click(resultBtn) // desc: win before loss
     fireEvent.click(resultBtn) // asc: loss before win
     const rows = screen.getAllByRole('row')
     expect(rows[1].textContent).toContain('Loss')
@@ -152,7 +154,8 @@ describe('MatchHistoryTable — sortable columns', () => {
   it('clicking opponent sort orders alphabetically', () => {
     render(<MatchHistoryTable history={mockHistory} />)
     const opponentBtn = screen.getByRole('button', { name: /sort by opponent/i })
-    fireEvent.click(opponentBtn)
+    fireEvent.click(opponentBtn) // desc: PlayerTwo first
+    fireEvent.click(opponentBtn) // asc: Bot (easy) first
     const rows = screen.getAllByRole('row')
     // "Bot (easy)" < "Bot (medium)" < "PlayerTwo"
     expect(rows[1].textContent).toContain('Bot (easy)')
@@ -187,7 +190,10 @@ describe('MatchHistoryTable — filter bar', () => {
     const rows = screen.getAllByRole('row')
     // 2 wins + header = 3 rows
     expect(rows.length).toBe(3)
-    const cells = screen.getAllByText('Win')
+    const tbody = document.querySelector('tbody')!
+    const cells = Array.from(tbody.querySelectorAll('span')).filter(
+      (el) => el.textContent === 'Win',
+    )
     expect(cells.length).toBe(2)
   })
 
@@ -308,7 +314,7 @@ describe('MatchHistoryTable — pagination', () => {
     expect(screen.getByText('2 / 3')).toBeDefined()
     // Apply win filter → page resets
     fireEvent.click(screen.getByRole('button', { name: /^win$/i }))
-    expect(screen.getByText('1 / ')).toBeDefined()
+    expect(screen.getByText('1 / 2')).toBeDefined()
   })
 
   it('resets to page 1 when sort changes', () => {

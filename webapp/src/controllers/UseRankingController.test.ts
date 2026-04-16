@@ -56,6 +56,7 @@ function makeAuthMock(overrides: Record<string, unknown> = {}) {
 // ── Setup ─────────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
+  vi.clearAllMocks()
   vi.mocked(useAuth).mockReturnValue(makeAuthMock() as any)
   vi.mocked(rankingService.getRankingByMode).mockResolvedValue(mockEntriesEasy)
 })
