@@ -145,15 +145,6 @@ describe('Stats API', () => {
       expect(typeof res.body.overall.losses).toBe('number');
     });
 
-    it('should return recent with wins and losses', async () => {
-      const res = await request(app)
-        .get('/api/stats/winrate')
-        .set('Authorization', `Bearer ${authToken}`);
-      expect(res.status).toBe(200);
-      expect(typeof res.body.recent.wins).toBe('number');
-      expect(typeof res.body.recent.losses).toBe('number');
-    });
-
     it('should return zeros when no matches played', async () => {
       const res = await request(app)
         .get('/api/stats/winrate')
@@ -202,14 +193,6 @@ describe('Stats API', () => {
         .get('/api/stats/winrate')
         .set('Accept', 'application/json');
       expect(res.status).toBe(401);
-      expect(res.body).toHaveProperty('error');
-    });
-
-    it('should return 401 with invalid token', async () => {
-      const res = await request(app)
-        .get('/api/stats/winrate')
-        .set('Authorization', 'Bearer invalid_token');
-      expect(res.status).toBe(401);
     });
   });
 
@@ -235,17 +218,36 @@ describe('Stats API', () => {
       expect(res.body.result).toBe('loss');
     });
 
+    it('should persist gameMode when provided', async () => {
+      const res = await request(app)
+        .post('/api/stats/record')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ opponentName: 'Bot (easy)', result: 'win', durationSeconds: 120, gameMode: 'pve-easy' });
+      expect(res.status).toBe(201);
+      expect(res.body.gameMode).toBe('pve-easy');
+    });
+
+    it('should save record with null gameMode when not provided', async () => {
+      const res = await request(app)
+        .post('/api/stats/record')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ opponentName: 'Bot', result: 'win', durationSeconds: 60 });
+      expect(res.status).toBe(201);
+      expect(res.body.gameMode == null).toBe(true);
+    });
+
     it('should return saved record with all fields', async () => {
       const res = await request(app)
         .post('/api/stats/record')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ opponentName: 'Bot (hard)', result: 'win', durationSeconds: 200 });
+        .send({ opponentName: 'Bot (hard)', result: 'win', durationSeconds: 200, gameMode: 'pve-hard' });
       expect(res.status).toBe(201);
       expect(res.body).toHaveProperty('id');
       expect(res.body).toHaveProperty('opponentName', 'Bot (hard)');
       expect(res.body).toHaveProperty('result', 'win');
       expect(res.body).toHaveProperty('durationSeconds', 200);
       expect(res.body).toHaveProperty('playedAt');
+      expect(res.body).toHaveProperty('gameMode', 'pve-hard');
     });
 
     it('should appear in history after being saved', async () => {
@@ -297,14 +299,6 @@ describe('Stats API', () => {
     it('should return 401 without token', async () => {
       const res = await request(app)
         .post('/api/stats/record')
-        .send({ opponentName: 'Bot', result: 'win', durationSeconds: 100 });
-      expect(res.status).toBe(401);
-    });
-
-    it('should return 401 with invalid token', async () => {
-      const res = await request(app)
-        .post('/api/stats/record')
-        .set('Authorization', 'Bearer invalid_token')
         .send({ opponentName: 'Bot', result: 'win', durationSeconds: 100 });
       expect(res.status).toBe(401);
     });

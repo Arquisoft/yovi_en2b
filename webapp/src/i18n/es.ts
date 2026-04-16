@@ -45,12 +45,10 @@ const es = {
     playAsGuest: 'Jugar como invitado',
     noAccount: '¿No tienes cuenta?',
     createOne: 'Crear una',
-    // Validation
     emailRequired: 'El correo es obligatorio',
     emailInvalid: 'Formato de correo inválido',
     passwordRequired: 'La contraseña es obligatoria',
     passwordMinLength: 'La contraseña debe tener al menos 6 caracteres',
-    // Register
     createAccountTitle: 'Crear cuenta',
     createAccountSubtitle: 'Únete a YOVI y empieza a jugar',
     username: 'Nombre de usuario',
@@ -63,7 +61,6 @@ const es = {
     createAccount: 'Crear cuenta',
     alreadyHaveAccount: '¿Ya tienes cuenta?',
     signInLink: 'Inicia sesión',
-    // Success
     accountCreatedTitle: '¡Cuenta creada!',
     accountCreatedDescription: 'Tu cuenta se ha creado correctamente. Ya puedes empezar a jugar.',
     startPlaying: 'Empezar a jugar',
@@ -142,14 +139,11 @@ const es = {
     surrender: 'Rendirse',
     playAgain: 'Jugar de nuevo',
     backToGames: 'Volver a juegos',
-    // Turn indicator
     turn: 'Turno de {{name}}',
     wins: '¡{{name}} gana!',
     gameOver: 'Fin de la partida',
-    // Sidebar toggle
     collapseSidebar: 'Contraer panel',
     expandSidebar: 'Expandir panel',
-    // Pie rule panel
     pieRule: 'Regla del pastel',
     pieDeciding: '{{name}} decide si cambiar…',
     piePrompt: '— ¿mantener tu lado o tomar la primera piedra?',
@@ -192,15 +186,19 @@ const es = {
     recent: 'Últimas 20 partidas',
     matchHistory: 'Historial de partidas',
     noMatches: 'Aún no has jugado ninguna partida',
+    noMatchesFilter: 'Ninguna partida coincide con los filtros seleccionados',
     opponent: 'Oponente',
     result: 'Resultado',
     duration: 'Duración',
     date: 'Fecha',
+    gameMode: 'Modo',
     win: 'Victoria',
     loss: 'Derrota',
     noData: 'Sin datos',
     winsLabel: 'Victorias {{count}}',
     lossesLabel: 'Derrotas {{count}}',
+    filterAll: 'Todas',
+    filterAllModes: 'Todos los modos',
     // Pagination
     first: 'Primera',
     previous: 'Anterior',
