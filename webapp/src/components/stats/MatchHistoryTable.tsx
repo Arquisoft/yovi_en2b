@@ -169,7 +169,7 @@ export function MatchHistoryTable({ history }: Readonly<MatchHistoryTableProps>)
   // Extract unique game modes from history for the filter dropdown
   const availableModes = useMemo(() => {
     const modes = new Set(history.map((r) => r.gameMode).filter(Boolean) as string[])
-    return Array.from(modes).sort()
+    return Array.from(modes).sort((a, b) => a.localeCompare(b))
   }, [history])
 
   const handleSort = (field: MatchSortField) => {
