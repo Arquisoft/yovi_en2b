@@ -21,7 +21,7 @@ import type {
   BotLevel,
 } from '../types/game';
 
-const USERS_PUBLIC_URL = process.env.USERS_PUBLIC_URL || 'http://localhost:3000';
+const USERS_INTERNAL_URL = process.env.USERS_INTERNAL_URL || 'http://localhost:3000';
 
 /**
  * Maps game config to a ranking mode string understood by the users service.
@@ -379,10 +379,9 @@ export class GameService {
       (game.updatedAt.getTime() - game.createdAt.getTime()) / 1000
     );
 
-    // Include gameMode so the ranking can filter by difficulty
     const gameMode = toRankingMode(game.config);
 
-    await fetch(`${USERS_PUBLIC_URL}/api/stats/record`, {
+    await fetch(`${USERS_INTERNAL_URL}/api/stats/record`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
