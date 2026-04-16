@@ -253,5 +253,5 @@ cd gamey && cargo llvm-cov --lcov --output-path lcov.info
 | `DB_*` | — | Same MariaDB instance as users |
 | `JWT_SECRET` | — | Must match users service |
 | `RUST_INTERNAL_URL` | `http://gamey:4000` | Internal Docker hostname of the bot engine |
-| `USERS_PUBLIC_URL` | — | Users service URL via Nginx (for recording match results) |
+| `USERS_INTERNAL_URL` | `http://users:3000` | Internal Docker URL for the users service (for recording match results) |
 | `PUBLIC_URL` | — | Public base URL for the game service — used in startup logs |
