@@ -54,8 +54,21 @@ interface SortButtonProps {
   onSort: (field: MatchSortField) => void
 }
 
-export function SortButton({ field, label, current, direction, onSort }: SortButtonProps) {
+export function SortButton({ field, label, current, direction, onSort }: Readonly<SortButtonProps>) {
   const isActive = current === field
+
+    let sortIcon
+  
+    if (isActive) {
+      if (direction === 'asc') {
+        sortIcon = <ArrowUp className="w-3 h-3" data-testid="sort-asc" />
+      } else {
+        sortIcon = <ArrowDown className="w-3 h-3" data-testid="sort-desc" />
+      }
+    } else {
+      sortIcon = <ArrowUpDown className="w-3 h-3 opacity-40" data-testid="sort-neutral" />
+    }
+
   return (
     <button
       type="button"
@@ -68,15 +81,7 @@ export function SortButton({ field, label, current, direction, onSort }: SortBut
       aria-pressed={isActive}
     >
       {label}
-      {isActive ? (
-        direction === 'asc' ? (
-          <ArrowUp className="w-3 h-3" data-testid="sort-asc" />
-        ) : (
-          <ArrowDown className="w-3 h-3" data-testid="sort-desc" />
-        )
-      ) : (
-        <ArrowUpDown className="w-3 h-3 opacity-40" data-testid="sort-neutral" />
-      )}
+      {sortIcon}
     </button>
   )
 }
@@ -89,7 +94,7 @@ interface FilterBarProps {
   onChange: (f: MatchHistoryFilter) => void
 }
 
-export function FilterBar({ filter, availableModes, onChange }: FilterBarProps) {
+export function FilterBar({ filter, availableModes, onChange }: Readonly<FilterBarProps>) {
   const { t } = useTranslation()
 
   const resultOptions = [
@@ -104,7 +109,8 @@ export function FilterBar({ filter, availableModes, onChange }: FilterBarProps) 
   ]
 
   return (
-    <div className="flex flex-wrap items-center gap-3 pb-3" role="group" aria-label="Filter options">
+    <fieldset className="flex flex-wrap items-center gap-3 pb-3 border-none p-0 m-0">
+      <legend className="sr-only">Filter options</legend>
       {/* Result filter */}
       <div className="flex items-center gap-1.5">
         <span className="text-xs text-muted-foreground">{t('stats.result')}:</span>
@@ -146,7 +152,7 @@ export function FilterBar({ filter, availableModes, onChange }: FilterBarProps) 
           </select>
         </div>
       )}
-    </div>
+    </fieldset>
   )
 }
 

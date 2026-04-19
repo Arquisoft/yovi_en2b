@@ -4,7 +4,7 @@ import { AppDataSource } from '../config/database'
 import { MatchRecord } from '../entities/MatchRecord'
 import { GameMode, RankingEntry } from '../types/ranking'
 
-const VALID_MODES: GameMode[] = ['pve-easy', 'pve-medium', 'pve-hard']
+const VALID_MODES: Set<GameMode> = new Set(['pve-easy', 'pve-medium', 'pve-hard'])
 
 export class RankingService {
   /**
@@ -12,7 +12,7 @@ export class RankingService {
    * Groups by username and counts wins.
    */
   static async getRankingByMode(mode: GameMode): Promise<RankingEntry[]> {
-    if (!VALID_MODES.includes(mode)) return []
+    if (!VALID_MODES.has(mode)) return []
 
     const repo = AppDataSource.getRepository(MatchRecord)
 
