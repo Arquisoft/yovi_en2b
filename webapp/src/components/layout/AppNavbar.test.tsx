@@ -63,15 +63,43 @@ describe('AppNavbar — branding', () => {
   })
 })
 
-describe('AppNavbar — language toggle button', () => {
-  it('renders the language toggle button', () => {
+describe('AppNavbar — language selector', () => {
+  it('renders the language select', () => {
     renderNavbar()
-    expect(screen.getByLabelText('Switch language')).toBeDefined()
+    expect(screen.getByRole('combobox')).toBeDefined()
   })
- 
-  it('language button is always visible (not gated behind user auth)', () => {
+
+  it('language selector is always visible (not gated behind user auth)', () => {
     renderNavbar({ user: null })
-    expect(screen.getByLabelText('Switch language')).toBeDefined()
+    expect(screen.getByRole('combobox')).toBeDefined()
+  })
+
+  it('shows available language options', () => {
+    renderNavbar()
+    expect(screen.getByRole('option', { name: 'ES' })).toBeDefined()
+    expect(screen.getByRole('option', { name: 'EN' })).toBeDefined()
+  })
+
+  it('calls setLanguage when selecting a new language', () => {
+    const setLanguage = vi.fn()
+
+    vi.mocked(useLanguage).mockReturnValue({
+      locale: 'en',
+      toggleLanguage: vi.fn(),
+      setLanguage,
+    } as any)
+
+    render(
+      <MemoryRouter>
+        <AppNavbar />
+      </MemoryRouter>
+    )
+
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: 'es' },
+    })
+
+    expect(setLanguage).toHaveBeenCalledWith('es')
   })
 })
 

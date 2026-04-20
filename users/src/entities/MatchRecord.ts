@@ -23,6 +23,14 @@ export class MatchRecord {
   @Column({ type: 'int', unsigned: true })
   durationSeconds!: number;
 
+  /**
+   * Optional game mode used for difficulty-based ranking.
+   * e.g. 'pve-easy', 'pve-medium', 'pve-hard', 'pvp-local', 'pvp-online'
+   * Nullable for backwards compatibility with existing records.
+   */
+  @Column({ type: 'varchar', length: 30, nullable: true, name: 'game_mode' })
+  gameMode!: string | null;
+
   @CreateDateColumn({ name: 'played_at' })
   playedAt!: Date;
 }

@@ -1,3 +1,4 @@
+// webapp/src/types/index.ts
 // ==================== User & Auth ====================
 
 export interface User {
@@ -197,6 +198,8 @@ export interface MatchRecord {
   result: 'win' | 'loss'
   durationSeconds: number
   playedAt: string
+  /** Optional: game mode slug, e.g. 'pve-easy', 'pve-medium', 'pve-hard', 'pvp-local' */
+  gameMode?: string | null
 }
 
 export interface WinrateStat {
@@ -208,6 +211,20 @@ export interface StatsData {
   overall: WinrateStat
   recent: WinrateStat
 }
+
+// ==================== Stats Filtering ====================
+
+export type MatchSortField = 'date' | 'duration' | 'result' | 'opponent' | 'gameMode'
+export type SortDirection = 'asc' | 'desc'
+
+export interface MatchHistoryFilter {
+  result?: 'win' | 'loss' | 'all'
+  gameMode?: string
+  sortField: MatchSortField
+  sortDirection: SortDirection
+}
+
+// ==================== Ranking ====================
 
 export type RankingMode = 'pve-easy' | 'pve-medium' | 'pve-hard'
 

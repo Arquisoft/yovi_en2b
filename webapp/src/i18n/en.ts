@@ -47,12 +47,10 @@ const en = {
     playAsGuest: 'Play as Guest',
     noAccount: "Don't have an account?",
     createOne: 'Create one',
-    // Validation
     emailRequired: 'Email is required',
     emailInvalid: 'Invalid email format',
     passwordRequired: 'Password is required',
     passwordMinLength: 'Password must be at least 6 characters',
-    // Register
     createAccountTitle: 'Create Account',
     createAccountSubtitle: 'Join YOVI and start playing strategic games',
     username: 'Username',
@@ -65,7 +63,6 @@ const en = {
     createAccount: 'Create Account',
     alreadyHaveAccount: 'Already have an account?',
     signInLink: 'Sign in',
-    // Success
     accountCreatedTitle: 'Account Created!',
     accountCreatedDescription: 'Your account has been created successfully. You can now start playing.',
     startPlaying: 'Start Playing',
@@ -144,14 +141,11 @@ const en = {
     surrender: 'Surrender',
     playAgain: 'Play Again',
     backToGames: 'Back to Games',
-    // Turn indicator
     turn: "{{name}}'s turn",
     wins: '{{name}} wins!',
     gameOver: 'Game Over',
-    // Sidebar toggle
     collapseSidebar: 'Collapse sidebar',
     expandSidebar: 'Expand sidebar',
-    // Pie rule panel
     pieRule: 'Pie Rule',
     pieDeciding: '{{name}} is deciding whether to swap…',
     piePrompt: '— keep your side or take the first stone?',
@@ -194,15 +188,19 @@ const en = {
     recent: 'Last 20 games',
     matchHistory: 'Match History',
     noMatches: 'No matches played yet',
+    noMatchesFilter: 'No matches match the selected filters',
     opponent: 'Opponent',
     result: 'Result',
     duration: 'Duration',
     date: 'Date',
+    gameMode: 'Mode',
     win: 'Win',
     loss: 'Loss',
     noData: 'No data',
     winsLabel: 'Wins {{count}}',
     lossesLabel: 'Losses {{count}}',
+    filterAll: 'All',
+    filterAllModes: 'All modes',
     // Pagination
     first: 'First',
     previous: 'Previous',

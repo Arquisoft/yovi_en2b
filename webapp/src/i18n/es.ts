@@ -81,7 +81,7 @@ const es = {
 
   // ── Game Modes ────────────────────────────────────────────────────────────────
   gameModes: {
-    title: 'Juego Y',
+    title: 'Game Y',
     subtitle: 'Selecciona cómo quieres jugar',
     backToGames: 'Volver a juegos',
     pvpLocal: {
@@ -135,7 +135,7 @@ const es = {
   game: {
     loadingGame: 'Cargando partida...',
     gameNotFound: 'Partida no encontrada',
-    gameY: 'Juego Y',
+    gameY: 'Game Y',
     moves: 'Movimientos: {{count}}',
     surrender: 'Rendirse',
     playAgain: 'Jugar de nuevo',
@@ -187,15 +187,20 @@ const es = {
     recent: 'Últimas 20 partidas',
     matchHistory: 'Historial de partidas',
     noMatches: 'Aún no has jugado ninguna partida',
+    noMatchesFilter: 'Ninguna partida coincide con los filtros seleccionados',
     opponent: 'Oponente',
     result: 'Resultado',
     duration: 'Duración',
     date: 'Fecha',
+    gameMode: 'Modo',
     win: 'Victoria',
     loss: 'Derrota',
     noData: 'Sin datos',
     winsLabel: 'Victorias {{count}}',
     lossesLabel: 'Derrotas {{count}}',
+    filterAll: 'Todas',
+    filterAllModes: 'Todos los modos',
+    // Pagination
     first: 'Primera',
     previous: 'Anterior',
     next: 'Siguiente',
