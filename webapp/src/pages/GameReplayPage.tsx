@@ -98,9 +98,7 @@ export function GameReplayPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-4">
         <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-        <p className="text-lg text-destructive">
-          {error || t('game.gameNotFound')}
-        </p>
+        <p className="text-lg text-destructive">{error || t('game.gameNotFound')}</p>
         <Button variant="ghost" className="mt-4" onClick={goToHistory}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('history.title')}
@@ -112,16 +110,10 @@ export function GameReplayPage() {
   const humanIsPlayer1 = !game.players.player1.isBot
   const humanColor: PlayerColor | null = humanIsPlayer1 ? 'player1' : 'player2'
 
-  const replayGame = {
-    ...game,
-    board: boardAtStep,
-    status: 'playing' as const,
-    winner: null
-  }
-
+  const replayGame = { ...game, board: boardAtStep, status: 'playing' as const, winner: null }
   const highlightMove = currentMove ?? null
 
-  // ─── MOVE PLAYER (refactor ternario → if) ──────────────────────────────────
+  // ─── MOVE PLAYER ────────────────────────────────────────────────────────────
   let currentMovePlayer: string | null = null
 
   if (currentMove) {
@@ -134,7 +126,7 @@ export function GameReplayPage() {
 
   const currentMoveColor: PlayerColor | null = currentMove?.player ?? null
 
-  // ─── MOVE INFO (refactor ternario → if/else) ───────────────────────────────
+  // ─── MOVE INFO ─────────────────────────────────────────────────────────────
   let moveInfoContent: React.ReactNode = null
 
   if (step === 0) {
@@ -155,16 +147,13 @@ export function GameReplayPage() {
           {currentMovePlayer}
         </span>{' '}
         <span className="text-muted-foreground">
-          {t('replay.played', {
-            row: currentMove!.row,
-            col: currentMove!.col
-          })}
+          {t('replay.played', { row: currentMove!.row, col: currentMove!.col })}
         </span>
       </span>
     )
   }
 
-  // ─── STEP LABEL (refactor ternario → if/else) ──────────────────────────────
+  // ─── STEP LABEL ─────────────────────────────────────────────────────────────
   let stepLabel = ''
 
   if (step === 0) {
@@ -177,6 +166,7 @@ export function GameReplayPage() {
 
   return (
     <div className="h-full min-h-0 flex flex-col">
+
       {/* Top bar */}
       <div className="flex-shrink-0 border-b border-border bg-card px-4 py-2 flex flex-wrap items-center gap-3">
         <Button variant="ghost" size="sm" onClick={goToHistory} className="gap-1.5">
@@ -185,29 +175,17 @@ export function GameReplayPage() {
         </Button>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-medium text-player1">{game.players.player1.name}</span>
+            {' vs '}
+          <span className="font-medium text-player2">{game.players.player2.name}</span>
           <ModeChip mode={game.config.mode} />
           <span className="text-xs text-muted-foreground">
             {game.config.boardSize}×{game.config.boardSize}
           </span>
           <span className="text-xs text-muted-foreground hidden sm:inline">
-            {new Date(game.updatedAt).toLocaleDateString(undefined, {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            })}
+            {new Date(game.updatedAt).toLocaleDateString()}
           </span>
           <ResultChip winner={game.winner} humanColor={humanColor} />
-        </div>
-
-        <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-player1 inline-block" />
-            {game.players.player1.name}
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-player2 inline-block" />
-            {game.players.player2.name}
-          </span>
         </div>
       </div>
 
@@ -223,6 +201,7 @@ export function GameReplayPage() {
 
       {/* Controls */}
       <div className="flex-shrink-0 border-t border-border bg-card px-4 py-3 space-y-3">
+
         <div className="text-center text-sm min-h-[1.5rem]">
           {moveInfoContent}
         </div>
@@ -237,11 +216,27 @@ export function GameReplayPage() {
         />
 
         <div className="flex items-center justify-between gap-2">
+
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" onClick={goToStart} disabled={!canGoBack} className="h-8 w-8">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToStart}
+              disabled={!canGoBack}
+              aria-label="Go to start"
+              title="Go to start"
+            >
               <ChevronFirst className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={goBack} disabled={!canGoBack} className="h-8 w-8">
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goBack}
+              disabled={!canGoBack}
+              aria-label="Previous move"
+              title="Previous move"
+            >
               <ChevronLeft className="w-4 h-4" />
             </Button>
           </div>
@@ -251,17 +246,33 @@ export function GameReplayPage() {
           </span>
 
           <div className="flex items-center gap-1">
-            <Button variant="outline" size="icon" onClick={goForward} disabled={!canGoForward} className="h-8 w-8">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goForward}
+              disabled={!canGoForward}
+              aria-label="Next move"
+              title="Next move"
+            >
               <ChevronRight className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={goToEnd} disabled={!canGoForward} className="h-8 w-8">
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToEnd}
+              disabled={!canGoForward}
+              aria-label="Go to end"
+              title="Go to end"
+            >
               <ChevronLast className="w-4 h-4" />
             </Button>
           </div>
+
         </div>
 
         <p className="text-center text-xs text-muted-foreground/60 hidden sm:block">
-          {t('replay.keyboardHint')}
+          ← → arrow keys to step through moves
         </p>
       </div>
     </div>
