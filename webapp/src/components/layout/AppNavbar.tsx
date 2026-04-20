@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { Button } from '@/components/ui/Button'
-import { Sun, Moon, LogOut, User, Hexagon, BarChart2, Trophy, Languages } from 'lucide-react'
+import { Sun, Moon, LogOut, User, Hexagon, BarChart2, Trophy, Languages, Clock } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -68,6 +68,10 @@ export function AppNavbar() {
 
               <Button variant="ghost" size="icon" onClick={() => navigate('/stats')} aria-label={t('nav.statistics')}>
                 <BarChart2 className="h-5 w-5" />
+              </Button>
+
+            <Button variant="ghost" size="icon" onClick={() => navigate('/history')} aria-label={t('nav.history')}>
+                <Clock className="h-5 w-5" />
               </Button>
 
               <Button variant="ghost" size="icon" onClick={() => navigate('/ranking')} aria-label={t('nav.ranking')}>

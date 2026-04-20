@@ -13,6 +13,7 @@ import { getBotMove, getBotPieOpening, getBotPieDecision } from './BotService';
 import type {
   GameConfig,
   GameState,
+  GameSummary,
   PieDecision,
   Player,
   PlayerColor,
@@ -69,6 +70,46 @@ export class GameService {
     });
     return this.toGameState(game, moves);
   }
+
+
+  async getUserGames(userId: number): Promise<GameSummary[]> {
+    const games = await this.gameRepo.find({
+      where: { player1Id: userId },
+      order: { updatedAt: 'DESC' },
+      take: 50,
+    });
+ 
+    if (games.length === 0) return [];
+ 
+    const gameIds = games.map(g => g.id);
+ 
+    // Count moves per game in a single efficient query
+    const moveCounts = await this.moveRepo
+      .createQueryBuilder('move')
+      .innerJoin('move.game', 'game')
+      .select('game.id', 'gameId')
+      .addSelect('COUNT(move.id)', 'cnt')
+      .where('game.id IN (:...gameIds)', { gameIds })
+      .groupBy('game.id')
+      .getRawMany<{ gameId: string; cnt: string }>();
+ 
+    const countMap = new Map<string, number>(
+      moveCounts.map(r => [r.gameId, parseInt(r.cnt, 10)])
+    );
+ 
+    return games.map(game => ({
+      id: game.id,
+      config: game.config,
+      status: game.status,
+      phase: game.phase ?? 'playing',
+      players: game.players,
+      winner: game.winner,
+      moveCount: countMap.get(game.id) ?? 0,
+      createdAt: game.createdAt.toISOString(),
+      updatedAt: game.updatedAt.toISOString(),
+    }));
+  }
+
 
   async playMove(
     gameId: string,

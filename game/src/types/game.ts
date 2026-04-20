@@ -65,3 +65,18 @@ export interface GameState {
   createdAt: string
   updatedAt: string
 }
+
+export interface GameSummary {
+  id: string
+  config: GameConfig
+  status: GameStatus
+  phase: GamePhase
+  players: {
+    player1: Player
+    player2: Player
+  }
+  winner: PlayerColor | null
+  moveCount: number
+  createdAt: string
+  updatedAt: string
+}

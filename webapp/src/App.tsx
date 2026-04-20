@@ -12,6 +12,8 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { StatsPage } from './pages/StatsPage'
 import { RankingPage } from './pages/RankingPage'
 import { useTranslation } from 'react-i18next'
+import { GameReplayPage } from './pages/GameReplayPage'
+import { GameHistoryPage } from './pages/GameHistoryPage'
 
 
 function App() {
@@ -43,6 +45,9 @@ function App() {
           <Route path="/games/y" element={<GameModePage />} />
           <Route path="/games/y/config/:mode" element={<GameConfigPage />} />
           <Route path="/games/y/play/:gameId" element={<GameYPage />} />
+          {/* Game history & step-through replay */}
+          <Route path="/history" element={<GameHistoryPage />} />
+          <Route path="/games/y/replay/:gameId" element={<GameReplayPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/ranking" element={<RankingPage />} />
         </Route>

@@ -24,6 +24,7 @@ const es = {
     toggleTheme: 'Cambiar tema',
     statistics: 'Estadísticas',
     ranking: 'Clasificación',
+    history: 'Historial de partidas',
     logout: 'Cerrar sesión',
     guestBadge: 'Invitado',
     signOut: 'Cerrar sesión',
@@ -45,12 +46,10 @@ const es = {
     playAsGuest: 'Jugar como invitado',
     noAccount: '¿No tienes cuenta?',
     createOne: 'Crear una',
-    // Validation
     emailRequired: 'El correo es obligatorio',
     emailInvalid: 'Formato de correo inválido',
     passwordRequired: 'La contraseña es obligatoria',
     passwordMinLength: 'La contraseña debe tener al menos 6 caracteres',
-    // Register
     createAccountTitle: 'Crear cuenta',
     createAccountSubtitle: 'Únete a YOVI y empieza a jugar',
     username: 'Nombre de usuario',
@@ -63,7 +62,6 @@ const es = {
     createAccount: 'Crear cuenta',
     alreadyHaveAccount: '¿Ya tienes cuenta?',
     signInLink: 'Inicia sesión',
-    // Success
     accountCreatedTitle: '¡Cuenta creada!',
     accountCreatedDescription: 'Tu cuenta se ha creado correctamente. Ya puedes empezar a jugar.',
     startPlaying: 'Empezar a jugar',
@@ -142,14 +140,11 @@ const es = {
     surrender: 'Rendirse',
     playAgain: 'Jugar de nuevo',
     backToGames: 'Volver a juegos',
-    // Turn indicator
     turn: 'Turno de {{name}}',
     wins: '¡{{name}} gana!',
     gameOver: 'Fin de la partida',
-    // Sidebar toggle
     collapseSidebar: 'Contraer panel',
     expandSidebar: 'Expandir panel',
-    // Pie rule panel
     pieRule: 'Regla del pastel',
     pieDeciding: '{{name}} decide si cambiar…',
     piePrompt: '— ¿mantener tu lado o tomar la primera piedra?',
@@ -201,13 +196,11 @@ const es = {
     noData: 'Sin datos',
     winsLabel: 'Victorias {{count}}',
     lossesLabel: 'Derrotas {{count}}',
-    // Pagination
     first: 'Primera',
     previous: 'Anterior',
     next: 'Siguiente',
     last: 'Última',
     pageOf: '{{page}} / {{total}}',
-    // Guest upsell
     trackProgress: 'Sigue tu progreso',
     trackProgressDescription: 'Crea una cuenta gratuita para guardar tu historial y ver tu porcentaje de victorias.',
     createAccount: 'Crear cuenta',
@@ -228,6 +221,46 @@ const es = {
       'pve-medium': 'Bot intermedio',
       'pve-hard': 'Bot difícil',
     },
+  },
+
+  // ── Game History ──────────────────────────────────────────────────────────────
+  history: {
+    title: 'Historial de partidas',
+    tableTitle: 'Todas las partidas',
+    noGames: 'Aún no has jugado ninguna partida.',
+    watchReplay: 'Repetición',
+    moves: '{{count}} movimientos',
+    colDate: 'Fecha',
+    colMode: 'Modo',
+    colOpponent: 'Oponente',
+    colBoard: 'Tablero',
+    colMoves: 'Jugadas',
+    colResult: 'Resultado',
+    result: {
+      win: 'Victoria',
+      loss: 'Derrota',
+      draw: 'Empate',
+    },
+    mode: {
+      pve: 'vs Bot',
+      'pvp-local': 'Local',
+      'pvp-online': 'Online',
+    },
+  },
+
+  // ── Replay ────────────────────────────────────────────────────────────────────
+  replay: {
+    emptyBoard: 'Posición inicial',
+    played: 'jugó en ({{row}}, {{col}})',
+    stepOf: '{{step}} / {{total}}',
+    start: 'Inicio',
+    end: 'Final',
+    goToStart: 'Ir al inicio',
+    previousMove: 'Jugada anterior',
+    nextMove: 'Jugada siguiente',
+    goToEnd: 'Ir al final',
+    scrubber: 'Control de jugadas',
+    keyboardHint: 'Teclas ← → para avanzar jugada a jugada',
   },
 
   // ── 404 ───────────────────────────────────────────────────────────────────────
