@@ -80,7 +80,7 @@ const es = {
 
   // ── Game Modes ────────────────────────────────────────────────────────────────
   gameModes: {
-    title: 'Juego Y',
+    title: 'Game Y',
     subtitle: 'Selecciona cómo quieres jugar',
     backToGames: 'Volver a juegos',
     pvpLocal: {
@@ -134,7 +134,7 @@ const es = {
   game: {
     loadingGame: 'Cargando partida...',
     gameNotFound: 'Partida no encontrada',
-    gameY: 'Juego Y',
+    gameY: 'Game Y',
     moves: 'Movimientos: {{count}}',
     surrender: 'Rendirse',
     playAgain: 'Jugar de nuevo',
