@@ -4,7 +4,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { Button } from '@/components/ui/Button'
-import { Sun, Moon, LogOut, User, Hexagon, BarChart2, Trophy, Languages } from 'lucide-react'
+import { SUPPORTED_LOCALES, type SupportedLocale } from '@/i18n/i18n'
+import { Sun, Moon, LogOut, User, Hexagon, BarChart2, Trophy } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -14,12 +15,12 @@ import {
   DialogTitle,
 } from '@/components/ui/Dialog'
 import { useTranslation } from 'react-i18next'
-
+ 
 
 export function AppNavbar() {
   const { user, logout, isGuest } = useAuth()
   const { theme, toggleTheme } = useTheme()
-  const { toggleLanguage } = useLanguage()
+  const { locale, setLanguage } = useLanguage()
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
@@ -38,16 +39,17 @@ export function AppNavbar() {
         </Link>
 
         <nav className="flex items-center gap-2">
-          {/* Language toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleLanguage}
-            aria-label={t('language.ariaLabel')}
-            title={t('language.switchTo')}
+         <select
+            value={locale}
+            onChange={(e) => setLanguage(e.target.value as SupportedLocale)}
+            className="bg-background text-foreground border border-border rounded-md px-2 py-1 text-sm appearance-none"
           >
-            <Languages className="h-5 w-5" />
-          </Button>
+            {SUPPORTED_LOCALES.map((lang) => (
+              <option key={lang} value={lang}>
+                {lang.toUpperCase()}
+              </option>
+            ))}
+          </select>
 
           {/* Theme toggle */}
           <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={t('nav.toggleTheme')}>
