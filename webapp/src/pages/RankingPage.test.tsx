@@ -31,6 +31,7 @@ describe('RankingPage', () => {
       entries: mockEntries,
       isLoading: false,
       currentUsername: null,
+      error: null
     })
   })
 
@@ -69,6 +70,7 @@ describe('RankingPage', () => {
       entries: [],
       isLoading: true,
       currentUsername: null,
+      error: null
     })
     const { container } = render(<RankingPage />)
     expect(container.querySelector('.animate-spin')).not.toBeNull()
@@ -82,6 +84,7 @@ describe('RankingPage', () => {
       entries: mockEntries,
       isLoading: false,
       currentUsername: null,
+      error: null
     })
     render(<RankingPage />)
     await userEvent.click(screen.getByText('Bot difícil'))
