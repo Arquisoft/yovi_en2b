@@ -204,7 +204,7 @@ export type SortDirection = 'asc' | 'desc'
 
 export interface MatchHistoryFilter {
   result?: 'win' | 'loss' | 'all'
-  gameMode?: string | 'all'
+  gameMode?: string
   sortField: MatchSortField
   sortDirection: SortDirection
 }
