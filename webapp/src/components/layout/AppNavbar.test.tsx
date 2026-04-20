@@ -125,7 +125,11 @@ describe('AppNavbar — navigation buttons', () => {
     fireEvent.click(screen.getByLabelText('Statistics'))
     expect(mockNavigate).toHaveBeenCalledWith('/stats')
   })
-
+ it('navigates to /history when Game History button is clicked', () => {
+    renderNavbar()
+    fireEvent.click(screen.getByLabelText('Game History'))
+    expect(mockNavigate).toHaveBeenCalledWith('/history')
+  })
   it('navigates to /ranking when Ranking button is clicked', () => {
     renderNavbar()
     fireEvent.click(screen.getByLabelText('Ranking'))
