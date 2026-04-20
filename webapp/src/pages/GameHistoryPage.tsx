@@ -9,7 +9,7 @@ import type { GameSummary, GameMode, PlayerColor } from '@/types'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function ModeIcon({ mode }: { mode: GameMode }) {
+function ModeIcon({ mode }: Readonly<{ mode: GameMode }>) {
   if (mode === 'pve') return <Bot className="w-3.5 h-3.5" />
   if (mode === 'pvp-local') return <Users className="w-3.5 h-3.5" />
   return <Globe className="w-3.5 h-3.5" />
@@ -50,7 +50,7 @@ function formatDate(iso: string): string {
 
 // ─── Row component ────────────────────────────────────────────────────────────
 
-function GameRow({ game, onReplay }: { game: GameSummary; onReplay: () => void }) {
+function GameRow({ game, onReplay }: Readonly<{ game: GameSummary; onReplay: () => void }>) {
   const { t } = useTranslation()
   const result = resultForGame(game, t)
 
@@ -115,6 +115,53 @@ export function GameHistoryPage() {
   const navigate = useNavigate()
   const { games, isLoading, error, isGuest } = useGameHistoryController()
 
+  let content
+
+  if (isLoading) {
+    content = (
+      <div className="flex justify-center py-12">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  } else if (error) {
+    content = (
+      <p className="text-center text-sm text-destructive py-8">{error}</p>
+    )
+  } else if (games.length === 0) {
+    content = (
+      <p className="text-center text-sm text-muted-foreground py-12">
+        {t('history.noGames')}
+      </p>
+    )
+  } else {
+    content = (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-muted-foreground text-left">
+              <th className="pb-2 font-medium pr-4">{t('history.colDate')}</th>
+              <th className="pb-2 font-medium pr-4">{t('history.colMode')}</th>
+              <th className="pb-2 font-medium pr-4">{t('history.colOpponent')}</th>
+              <th className="pb-2 font-medium pr-4 hidden sm:table-cell">{t('history.colBoard')}</th>
+              <th className="pb-2 font-medium pr-4 hidden md:table-cell">{t('history.colMoves')}</th>
+              <th className="pb-2 font-medium pr-4">{t('history.colResult')}</th>
+              <th className="pb-2 font-medium" />
+            </tr>
+          </thead>
+          <tbody>
+            {games.map(game => (
+              <GameRow
+                key={game.id}
+                game={game}
+                onReplay={() => navigate(`/games/y/replay/${game.id}`)}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
   // Guest upsell
   if (isGuest) {
     return (
@@ -166,42 +213,7 @@ export function GameHistoryPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : error ? (
-            <p className="text-center text-sm text-destructive py-8">{error}</p>
-          ) : games.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground py-12">
-              {t('history.noGames')}
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-muted-foreground text-left">
-                    <th className="pb-2 font-medium pr-4">{t('history.colDate')}</th>
-                    <th className="pb-2 font-medium pr-4">{t('history.colMode')}</th>
-                    <th className="pb-2 font-medium pr-4">{t('history.colOpponent')}</th>
-                    <th className="pb-2 font-medium pr-4 hidden sm:table-cell">{t('history.colBoard')}</th>
-                    <th className="pb-2 font-medium pr-4 hidden md:table-cell">{t('history.colMoves')}</th>
-                    <th className="pb-2 font-medium pr-4">{t('history.colResult')}</th>
-                    <th className="pb-2 font-medium" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {games.map(game => (
-                    <GameRow
-                      key={game.id}
-                      game={game}
-                      onReplay={() => navigate(`/games/y/replay/${game.id}`)}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {content}
         </CardContent>
       </Card>
     </div>

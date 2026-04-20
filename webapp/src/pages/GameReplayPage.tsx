@@ -2,16 +2,27 @@ import { useTranslation } from 'react-i18next'
 import { useGameReplayController } from '@/controllers/useGameReplayController'
 import { GameYBoard } from '@/components/game-y/GameYBoard'
 import { Button } from '@/components/ui/Button'
-import { AlertCircle, ArrowLeft, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Bot, Users, Globe } from 'lucide-react'
+import {
+  AlertCircle,
+  ArrowLeft,
+  ChevronFirst,
+  ChevronLast,
+  ChevronLeft,
+  ChevronRight,
+  Bot,
+  Users,
+  Globe
+} from 'lucide-react'
 import { cn } from '@/utils'
 import type { GameMode, PlayerColor } from '@/types'
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function ModeChip({ mode }: { mode: GameMode }) {
+function ModeChip({ mode }: Readonly<{ mode: GameMode }>) {
   const icons = { pve: Bot, 'pvp-local': Users, 'pvp-online': Globe }
   const Icon = icons[mode] ?? Globe
   const labels = { pve: 'vs Bot', 'pvp-local': 'Local', 'pvp-online': 'Online' }
+
   return (
     <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground px-2 py-0.5 rounded-full border border-border bg-muted/50">
       <Icon className="w-3 h-3" />
@@ -20,18 +31,30 @@ function ModeChip({ mode }: { mode: GameMode }) {
   )
 }
 
-function ResultChip({ winner, humanColor }: { winner: PlayerColor | null; humanColor: PlayerColor | null }) {
+function ResultChip({
+  winner,
+  humanColor
+}: Readonly<{ winner: PlayerColor | null; humanColor: PlayerColor | null }>) {
   if (!winner) return null
+
   if (!humanColor) {
     const name = winner === 'player1' ? 'Player 1' : 'Player 2'
-    return <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{name} won</span>
+    return (
+      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+        {name} won
+      </span>
+    )
   }
+
   const isWin = winner === humanColor
+
   return (
-    <span className={cn(
-      'text-xs font-semibold px-2 py-0.5 rounded-full',
-      isWin ? 'bg-player1/10 text-player1' : 'bg-player2/10 text-player2'
-    )}>
+    <span
+      className={cn(
+        'text-xs font-semibold px-2 py-0.5 rounded-full',
+        isWin ? 'bg-player1/10 text-player1' : 'bg-player2/10 text-player2'
+      )}
+    >
       {isWin ? 'Win' : 'Loss'}
     </span>
   )
@@ -41,6 +64,7 @@ function ResultChip({ winner, humanColor }: { winner: PlayerColor | null; humanC
 
 export function GameReplayPage() {
   const { t } = useTranslation()
+
   const {
     game,
     boardAtStep,
@@ -56,7 +80,7 @@ export function GameReplayPage() {
     goToStart,
     goToEnd,
     setStep,
-    goToHistory,
+    goToHistory
   } = useGameReplayController()
 
   if (isLoading) {
@@ -74,7 +98,9 @@ export function GameReplayPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-4">
         <AlertCircle className="w-12 h-12 text-destructive mb-4" />
-        <p className="text-lg text-destructive">{error || t('game.gameNotFound')}</p>
+        <p className="text-lg text-destructive">
+          {error || t('game.gameNotFound')}
+        </p>
         <Button variant="ghost" className="mt-4" onClick={goToHistory}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('history.title')}
@@ -86,18 +112,68 @@ export function GameReplayPage() {
   const humanIsPlayer1 = !game.players.player1.isBot
   const humanColor: PlayerColor | null = humanIsPlayer1 ? 'player1' : 'player2'
 
-  // The board's "game-like" object we pass to GameYBoard (read-only mode)
-  const replayGame = { ...game, board: boardAtStep, status: 'playing' as const, winner: null }
+  const replayGame = {
+    ...game,
+    board: boardAtStep,
+    status: 'playing' as const,
+    winner: null
+  }
 
-  // The last move to highlight is the one at the current step (step - 1 index)
   const highlightMove = currentMove ?? null
 
-  // Player name for current-move label
-  const currentMovePlayer = currentMove
-    ? (currentMove.player === 'player1' ? game.players.player1.name : game.players.player2.name)
-    : null
+  // ─── MOVE PLAYER (refactor ternario → if) ──────────────────────────────────
+  let currentMovePlayer: string | null = null
+
+  if (currentMove) {
+    if (currentMove.player === 'player1') {
+      currentMovePlayer = game.players.player1.name
+    } else {
+      currentMovePlayer = game.players.player2.name
+    }
+  }
 
   const currentMoveColor: PlayerColor | null = currentMove?.player ?? null
+
+  // ─── MOVE INFO (refactor ternario → if/else) ───────────────────────────────
+  let moveInfoContent: React.ReactNode = null
+
+  if (step === 0) {
+    moveInfoContent = (
+      <span className="text-muted-foreground italic">
+        {t('replay.emptyBoard')}
+      </span>
+    )
+  } else if (currentMovePlayer && currentMoveColor) {
+    moveInfoContent = (
+      <span>
+        <span
+          className={cn(
+            'font-semibold',
+            currentMoveColor === 'player1' ? 'text-player1' : 'text-player2'
+          )}
+        >
+          {currentMovePlayer}
+        </span>{' '}
+        <span className="text-muted-foreground">
+          {t('replay.played', {
+            row: currentMove!.row,
+            col: currentMove!.col
+          })}
+        </span>
+      </span>
+    )
+  }
+
+  // ─── STEP LABEL (refactor ternario → if/else) ──────────────────────────────
+  let stepLabel = ''
+
+  if (step === 0) {
+    stepLabel = t('replay.start')
+  } else if (step === totalMoves) {
+    stepLabel = t('replay.end')
+  } else {
+    stepLabel = t('replay.stepOf', { step, total: totalMoves })
+  }
 
   return (
     <div className="h-full min-h-0 flex flex-col">
@@ -114,12 +190,15 @@ export function GameReplayPage() {
             {game.config.boardSize}×{game.config.boardSize}
           </span>
           <span className="text-xs text-muted-foreground hidden sm:inline">
-            {new Date(game.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+            {new Date(game.updatedAt).toLocaleDateString(undefined, {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}
           </span>
           <ResultChip winner={game.winner} humanColor={humanColor} />
         </div>
 
-        {/* Player legend */}
         <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded-full bg-player1 inline-block" />
@@ -142,31 +221,12 @@ export function GameReplayPage() {
         />
       </div>
 
-      {/* Controls bar */}
+      {/* Controls */}
       <div className="flex-shrink-0 border-t border-border bg-card px-4 py-3 space-y-3">
-        {/* Move info */}
         <div className="text-center text-sm min-h-[1.5rem]">
-          {step === 0 ? (
-            <span className="text-muted-foreground italic">{t('replay.emptyBoard')}</span>
-          ) : currentMovePlayer && currentMoveColor ? (
-            <span>
-              <span
-                className={cn(
-                  'font-semibold',
-                  currentMoveColor === 'player1' ? 'text-player1' : 'text-player2'
-                )}
-              >
-                {currentMovePlayer}
-              </span>
-              {' '}
-              <span className="text-muted-foreground">
-                {t('replay.played', { row: currentMove!.row, col: currentMove!.col })}
-              </span>
-            </span>
-          ) : null}
+          {moveInfoContent}
         </div>
 
-        {/* Scrubber */}
         <input
           type="range"
           min={0}
@@ -174,61 +234,27 @@ export function GameReplayPage() {
           value={step}
           onChange={e => setStep(Number(e.target.value))}
           className="w-full h-1.5 rounded-full accent-primary cursor-pointer"
-          aria-label={t('replay.scrubber')}
         />
 
-        {/* Buttons + counter */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={goToStart}
-              disabled={!canGoBack}
-              className="h-8 w-8"
-              title={t('replay.goToStart')}
-            >
+            <Button variant="outline" size="icon" onClick={goToStart} disabled={!canGoBack} className="h-8 w-8">
               <ChevronFirst className="w-4 h-4" />
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={goBack}
-              disabled={!canGoBack}
-              className="h-8 w-8"
-              title={t('replay.previousMove')}
-            >
+            <Button variant="outline" size="icon" onClick={goBack} disabled={!canGoBack} className="h-8 w-8">
               <ChevronLeft className="w-4 h-4" />
             </Button>
           </div>
 
           <span className="text-sm font-mono font-medium text-muted-foreground tabular-nums select-none">
-            {step === 0
-              ? t('replay.start')
-              : step === totalMoves
-              ? t('replay.end')
-              : t('replay.stepOf', { step, total: totalMoves })}
+            {stepLabel}
           </span>
 
           <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={goForward}
-              disabled={!canGoForward}
-              className="h-8 w-8"
-              title={t('replay.nextMove')}
-            >
+            <Button variant="outline" size="icon" onClick={goForward} disabled={!canGoForward} className="h-8 w-8">
               <ChevronRight className="w-4 h-4" />
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={goToEnd}
-              disabled={!canGoForward}
-              className="h-8 w-8"
-              title={t('replay.goToEnd')}
-            >
+            <Button variant="outline" size="icon" onClick={goToEnd} disabled={!canGoForward} className="h-8 w-8">
               <ChevronLast className="w-4 h-4" />
             </Button>
           </div>

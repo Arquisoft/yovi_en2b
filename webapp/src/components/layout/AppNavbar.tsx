@@ -5,7 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { Button } from '@/components/ui/Button'
 import { SUPPORTED_LOCALES, type SupportedLocale } from '@/i18n/i18n'
-import { Sun, Moon, LogOut, User, Hexagon, BarChart2, Trophy, Languages, Clock } from 'lucide-react'
+import { Sun, Moon, LogOut, User, Hexagon, BarChart2, Trophy,  Clock } from 'lucide-react'
 import {
   Dialog,
   DialogContent,

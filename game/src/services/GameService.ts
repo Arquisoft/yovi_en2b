@@ -104,7 +104,7 @@ export class GameService {
       .getRawMany<{ gameId: string; cnt: string }>();
  
     const countMap = new Map<string, number>(
-      moveCounts.map(r => [r.gameId, parseInt(r.cnt, 10)])
+      moveCounts.map(r => [r.gameId, Number.parseInt(r.cnt, 10)])
     );
  
     return games.map(game => ({

@@ -71,8 +71,8 @@ export function useGameReplayController() {
         setStep(totalMoves)
       }
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    globalThis.addEventListener('keydown', onKey)
+    return () => globalThis.removeEventListener('keydown', onKey)
   }, [totalMoves])
 
   return {
