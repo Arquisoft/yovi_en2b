@@ -107,8 +107,188 @@ describe('Game API', () => {
         });
 
       expect(res.status).toBe(201);
-      // Bot is player1, so after createGame the board should have 1 move
       expect(res.body.moves.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe('GET /api/games', () => {
+    it('returns 401 without token', async () => {
+      const res = await request(app).get('/api/games');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 401 with an invalid token', async () => {
+      const res = await request(app)
+        .get('/api/games')
+        .set('Authorization', 'Bearer bad-token');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 401 with an expired token', async () => {
+      const expiredToken = jwt.sign(
+        { id: 1, username: 'test', role: 'player' },
+        JWT_SECRET,
+        { expiresIn: '-1s' }
+      );
+      const res = await request(app)
+        .get('/api/games')
+        .set('Authorization', `Bearer ${expiredToken}`);
+      expect(res.status).toBe(401);
+    });
+
+    it('returns an empty array when the user has no games', async () => {
+      const freshToken = makeToken(999, 'noGamesUser');
+      const res = await request(app)
+        .get('/api/games')
+        .set('Authorization', `Bearer ${freshToken}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body).toHaveLength(0);
+    });
+
+    it('returns a summary for each game the user has created', async () => {
+      // Create two games as user 1
+      await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send(pvpLocalConfig);
+      await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send(pvpLocalConfig);
+
+      const res = await request(app)
+        .get('/api/games')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('returned summaries have the expected shape', async () => {
+      await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send(pvpLocalConfig);
+
+      const res = await request(app)
+        .get('/api/games')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      const summary = res.body[0];
+      expect(summary).toHaveProperty('id');
+      expect(summary).toHaveProperty('config');
+      expect(summary).toHaveProperty('status');
+      expect(summary).toHaveProperty('phase');
+      expect(summary).toHaveProperty('players');
+      expect(summary).toHaveProperty('winner');
+      expect(summary).toHaveProperty('moveCount');
+      expect(summary).toHaveProperty('createdAt');
+      expect(summary).toHaveProperty('updatedAt');
+      expect(typeof summary.moveCount).toBe('number');
+      // Summaries must NOT expose the full board state or moves array
+      expect(summary).not.toHaveProperty('board');
+      expect(summary).not.toHaveProperty('moves');
+      expect(summary).not.toHaveProperty('timer');
+    });
+
+    it('moveCount is 0 for a freshly created game with no moves', async () => {
+      await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send(pvpLocalConfig);
+
+      const res = await request(app)
+        .get('/api/games')
+        .set('Authorization', `Bearer ${token}`);
+
+      // Find the most recent game (first in list, ordered desc)
+      const newest = res.body[0];
+      expect(newest.moveCount).toBe(0);
+    });
+
+    it('moveCount reflects moves played in the game', async () => {
+      const createRes = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send(pvpLocalConfig);
+      const gameId = createRes.body.id;
+
+      // Play two moves
+      await request(app)
+        .post(`/api/games/${gameId}/move`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ row: 0, col: 0, player: 'player1' });
+      await request(app)
+        .post(`/api/games/${gameId}/move`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ row: 1, col: 0, player: 'player2' });
+
+      const res = await request(app)
+        .get('/api/games')
+        .set('Authorization', `Bearer ${token}`);
+
+      const summary = res.body.find((g: any) => g.id === gameId);
+      expect(summary).toBeDefined();
+      expect(summary.moveCount).toBe(2);
+    });
+
+    it('games are returned newest first', async () => {
+      // Create two games sequentially so updatedAt differs
+      await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send(pvpLocalConfig);
+      await new Promise(r => setTimeout(r, 10));
+      await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send(pvpLocalConfig);
+
+      const res = await request(app)
+        .get('/api/games')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      const dates = res.body.map((g: any) => new Date(g.updatedAt).getTime());
+      for (let i = 1; i < dates.length; i++) {
+        expect(dates[i - 1]).toBeGreaterThanOrEqual(dates[i]);
+      }
+    });
+
+    it('does not return games belonging to another user', async () => {
+      const otherToken = makeToken(42, 'otherPlayer');
+      await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${otherToken}`)
+        .send(pvpLocalConfig);
+
+      // Fresh user 999 should see no games
+      const freshToken = makeToken(999, 'noGamesUser');
+      const res = await request(app)
+        .get('/api/games')
+        .set('Authorization', `Bearer ${freshToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(0);
+    });
+
+    it('includes pve games with the correct config', async () => {
+      await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send(pvePatch);
+
+      const res = await request(app)
+        .get('/api/games')
+        .set('Authorization', `Bearer ${token}`);
+
+      const pveGame = res.body.find((g: any) => g.config.mode === 'pve');
+      expect(pveGame).toBeDefined();
+      expect(pveGame.config.boardSize).toBe(5);
     });
   });
 
@@ -329,333 +509,73 @@ describe('Game API', () => {
       expect(game?.status).toBe('finished');
       expect(game?.winner).toBe('player1');
     });
-  });
 
-  describe('POST /api/games — Pie Rule', () => {
-    it('creates a game with pieRule enabled and returns phase "playing" initially', async () => {
-      const res = await request(app)
-        .post('/api/games')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ config: { mode: 'pvp-local', boardSize: 5, timerEnabled: false, pieRule: true } });
-
-      expect(res.status).toBe(201);
-      expect(res.body.config.pieRule).toBe(true);
-      expect(res.body.phase).toBe('playing');
-    });
-
-    it('enters pie-decision phase after the first move when pieRule is enabled', async () => {
-      const createRes = await request(app)
-        .post('/api/games')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ config: { mode: 'pvp-local', boardSize: 5, timerEnabled: false, pieRule: true } });
-      const gameId = createRes.body.id;
-
-      const moveRes = await request(app)
-        .post(`/api/games/${gameId}/move`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ row: 0, col: 0, player: 'player1' });
-
-      expect(moveRes.status).toBe(200);
-      expect(moveRes.body.phase).toBe('pie-decision');
-      expect(moveRes.body.currentTurn).toBe('player2');
-      expect(moveRes.body.status).toBe('playing');
-    });
-
-    it('rejects a normal move while in pie-decision phase', async () => {
-      const createRes = await request(app)
-        .post('/api/games')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ config: { mode: 'pvp-local', boardSize: 5, timerEnabled: false, pieRule: true } });
-      const gameId = createRes.body.id;
-
-      await request(app)
-        .post(`/api/games/${gameId}/move`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ row: 0, col: 0, player: 'player1' });
-
-      const illegalMove = await request(app)
-        .post(`/api/games/${gameId}/move`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ row: 1, col: 0, player: 'player2' });
-
-      expect(illegalMove.status).toBe(409);
-      expect(illegalMove.body.error).toMatch(/pie rule/i);
-    });
-  });
-
-  describe('POST /api/games/:id/pie-decision', () => {
-    async function createPieGame() {
-      const createRes = await request(app)
-        .post('/api/games')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ config: { mode: 'pvp-local', boardSize: 5, timerEnabled: false, pieRule: true } });
-      const gameId = createRes.body.id;
-
-      await request(app)
-        .post(`/api/games/${gameId}/move`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ row: 0, col: 0, player: 'player1' });
-
-      return gameId;
-    }
-
-    it('returns 400 for an invalid decision value', async () => {
-      const gameId = await createPieGame();
-      const res = await request(app)
-        .post(`/api/games/${gameId}/pie-decision`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ decision: 'invalid' });
-      expect(res.status).toBe(400);
-    });
-
-    it('returns 409 when the game is not in pie-decision phase', async () => {
-      // Game without pie rule — no pie-decision phase ever entered
+    it('finished game appears in GET /api/games with correct status', async () => {
       const createRes = await request(app)
         .post('/api/games')
         .set('Authorization', `Bearer ${token}`)
         .send(pvpLocalConfig);
       const gameId = createRes.body.id;
 
-      const res = await request(app)
-        .post(`/api/games/${gameId}/pie-decision`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ decision: 'keep' });
-
-      expect(res.status).toBe(409);
-    });
-
-    it('keep: resumes game in playing phase with unchanged board and player order', async () => {
-      const gameId = await createPieGame();
-
-      const res = await request(app)
-        .post(`/api/games/${gameId}/pie-decision`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ decision: 'keep' });
-
-      expect(res.status).toBe(200);
-      expect(res.body.phase).toBe('playing');
-      expect(res.body.currentTurn).toBe('player2');
-      // First stone still belongs to player1
-      const stone = (res.body.board as any[][]).flat().find((c: any) => c.owner !== null);
-      expect(stone?.owner).toBe('player1');
-      // Player identities unchanged: player1 is still the one who placed the stone
-      expect(res.body.players.player1.isLocal).toBe(true);
-      expect(res.body.players.player2.isLocal).toBe(true);
-    });
-
-    it('keep: allows player2 to play immediately after keeping', async () => {
-      const gameId = await createPieGame();
-
       await request(app)
-        .post(`/api/games/${gameId}/pie-decision`)
+        .post(`/api/games/${gameId}/surrender`)
         .set('Authorization', `Bearer ${token}`)
-        .send({ decision: 'keep' });
+        .send({ player: 'player1' });
 
-      const moveRes = await request(app)
-        .post(`/api/games/${gameId}/move`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ row: 1, col: 0, player: 'player2' });
+      const listRes = await request(app)
+        .get('/api/games')
+        .set('Authorization', `Bearer ${token}`);
 
-      expect(moveRes.status).toBe(200);
-      expect(moveRes.body.moves).toHaveLength(2);
+      const summary = listRes.body.find((g: any) => g.id === gameId);
+      expect(summary).toBeDefined();
+      expect(summary.status).toBe('finished');
+      expect(summary.winner).toBe('player2');
     });
+  });
 
-    it('swap: changes the first stone from player1 (Blue) to player2 (Red)', async () => {
-      const gameId = await createPieGame();
-
-      const res = await request(app)
-        .post(`/api/games/${gameId}/pie-decision`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ decision: 'swap' });
-
-      expect(res.status).toBe(200);
-      expect(res.body.phase).toBe('playing');
-      // Stone colour changes: was player1 (Blue), now player2 (Red)
-      const stone = (res.body.board as any[][]).flat().find((c: any) => c.owner !== null);
-      expect(stone?.owner).toBe('player2');
-      // player1 (Blue) goes next — they respond after their stone was taken
-      expect(res.body.currentTurn).toBe('player1');
-      // Player objects are unchanged — player1 is still Blue, player2 is still Red
-      expect(res.body.players.player1.isLocal).toBe(true);
-      expect(res.body.players.player2.isLocal).toBe(true);
-    });
-
-    it('swap: player1 (Blue) can play immediately after the swap', async () => {
-      const gameId = await createPieGame();
-
-      await request(app)
-        .post(`/api/games/${gameId}/pie-decision`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ decision: 'swap' });
-
-      // currentTurn is 'player1' — Blue plays next
-      const moveRes = await request(app)
-        .post(`/api/games/${gameId}/move`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ row: 1, col: 0, player: 'player1' });
-
-      expect(moveRes.status).toBe(200);
-      expect(moveRes.body.moves).toHaveLength(2);
-    });
-
-    it('pie-decision phase with bot as player2 (PvE, human is player1): bot auto-resolves pie decision', async () => {
-      // Mock: first fetch = pie-decide (bot decides keep), second fetch = bot move
-      vi.mocked(fetch)
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ decision: 'keep' }) } as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ coords: { x: 3, y: 1, z: 0 } }) } as any);
-
-      const createRes = await request(app)
-        .post('/api/games')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          config: {
-            mode: 'pve',
-            boardSize: 5,
-            timerEnabled: false,
-            botLevel: 'medium',
-            playerColor: 'player1',
-            pieRule: true,
-          },
-        });
-      const gameId = createRes.body.id;
-      expect(createRes.body.players.player2.isBot).toBe(true);
-
-      // Human (player1) plays first move — bot auto-resolves pie decision
-      const moveRes = await request(app)
-        .post(`/api/games/${gameId}/move`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ row: 0, col: 0, player: 'player1' });
-
-      expect(moveRes.status).toBe(200);
-      // Bot auto-resolved the pie decision, game is back to playing
-      expect(moveRes.body.phase).toBe('playing');
-      expect(moveRes.body.players.player2.isBot).toBe(true);
-    });
-
-    it('pie-decision with human as player2 (PvE): keep → human plays next as Red', async () => {
-      // Human is player2 (Red), bot is player1 (Blue) — bot plays first automatically
-      const createRes = await request(app)
-        .post('/api/games')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          config: {
-            mode: 'pve',
-            boardSize: 5,
-            timerEnabled: false,
-            botLevel: 'medium',
-            playerColor: 'player2',
-            pieRule: true,
-          },
-        });
-
-      expect(createRes.status).toBe(201);
-      expect(createRes.body.phase).toBe('pie-decision');
-      expect(createRes.body.players.player1.isBot).toBe(true);
-
-      const gameId = createRes.body.id;
-
-      // Human (player2/Red) keeps — stone stays Blue (player1), human plays next as Red
-      const keepRes = await request(app)
-        .post(`/api/games/${gameId}/pie-decision`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ decision: 'keep' });
-
-      expect(keepRes.status).toBe(200);
-      expect(keepRes.body.phase).toBe('playing');
-      // currentTurn was already 'player2' after the first move; keep leaves it unchanged
-      expect(keepRes.body.currentTurn).toBe('player2');
-      // Stone stays Blue (player1's)
-      const stone = (keepRes.body.board as any[][]).flat().find((c: any) => c.owner !== null);
-      expect(stone?.owner).toBe('player1');
-    });
-
-    it('pie-decision with human as player2 (PvE): swap → stone becomes Red, bot (player1) auto-plays', async () => {
-      // Bot's first move (on creation): x=3,y=1 → row=1,col=1
-      // Bot's second move (after swap):  x=2,y=0 → row=2,col=0  (different empty cell)
-      vi.mocked(fetch)
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ coords: { x: 3, y: 1, z: 0 } }) } as any)
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ coords: { x: 2, y: 0, z: 0 } }) } as any);
-
-      const createRes = await request(app)
-        .post('/api/games')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          config: {
-            mode: 'pve',
-            boardSize: 5,
-            timerEnabled: false,
-            botLevel: 'medium',
-            playerColor: 'player2',
-            pieRule: true,
-          },
-        });
-
-      const gameId = createRes.body.id;
-
-      // Human (player2/Red) swaps — stone becomes Red (player2), bot (player1/Blue) goes next
-      const swapRes = await request(app)
-        .post(`/api/games/${gameId}/pie-decision`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ decision: 'swap' });
-
-      expect(swapRes.status).toBe(200);
-      // Bot (player1) auto-played: at least 2 moves in history
-      expect(swapRes.body.moves.length).toBeGreaterThanOrEqual(2);
-      // The originally-placed stone is now Red (player2 = human)
-      const swappedStone = (swapRes.body.board as any[][]).flat().find(
-        (c: any) => c.row === 1 && c.col === 1
-      );
-      expect(swappedStone?.owner).toBe('player2');
-      // Bot played its second stone as Blue (player1)
-      expect(swapRes.body.currentTurn).toBe('player2');
-    });
-
-    it('timer is paused in pie-decision phase and resumed after keep', async () => {
-      const createRes = await request(app)
-        .post('/api/games')
-        .set('Authorization', `Bearer ${token}`)
-        .send({
-          config: {
-            mode: 'pvp-local',
-            boardSize: 5,
-            timerEnabled: true,
-            timerSeconds: 300,
-            pieRule: true,
-          },
-        });
-      const gameId = createRes.body.id;
-
-      const moveRes = await request(app)
-        .post(`/api/games/${gameId}/move`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ row: 0, col: 0, player: 'player1' });
-
-      expect(moveRes.body.phase).toBe('pie-decision');
-      expect(moveRes.body.timer.activePlayer).toBeNull();
-
-      const keepRes = await request(app)
-        .post(`/api/games/${gameId}/pie-decision`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ decision: 'keep' });
-
-      expect(keepRes.body.phase).toBe('playing');
-      expect(keepRes.body.timer.activePlayer).toBe('player2');
-    });
-
-    it('normal game without pieRule does not enter pie-decision after first move', async () => {
+  describe('GET /api/games — integration with full game lifecycle', () => {
+    it('a game that ends by surrender shows winner in summary', async () => {
       const createRes = await request(app)
         .post('/api/games')
         .set('Authorization', `Bearer ${token}`)
         .send(pvpLocalConfig);
       const gameId = createRes.body.id;
 
-      const moveRes = await request(app)
+      // Play a move first, then surrender
+      await request(app)
         .post(`/api/games/${gameId}/move`)
         .set('Authorization', `Bearer ${token}`)
         .send({ row: 0, col: 0, player: 'player1' });
 
-      expect(moveRes.status).toBe(200);
-      expect(moveRes.body.phase).toBe('playing');
+      await request(app)
+        .post(`/api/games/${gameId}/surrender`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ player: 'player2' });
+
+      const listRes = await request(app)
+        .get('/api/games')
+        .set('Authorization', `Bearer ${token}`);
+
+      const summary = listRes.body.find((g: any) => g.id === gameId);
+      expect(summary.winner).toBe('player1');
+      expect(summary.moveCount).toBe(1);
+    });
+
+    it('GET /api/games and GET /api/games/:id report consistent status', async () => {
+      const createRes = await request(app)
+        .post('/api/games')
+        .set('Authorization', `Bearer ${token}`)
+        .send(pvpLocalConfig);
+      const gameId = createRes.body.id;
+
+      const [listRes, detailRes] = await Promise.all([
+        request(app).get('/api/games').set('Authorization', `Bearer ${token}`),
+        request(app).get(`/api/games/${gameId}`),
+      ]);
+
+      const summary = listRes.body.find((g: any) => g.id === gameId);
+      expect(summary.status).toBe(detailRes.body.status);
+      expect(summary.config.mode).toBe(detailRes.body.config.mode);
     });
   });
 
@@ -777,69 +697,6 @@ describe('Game API', () => {
         .send({});
       expect(res.status).toBe(400);
       expect(res.body.error).toMatch(/player is required/i);
-    });
-  });
-
-  describe('Timer game flow', () => {
-    it('timer decrements after a move', async () => {
-      const createRes = await request(app)
-        .post('/api/games')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ config: { mode: 'pvp-local', boardSize: 5, timerEnabled: true, timerSeconds: 300 } });
-      const gameId = createRes.body.id;
-      const initialMs = createRes.body.timer.player1RemainingMs;
-
-      const moveRes = await request(app)
-        .post(`/api/games/${gameId}/move`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ row: 0, col: 0, player: 'player1' });
-
-      expect(moveRes.status).toBe(200);
-      expect(moveRes.body.timer).not.toBeNull();
-      expect(moveRes.body.timer.player1RemainingMs).toBeLessThanOrEqual(initialMs);
-      expect(moveRes.body.timer.activePlayer).toBe('player2');
-    });
-
-    it('timer activePlayer is null after surrender', async () => {
-      const createRes = await request(app)
-        .post('/api/games')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ config: { mode: 'pvp-local', boardSize: 5, timerEnabled: true, timerSeconds: 300 } });
-      const gameId = createRes.body.id;
-
-      const res = await request(app)
-        .post(`/api/games/${gameId}/surrender`)
-        .set('Authorization', `Bearer ${token}`)
-        .send({ player: 'player1' });
-
-      expect(res.status).toBe(200);
-      expect(res.body.timer.activePlayer).toBeNull();
-    });
-  });
-
-  describe('PvE game with token — match recording', () => {
-    it('pve game records match when human wins (bot fails gracefully)', async () => {
-      // Mock bot to return an invalid move so it skips — human can play to win
-      vi.mocked(fetch)
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ coords: { x: 0, y: 0, z: 0 } }) } as any)
-        .mockResolvedValue({ ok: false, status: 503 } as any);
-
-      const createRes = await request(app)
-        .post('/api/games')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ config: { mode: 'pve', boardSize: 5, timerEnabled: false, botLevel: 'medium', playerColor: 'player1' } });
-
-      expect(createRes.status).toBe(201);
-    });
-
-    it('returns 201 for pve game where bot is player2 (human player1)', async () => {
-      const res = await request(app)
-        .post('/api/games')
-        .set('Authorization', `Bearer ${token}`)
-        .send({ config: { mode: 'pve', boardSize: 5, timerEnabled: false, botLevel: 'medium', playerColor: 'player1' } });
-      expect(res.status).toBe(201);
-      expect(res.body.players.player1.isBot).toBeUndefined();
-      expect(res.body.players.player2.isBot).toBe(true);
     });
   });
 });

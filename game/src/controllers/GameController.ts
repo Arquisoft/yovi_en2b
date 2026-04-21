@@ -44,6 +44,19 @@ export const getGame = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const getGames = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    const games = await gameService.getUserGames(userId);
+    return res.json(games);
+  } catch (err: any) {
+    return res.status(err.status || 500).json({ error: err.message });
+  }
+};
+
 export const playMove = async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string;

@@ -19,6 +19,21 @@ const mockGame = {
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 }
+const mockSummary = {
+  id: 'game-1',
+  config: { mode: 'pvp-local', boardSize: 5, timerEnabled: false },
+  status: 'finished',
+  phase: 'playing',
+  players: {
+    player1: { id: '1', name: 'TestUser', color: 'player1' },
+    player2: { id: '2', name: 'Opponent', color: 'player2' },
+  },
+  winner: 'player1',
+  moveCount: 8,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+}
+ 
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -81,6 +96,102 @@ describe('GameService', () => {
       await expect(gameService.getGameState('game-1')).rejects.toThrow()
     })
   })
+
+ describe('getUserGames', () => {
+    it('calls GET /api/games with Authorization header', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [mockSummary],
+      } as any)
+ 
+      await gameService.getUserGames('my-token')
+ 
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/games'),
+        expect.objectContaining({
+          headers: expect.objectContaining({ Authorization: 'Bearer my-token' }),
+        })
+      )
+    })
+ 
+    it('does NOT include a method (defaults to GET)', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      } as any)
+ 
+      await gameService.getUserGames('token')
+ 
+      const [, options] = vi.mocked(fetch).mock.calls[0]
+      expect((options as RequestInit).method).toBeUndefined()
+    })
+ 
+    it('returns an array of game summaries on success', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [mockSummary, { ...mockSummary, id: 'game-2' }],
+      } as any)
+ 
+      const result = await gameService.getUserGames('token')
+      expect(result).toHaveLength(2)
+      expect(result[0].id).toBe('game-1')
+      expect(result[1].id).toBe('game-2')
+    })
+ 
+    it('returns an empty array when server returns empty array', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      } as any)
+ 
+      const result = await gameService.getUserGames('token')
+      expect(result).toHaveLength(0)
+    })
+ 
+    it('summaries contain moveCount', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [mockSummary],
+      } as any)
+ 
+      const [summary] = await gameService.getUserGames('token')
+      expect(summary.moveCount).toBe(8)
+    })
+ 
+    it('throws using data.error on non-ok response', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' }),
+      } as any)
+ 
+      await expect(gameService.getUserGames('bad-token')).rejects.toThrow('Unauthorized')
+    })
+ 
+    it('throws generic message when json() fails on error response', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => { throw new Error('not json') },
+      } as any)
+ 
+      await expect(gameService.getUserGames('token')).rejects.toThrow('Failed to fetch game history')
+    })
+ 
+    it('the URL targets the /api/games endpoint (not a sub-route)', async () => {
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      } as any)
+ 
+      await gameService.getUserGames('token')
+ 
+      const [url] = vi.mocked(fetch).mock.calls[0]
+      // Should end with /games, not /games/something
+      expect(String(url)).toMatch(/\/games$/)
+    })
+  })
+
 
   describe('playMove', () => {
     it('calls POST /api/games/:id/move with row, col, player', async () => {

@@ -5,7 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { Button } from '@/components/ui/Button'
 import { SUPPORTED_LOCALES, type SupportedLocale } from '@/i18n/i18n'
-import { Sun, Moon, LogOut, User, Hexagon, BarChart2, Trophy } from 'lucide-react'
+import { Sun, Moon, LogOut, User, Hexagon, BarChart2, Trophy,  Clock } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -70,6 +70,10 @@ export function AppNavbar() {
 
               <Button variant="ghost" size="icon" onClick={() => navigate('/stats')} aria-label={t('nav.statistics')}>
                 <BarChart2 className="h-5 w-5" />
+              </Button>
+
+            <Button variant="ghost" size="icon" onClick={() => navigate('/history')} aria-label={t('nav.history')}>
+                <Clock className="h-5 w-5" />
               </Button>
 
               <Button variant="ghost" size="icon" onClick={() => navigate('/ranking')} aria-label={t('nav.ranking')}>

@@ -1,6 +1,7 @@
 import type {
   GameInfo,
   GameState,
+  GameSummary,
   GameConfig,
   ChatMessage,
   PieDecision,
@@ -42,6 +43,20 @@ class GameService {
     const response = await fetch(`${this.baseUrl}/games/${gameId}`)
     if (response.status === 404) return null
     if (!response.ok) throw new Error(`Failed to get game state: ${response.status}`)
+    return response.json()
+  }
+
+  async getUserGames(token: string): Promise<GameSummary[]> {
+    const response = await fetch(`${this.baseUrl}/games`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: 'Failed to fetch game history' }))
+      throw new Error(err.error || `Failed to fetch game history: ${response.status}`)
+    }
     return response.json()
   }
 

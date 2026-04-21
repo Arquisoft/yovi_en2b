@@ -24,6 +24,7 @@ const es = {
     toggleTheme: 'Cambiar tema',
     statistics: 'Estadísticas',
     ranking: 'Clasificación',
+    history: 'Historial de partidas',
     logout: 'Cerrar sesión',
     guestBadge: 'Invitado',
     signOut: 'Cerrar sesión',
@@ -205,7 +206,6 @@ const es = {
     next: 'Siguiente',
     last: 'Última',
     pageOf: '{{page}} / {{total}}',
-    // Guest upsell
     trackProgress: 'Sigue tu progreso',
     trackProgressDescription: 'Crea una cuenta gratuita para guardar tu historial y ver tu porcentaje de victorias.',
     createAccount: 'Crear cuenta',
@@ -226,6 +226,46 @@ const es = {
       'pve-medium': 'Bot intermedio',
       'pve-hard': 'Bot difícil',
     },
+  },
+
+  // ── Game History ──────────────────────────────────────────────────────────────
+  history: {
+    title: 'Historial de partidas',
+    tableTitle: 'Todas las partidas',
+    noGames: 'Aún no has jugado ninguna partida.',
+    watchReplay: 'Repetición',
+    moves: '{{count}} movimientos',
+    colDate: 'Fecha',
+    colMode: 'Modo',
+    colOpponent: 'Oponente',
+    colBoard: 'Tablero',
+    colMoves: 'Jugadas',
+    colResult: 'Resultado',
+    result: {
+      win: 'Victoria',
+      loss: 'Derrota',
+      draw: 'Empate',
+    },
+    mode: {
+      pve: 'vs Bot',
+      'pvp-local': 'Local',
+      'pvp-online': 'Online',
+    },
+  },
+
+  // ── Replay ────────────────────────────────────────────────────────────────────
+  replay: {
+    emptyBoard: 'Posición inicial',
+    played: 'jugó en ({{row}}, {{col}})',
+    stepOf: '{{step}} / {{total}}',
+    start: 'Inicio',
+    end: 'Final',
+    goToStart: 'Ir al inicio',
+    previousMove: 'Jugada anterior',
+    nextMove: 'Jugada siguiente',
+    goToEnd: 'Ir al final',
+    scrubber: 'Control de jugadas',
+    keyboardHint: 'Teclas ← → para avanzar jugada a jugada',
   },
 
   // ── 404 ───────────────────────────────────────────────────────────────────────
