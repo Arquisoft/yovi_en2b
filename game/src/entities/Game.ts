@@ -18,6 +18,10 @@ export class Game {
   @Column({ type: 'int', name: 'player1_id', nullable: true })
   player1Id!: number | null;
 
+  /** Second player's userId — set after online matchmaking */
+  @Column({ type: 'int', name: 'player2_id', nullable: true })
+  player2Id!: number | null;
+
   @Column({ type: 'simple-json' })
   config!: GameConfig;
 
@@ -28,8 +32,6 @@ export class Game {
   })
   status!: GameStatus;
 
-  // Sub-phase within the 'playing' status for Pie Rule support.
-  // Stored as varchar to avoid enum migration complexity.
   @Column({ type: 'varchar', length: 20, default: 'playing' })
   phase!: GamePhase;
 
