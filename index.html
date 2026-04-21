@@ -1,0 +1,5666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.26">
+<title>yovi_en2b</title>
+<style>
+/*! Asciidoctor GitHub Dark stylesheet | MIT License | [https://asciidoctor.org](https://asciidoctor.org) */
+/* Uncomment the following line when using as a custom stylesheet */
+@import "https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;600&display=swap";
+
+*,
+::before,
+::after {
+  box-sizing: border-box
+}
+
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%
+}
+
+
+body {
+  background: #0d1117;
+  color: #c9d1d9;
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  font-size: inherit;
+  line-height: 1;
+  position: relative;
+  cursor: auto;
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+  word-wrap: anywhere;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased
+}
+
+
+dl,
+dt,
+dd,
+ul,
+ol,
+li,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+pre,
+p,
+blockquote,
+th,
+td {
+  margin: 0;
+  padding: 0
+}
+
+
+a {
+  background: none;
+  color: #58a6ff;
+  text-decoration: underline;
+  line-height: inherit
+}
+
+
+a:active,
+a:hover {
+  cursor: pointer;
+  outline: 0
+}
+
+
+a:focus {
+  outline: thin dotted
+}
+
+
+a:hover,
+a:focus {
+  color: #1f6feb
+}
+
+
+abbr {
+  font-size: .9em
+}
+
+
+abbr[title] {
+  cursor: help;
+  border-bottom: 1px dotted #30363d;
+  text-decoration: none
+}
+
+
+b,
+strong {
+  font-weight: bold;
+  line-height: inherit
+}
+
+
+strong strong {
+  font-weight: 400
+}
+
+
+code,
+kbd,
+pre {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 1em
+}
+
+
+code {
+  font-weight: 400;
+  color: #c9d1d9
+}
+
+
+pre {
+  color: #c9d1d9;
+  line-height: 1.45;
+  text-rendering: optimizeSpeed;
+  white-space: pre-wrap
+}
+
+
+dfn {
+  font-style: italic
+}
+
+
+em,
+i {
+  font-style: italic;
+  line-height: inherit
+}
+
+
+em em {
+  font-style: normal
+}
+
+
+hr {
+  border: solid #30363d;
+  border-width: 1px 0 0;
+  clear: both;
+  height: 0;
+  margin: 1.25em 0 1.1875em
+}
+
+
+mark {
+  background: #d29922;
+  color: #0d1117
+}
+
+
+p {
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+  text-rendering: optimizeLegibility
+}
+
+
+q {
+  quotes: "\201C" "\201D" "\2018" "\2019"
+}
+
+
+small {
+  font-size: 60%;
+  line-height: inherit
+}
+
+
+sub,
+sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline
+}
+
+
+sup {
+  top: -.5em
+}
+
+
+sub {
+  bottom: -.25em
+}
+
+
+img,
+object[type^="image/"],
+svg {
+  display: inline-block;
+  height: auto;
+  max-width: 100%;
+  vertical-align: middle
+}
+
+
+img {
+  border: 0;
+  -ms-interpolation-mode: bicubic
+}
+
+
+object {
+  max-width: 100%
+}
+
+
+svg:not(:root) {
+  overflow: hidden
+}
+
+
+figure {
+  margin: 0
+}
+
+
+audio,
+video {
+  display: inline-block
+}
+
+
+audio:not([controls]) {
+  display: none;
+  height: 0
+}
+
+
+.left {
+  float: left !important
+}
+
+
+.right {
+  float: right !important
+}
+
+
+.text-left,
+div.text-left>* {
+  text-align: left !important
+}
+
+
+.text-right,
+div.text-right>* {
+  text-align: right !important
+}
+
+
+.text-center,
+div.text-center>* {
+  text-align: center !important
+}
+
+
+.text-justify,
+div.text-justify>* {
+  text-align: justify !important
+}
+
+
+.hide {
+  display: none
+}
+
+
+.subheader,
+.admonitionblock td.content>.title,
+.audioblock>.title,
+.exampleblock>.title,
+.imageblock>.title,
+.listingblock>.title,
+.literalblock>.title,
+.stemblock>.title,
+.openblock>.title,
+.paragraph>.title,
+.quoteblock>.title,
+table.tableblock>.title,
+.verseblock>.title,
+.videoblock>.title,
+.dlist>.title,
+.olist>.title,
+.ulist>.title,
+.qlist>.title,
+.hdlist>.title {
+  line-height: 1.45;
+  color: #8b949e;
+  font-weight: 400;
+  margin-top: 0;
+  margin-bottom: .25em
+}
+
+
+p aside {
+  font-size: .875em;
+  line-height: 1.35;
+  font-style: italic
+}
+
+
+h1,
+h2,
+h3,
+#toctitle,
+.sidebarblock>.content>.title,
+h4,
+h5,
+h6 {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  font-weight: 600;
+  font-style: normal;
+  color: #f0f6fc;
+  text-rendering: optimizeLegibility;
+  margin-top: 1em;
+  margin-bottom: .5em;
+  line-height: 1.2;
+  word-spacing: -.05em
+}
+
+
+h1 small,
+h2 small,
+h3 small,
+#toctitle small,
+.sidebarblock>.content>.title small,
+h4 small,
+h5 small,
+h6 small {
+  color: #8b949e;
+  line-height: 0
+}
+
+
+h1 {
+  font-size: 2.125em
+}
+
+
+h2 {
+  font-size: 1.6875em
+}
+
+
+h3,
+#toctitle,
+.sidebarblock>.content>.title {
+  font-size: 1.375em
+}
+
+
+h4,
+h5 {
+  font-size: 1.125em
+}
+
+
+h6 {
+  font-size: 1em
+}
+
+
+ul,
+ol,
+dl {
+  line-height: 1.6;
+  margin-bottom: 1.25em;
+  list-style-position: outside;
+  font-family: inherit
+}
+
+
+ul,
+ol {
+  margin-left: 1.5em
+}
+
+
+ul li ul,
+ul li ol {
+  margin-left: 1.25em;
+  margin-bottom: 0
+}
+
+
+ul.circle {
+  list-style-type: circle
+}
+
+
+ul.disc {
+  list-style-type: disc
+}
+
+
+ul.square {
+  list-style-type: square
+}
+
+
+ul.circle ul:not([class]),
+ul.disc ul:not([class]),
+ul.square ul:not([class]) {
+  list-style: inherit
+}
+
+
+ol li ul,
+ol li ol {
+  margin-left: 1.25em;
+  margin-bottom: 0
+}
+
+
+dl dt {
+  margin-bottom: .3125em;
+  font-weight: bold
+}
+
+
+dl dd {
+  margin-bottom: 1.25em;
+  margin-left: 1.125em
+}
+
+
+blockquote {
+  margin: 0 0 1.25em;
+  padding: .5625em 1.25em 0 1.1875em;
+  border-left: 1px solid #30363d
+}
+
+
+blockquote,
+blockquote p {
+  line-height: 1.6;
+  color: #8b949e
+}
+
+
+@media screen and (min-width:768px) {
+  h1 {
+    font-size: 2.75em
+  }
+
+
+  h2 {
+    font-size: 2.3125em
+  }
+
+
+  h3,
+  #toctitle,
+  .sidebarblock>.content>.title {
+    font-size: 1.6875em
+  }
+
+
+  h4 {
+    font-size: 1.4375em
+  }
+}
+
+
+table {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-collapse: collapse;
+  border-spacing: 0;
+  margin-bottom: 1.25em;
+  word-wrap: normal
+}
+
+
+table thead,
+table tfoot {
+  background: #161b22
+}
+
+
+table thead tr th,
+table thead tr td,
+table tfoot tr th,
+table tfoot tr td {
+  padding: .5em .625em .625em;
+  font-size: inherit;
+  color: #c9d1d9;
+  text-align: left
+}
+
+
+table tr th,
+table tr td {
+  padding: .5625em .625em;
+  font-size: inherit;
+  color: #c9d1d9
+}
+
+
+table tr.even,
+table tr.alt {
+  background: #161b22
+}
+
+
+table thead tr th,
+table tfoot tr th,
+table tbody tr td,
+table tr td,
+table tfoot tr td {
+  line-height: 1.6
+}
+
+
+h1 strong,
+h2 strong,
+h3 strong,
+#toctitle strong,
+.sidebarblock>.content>.title strong,
+h4 strong,
+h5 strong,
+h6 strong {
+  font-weight: 400
+}
+
+
+.center {
+  margin-left: auto;
+  margin-right: auto
+}
+
+
+.stretch {
+  width: 100%
+}
+
+
+.clearfix::before,
+.clearfix::after,
+.float-group::before,
+.float-group::after {
+  content: "";
+  display: table
+}
+
+
+.clearfix::after,
+.float-group::after {
+  clear: both
+}
+
+
+:not(pre).nobreak {
+  word-wrap: normal
+}
+
+
+:not(pre).nowrap {
+  white-space: nowrap
+}
+
+
+:not(pre).pre-wrap {
+  white-space: pre-wrap
+}
+
+
+:not(pre):not([class^=L])>code {
+  font-size: .9375em;
+  font-style: normal !important;
+  letter-spacing: 0;
+  padding: .1em .5ex;
+  word-spacing: -.15em;
+  background: #161b22;
+  border-radius: 4px;
+  line-height: 1.45;
+  text-rendering: optimizeSpeed
+}
+
+
+pre code,
+pre pre {
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit
+}
+
+
+pre.nowrap,
+pre.nowrap pre {
+  white-space: pre;
+  word-wrap: normal
+}
+
+
+.keyseq {
+  color: #8b949e
+}
+
+
+kbd {
+  display: inline-block;
+  color: #c9d1d9;
+  font-size: .65em;
+  line-height: 1.45;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .3), inset 0 0 0 .1em #21262d;
+  margin: 0 .15em;
+  padding: .2em .5em;
+  vertical-align: middle;
+  position: relative;
+  top: -.1em;
+  white-space: nowrap
+}
+
+
+.keyseq kbd:first-child {
+  margin-left: 0
+}
+
+
+.keyseq kbd:last-child {
+  margin-right: 0
+}
+
+
+.menuseq,
+.menuref {
+  color: #c9d1d9
+}
+
+
+.menuseq b:not(.caret),
+.menuref {
+  font-weight: inherit
+}
+
+
+.menuseq {
+  word-spacing: -.02em
+}
+
+
+.menuseq b.caret {
+  font-size: 1.25em;
+  line-height: .8
+}
+
+
+.menuseq i.caret {
+  font-weight: bold;
+  text-align: center;
+  width: .45em
+}
+
+
+b.button::before,
+b.button::after {
+  position: relative;
+  top: -1px;
+  font-weight: 400
+}
+
+
+b.button::before {
+  content: "[";
+  padding: 0 3px 0 2px
+}
+
+
+b.button::after {
+  content: "]";
+  padding: 0 2px 0 3px
+}
+
+
+p a>code:hover {
+  color: #f0f6fc
+}
+
+
+body>div[id] {
+  margin: 0 auto;
+  max-width: 62.5em;
+  position: relative;
+  padding-left: .9375em;
+  padding-right: .9375em;
+  width: 100%
+}
+
+
+body>div[id]::before,
+body>div[id]::after,
+#content #footnotes::before {
+  content: "";
+  display: table;
+  clear: both
+}
+
+
+#content {
+  margin-top: 1.25em;
+  margin-bottom: .625em
+}
+
+
+#content::before {
+  content: none
+}
+
+
+#header>h1:first-child {
+  color: #f0f6fc;
+  margin-top: 2.25rem;
+  margin-bottom: 0
+}
+
+
+#header>h1:first-child+#toc {
+  margin-top: 8px;
+  border-top: 1px solid #30363d
+}
+
+
+#header>h1:only-child {
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 8px
+}
+
+
+#header .details {
+  border-bottom: 1px solid #30363d;
+  line-height: 1.45;
+  padding-top: .25em;
+  padding-bottom: .25em;
+  padding-left: .25em;
+  color: #8b949e;
+  display: flex;
+  flex-flow: row wrap
+}
+
+
+#header .details span:first-child {
+  margin-left: -.125em
+}
+
+
+#header .details span.email a {
+  color: #c9d1d9
+}
+
+
+#header .details br {
+  display: none
+}
+
+
+#header .details br+span::before {
+  content: "\00a0\2013\00a0"
+}
+
+
+#header .details br+span.author::before {
+  content: "\00a0\22c5\00a0";
+  color: #c9d1d9
+}
+
+
+#header .details br+span#revremark::before {
+  content: "\00a0|\00a0"
+}
+
+
+#header #revnumber {
+  text-transform: capitalize
+}
+
+
+#header #revnumber::after {
+  content: "\00a0"
+}
+
+
+#content>h1:first-child:not([class]) {
+  color: #f0f6fc;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 8px;
+  margin-top: 0;
+  padding-top: 1rem;
+  margin-bottom: 1.25rem
+}
+
+
+#toc {
+  border-bottom: 1px solid #30363d;
+  padding-bottom: .5em
+}
+
+
+#toc>ul {
+  margin-left: .125em
+}
+
+
+#toc ul.sectlevel0>li:not([class])>a {
+  font-style: italic
+}
+
+
+#toc ul.sectlevel0 ul.sectlevel1 {
+  margin: .5em 0
+}
+
+
+#toc ul {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  list-style-type: none
+}
+
+
+#toc li {
+  line-height: 1.3334;
+  margin-top: .3334em
+}
+
+
+#toc a {
+  text-decoration: none;
+  color: #adbac7;
+  transition: color 0.15s ease-in-out
+}
+
+#toc a:hover {
+  color: #58a6ff
+}
+
+#toc a:active {
+  text-decoration: none;
+  color: #58a6ff
+}
+
+
+#toctitle {
+  color: #8b949e;
+  font-size: 1.2em
+}
+
+
+@media screen and (min-width:768px) {
+  #toctitle {
+    font-size: 1.375em
+  }
+
+
+  body.toc2 {
+    padding-left: 15em;
+    padding-right: 0
+  }
+
+
+  body.toc2 #header>h1:nth-last-child(2) {
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 8px
+  }
+
+
+  #toc.toc2 {
+    margin-top: 0 !important;
+    background: #010409;
+    position: fixed;
+    width: 15em;
+    left: 0;
+    top: 0;
+    border-right: 1px solid #30363d;
+    border-top-width: 0 !important;
+    border-bottom-width: 0 !important;
+    z-index: 1000;
+    padding: 1.25em 1em;
+    height: 100%;
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #484f58 #010409
+  }
+
+
+  #toc.toc2::-webkit-scrollbar {
+    width: 10px
+  }
+
+
+  #toc.toc2::-webkit-scrollbar-track {
+    background: #010409
+  }
+
+
+  #toc.toc2::-webkit-scrollbar-thumb {
+    background: #484f58;
+    border-radius: 5px
+  }
+
+
+  #toc.toc2::-webkit-scrollbar-thumb:hover {
+    background: #6e7681
+  }
+
+  #toc.toc2 #toctitle {
+    margin-top: 0;
+    margin-bottom: .8rem;
+    font-size: 1.2em;
+    color: #f0f6fc;
+    font-weight: 600
+  }
+
+
+  #toc.toc2>ul {
+    font-size: .9em;
+    margin-bottom: 0
+  }
+
+  #toc.toc2 a {
+    color: #8b949e;
+    display: block;
+    padding: .25rem .5rem;
+    margin: 0 -.5rem;
+    border-radius: 6px;
+    transition: all 0.15s ease-in-out
+  }
+
+
+  #toc.toc2 a:hover {
+    color: #c9d1d9;
+    background: rgba(177, 186, 196, 0.12)
+  }
+
+  #toc.toc2 ul.sectlevel0>li>a {
+    font-weight: 600;
+    color: #adbac7
+  }
+
+  #toc.toc2 ul ul {
+    margin-left: 0;
+    padding-left: 1em
+  }
+
+
+  #toc.toc2 ul.sectlevel0 ul.sectlevel1 {
+    padding-left: 0;
+    margin-top: .5em;
+    margin-bottom: .5em
+  }
+
+
+  body.toc2.toc-right {
+    padding-left: 0;
+    padding-right: 15em
+  }
+
+
+  body.toc2.toc-right #toc.toc2 {
+    border-right-width: 0;
+    border-left: 1px solid #30363d;
+    left: auto;
+    right: 0
+  }
+}
+
+
+@media screen and (min-width:1280px) {
+  body.toc2 {
+    padding-left: 20em;
+    padding-right: 0
+  }
+
+
+  #toc.toc2 {
+    width: 20em
+  }
+
+
+  #toc.toc2 #toctitle {
+    font-size: 1.375em
+  }
+
+
+  #toc.toc2>ul {
+    font-size: .95em
+  }
+
+
+  #toc.toc2 ul ul {
+    padding-left: 1.25em
+  }
+
+
+  body.toc2.toc-right {
+    padding-left: 0;
+    padding-right: 20em
+  }
+}
+
+
+#content #toc {
+  border: 1px solid #30363d;
+  margin-bottom: 1.25em;
+  padding: 1.25em;
+  background: #0d1117;
+  border-radius: 4px
+}
+
+
+#footer {
+  max-width: none;
+  background: #161b22;
+  padding: 1.25em
+}
+
+
+#footer-text {
+  color: #8b949e;
+  line-height: 1.44
+}
+
+
+.sect1 {
+  padding-bottom: .625em
+}
+
+
+@media screen and (min-width:768px) {
+  #content {
+    margin-bottom: 1.25em
+  }
+
+
+  .sect1 {
+    padding-bottom: 1.25em
+  }
+}
+
+
+.sect1:last-child {
+  padding-bottom: 0
+}
+
+
+.sect1+.sect1 {
+  border-top: 1px solid #30363d
+}
+
+
+#content h1>a.anchor,
+h2>a.anchor,
+h3>a.anchor,
+#toctitle>a.anchor,
+.sidebarblock>.content>.title>a.anchor,
+h4>a.anchor,
+h5>a.anchor,
+h6>a.anchor {
+  position: absolute;
+  z-index: 1001;
+  width: 1.5ex;
+  margin-left: -1.5ex;
+  display: block;
+  text-decoration: none !important;
+  visibility: hidden;
+  text-align: center;
+  font-weight: 400
+}
+
+
+#content h1>a.anchor::before,
+h2>a.anchor::before,
+h3>a.anchor::before,
+#toctitle>a.anchor::before,
+.sidebarblock>.content>.title>a.anchor::before,
+h4>a.anchor::before,
+h5>a.anchor::before,
+h6>a.anchor::before {
+  content: "\00A7";
+  font-size: .85em;
+  display: block;
+  padding-top: .1em
+}
+
+
+#content h1:hover>a.anchor,
+#content h1>a.anchor:hover,
+h2:hover>a.anchor,
+h2>a.anchor:hover,
+h3:hover>a.anchor,
+#toctitle:hover>a.anchor,
+.sidebarblock>.content>.title:hover>a.anchor,
+h3>a.anchor:hover,
+#toctitle>a.anchor:hover,
+.sidebarblock>.content>.title>a.anchor:hover,
+h4:hover>a.anchor,
+h4>a.anchor:hover,
+h5:hover>a.anchor,
+h5>a.anchor:hover,
+h6:hover>a.anchor,
+h6>a.anchor:hover {
+  visibility: visible
+}
+
+
+#content h1>a.link,
+h2>a.link,
+h3>a.link,
+#toctitle>a.link,
+.sidebarblock>.content>.title>a.link,
+h4>a.link,
+h5>a.link,
+h6>a.link {
+  color: #f0f6fc;
+  text-decoration: none
+}
+
+
+#content h1>a.link:hover,
+h2>a.link:hover,
+h3>a.link:hover,
+#toctitle>a.link:hover,
+.sidebarblock>.content>.title>a.link:hover,
+h4>a.link:hover,
+h5>a.link:hover,
+h6>a.link:hover {
+  color: #58a6ff
+}
+
+
+details,
+.audioblock,
+.imageblock,
+.literalblock,
+.listingblock,
+.stemblock,
+.videoblock {
+  margin-bottom: 1.25em
+}
+
+
+details {
+  margin-left: 1.25rem
+}
+
+
+details>summary {
+  cursor: pointer;
+  display: block;
+  position: relative;
+  line-height: 1.6;
+  margin-bottom: .625rem;
+  outline: none;
+  -webkit-tap-highlight-color: transparent
+}
+
+
+details>summary::-webkit-details-marker {
+  display: none
+}
+
+
+details>summary::before {
+  content: "";
+  border: solid transparent;
+  border-left: solid;
+  border-width: .3em 0 .3em .5em;
+  position: absolute;
+  top: .5em;
+  left: -1.25rem;
+  transform: translateX(15%)
+}
+
+
+details[open]>summary::before {
+  border: solid transparent;
+  border-top: solid;
+  border-width: .5em .3em 0;
+  transform: translateY(15%)
+}
+
+
+details>summary::after {
+  content: "";
+  width: 1.25rem;
+  height: 1em;
+  position: absolute;
+  top: .3em;
+  left: -1.25rem
+}
+
+
+.admonitionblock td.content>.title,
+.audioblock>.title,
+.exampleblock>.title,
+.imageblock>.title,
+.listingblock>.title,
+.literalblock>.title,
+.stemblock>.title,
+.openblock>.title,
+.paragraph>.title,
+.quoteblock>.title,
+table.tableblock>.title,
+.verseblock>.title,
+.videoblock>.title,
+.dlist>.title,
+.olist>.title,
+.ulist>.title,
+.qlist>.title,
+.hdlist>.title {
+  text-rendering: optimizeLegibility;
+  text-align: left;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  font-size: 1rem;
+  font-style: italic
+}
+
+
+table.tableblock.fit-content>caption.title {
+  white-space: nowrap;
+  width: 0
+}
+
+
+.paragraph.lead>p,
+#preamble>.sectionbody>[class=paragraph]:first-of-type p {
+  font-size: 1.21875em;
+  line-height: 1.6;
+  color: #c9d1d9
+}
+
+
+.admonitionblock>table {
+  border-collapse: separate;
+  border: 0;
+  background: none;
+  width: 100%
+}
+
+
+.admonitionblock>table td.icon {
+  text-align: center;
+  width: 80px
+}
+
+
+.admonitionblock>table td.icon img {
+  max-width: none
+}
+
+
+.admonitionblock>table td.icon .title {
+  font-weight: bold;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  text-transform: uppercase
+}
+
+
+.admonitionblock>table td.content {
+  padding-left: 1.125em;
+  padding-right: 1.25em;
+  border-left: 1px solid #30363d;
+  color: #8b949e;
+  word-wrap: anywhere
+}
+
+
+.admonitionblock>table td.content>:last-child>:last-child {
+  margin-bottom: 0
+}
+
+
+.exampleblock>.content {
+  border: 1px solid #30363d;
+  margin-bottom: 1.25em;
+  padding: 1.25em;
+  background: #161b22;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .3)
+}
+
+
+.sidebarblock {
+  border: 1px solid #30363d;
+  margin-bottom: 1.25em;
+  padding: 1.25em;
+  background: #161b22;
+  border-radius: 4px
+}
+
+
+.sidebarblock>.content>.title {
+  color: #8b949e;
+  margin-top: 0;
+  text-align: center
+}
+
+
+#content #toc>:first-child,
+.exampleblock>.content>:first-child,
+.sidebarblock>.content>:first-child {
+  margin-top: 0
+}
+
+
+#content #toc>:last-child,
+.exampleblock>.content>:last-child,
+.exampleblock>.content>:last-child>:last-child,
+.exampleblock>.content .olist>ol>li:last-child>:last-child,
+.exampleblock>.content .ulist>ul>li:last-child>:last-child,
+.exampleblock>.content .qlist>ol>li:last-child>:last-child,
+.sidebarblock>.content>:last-child,
+.sidebarblock>.content>:last-child>:last-child,
+.sidebarblock>.content .olist>ol>li:last-child>:last-child,
+.sidebarblock>.content .ulist>ul>li:last-child>:last-child,
+.sidebarblock>.content .qlist>ol>li:last-child>:last-child {
+  margin-bottom: 0
+}
+
+
+.literalblock pre,
+.listingblock>.content>pre {
+  border-radius: 4px;
+  overflow-x: auto;
+  padding: 1em;
+  font-size: .8125em
+}
+
+
+@media screen and (min-width:768px) {
+
+
+  .literalblock pre,
+  .listingblock>.content>pre {
+    font-size: .90625em
+  }
+}
+
+
+@media screen and (min-width:1280px) {
+
+
+  .literalblock pre,
+  .listingblock>.content>pre {
+    font-size: 1em
+  }
+}
+
+
+.literalblock pre,
+.listingblock>.content>pre:not(.highlight),
+.listingblock>.content>pre[class=highlight],
+.listingblock>.content>pre[class^="highlight "] {
+  background: #161b22
+}
+
+
+.literalblock.output pre {
+  color: #c9d1d9;
+  background: #21262d
+}
+
+
+.listingblock>.content {
+  position: relative
+}
+
+
+.listingblock pre>code {
+  display: block
+}
+
+
+.listingblock code[data-lang]::before {
+  display: none;
+  content: attr(data-lang);
+  position: absolute;
+  font-size: .75em;
+  top: .425rem;
+  right: .5rem;
+  line-height: 1;
+  text-transform: uppercase;
+  color: inherit;
+  opacity: .5
+}
+
+
+.listingblock:hover code[data-lang]::before {
+  display: block
+}
+
+
+.listingblock.terminal pre .command::before {
+  content: attr(data-prompt);
+  padding-right: .5em;
+  color: inherit;
+  opacity: .5
+}
+
+
+.listingblock.terminal pre .command:not([data-prompt])::before {
+  content: "$"
+}
+
+
+.listingblock pre.highlightjs {
+  padding: 0
+}
+
+
+.listingblock pre.highlightjs>code {
+  padding: 1em;
+  border-radius: 4px
+}
+
+
+.listingblock pre.prettyprint {
+  border-width: 0
+}
+
+
+.prettyprint {
+  background: #161b22
+}
+
+
+pre.prettyprint .linenums {
+  line-height: 1.45;
+  margin-left: 2em
+}
+
+
+pre.prettyprint li {
+  background: none;
+  list-style-type: inherit;
+  padding-left: 0
+}
+
+
+pre.prettyprint li code[data-lang]::before {
+  opacity: 1
+}
+
+
+pre.prettyprint li:not(:first-child) code[data-lang]::before {
+  display: none
+}
+
+
+table.linenotable {
+  border-collapse: separate;
+  border: 0;
+  margin-bottom: 0;
+  background: none
+}
+
+
+table.linenotable td[class] {
+  color: inherit;
+  vertical-align: top;
+  padding: 0;
+  line-height: inherit;
+  white-space: normal
+}
+
+
+table.linenotable td.code {
+  padding-left: .75em
+}
+
+
+table.linenotable td.linenos {
+  width: .01%
+}
+
+
+table.linenotable td.linenos,
+pre.pygments .linenos,
+pre.rouge .linenos {
+  border-right: 1px solid;
+  opacity: .35;
+  padding-right: .5em;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none
+}
+
+
+pre.pygments span.linenos,
+pre.rouge span.linenos {
+  display: inline-block;
+  margin-right: .75em
+}
+
+
+.quoteblock {
+  margin: 0 1em 1.25em 1.5em;
+  display: table
+}
+
+
+.quoteblock:not(.excerpt)>.title {
+  margin-left: -1.5em;
+  margin-bottom: .75em
+}
+
+
+.quoteblock blockquote,
+.quoteblock p {
+  color: #8b949e;
+  font-size: 1.15rem;
+  line-height: 1.75;
+  word-spacing: .1em;
+  letter-spacing: 0;
+  font-style: italic;
+  text-align: justify
+}
+
+
+.quoteblock blockquote {
+  margin: 0;
+  padding: 0;
+  border: 0
+}
+
+
+.quoteblock blockquote::before {
+  content: "\201c";
+  float: left;
+  font-size: 2.75em;
+  font-weight: bold;
+  line-height: .6em;
+  margin-left: -.6em;
+  color: #58a6ff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .3)
+}
+
+
+.quoteblock blockquote>.paragraph:last-child p {
+  margin-bottom: 0
+}
+
+
+.quoteblock .attribution {
+  margin-top: .75em;
+  margin-right: .5ex;
+  text-align: right
+}
+
+
+.verseblock {
+  margin: 0 1em 1.25em
+}
+
+
+.verseblock pre {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  font-size: 1.15rem;
+  color: #c9d1d9;
+  font-weight: 300;
+  text-rendering: optimizeLegibility
+}
+
+
+.verseblock pre strong {
+  font-weight: 400
+}
+
+
+.verseblock .attribution {
+  margin-top: 1.25rem;
+  margin-left: .5ex
+}
+
+
+.quoteblock .attribution,
+.verseblock .attribution {
+  font-size: .9375em;
+  line-height: 1.45;
+  font-style: italic
+}
+
+
+.quoteblock .attribution br,
+.verseblock .attribution br {
+  display: none
+}
+
+
+.quoteblock .attribution cite,
+.verseblock .attribution cite {
+  display: block;
+  letter-spacing: -.025em;
+  color: #8b949e
+}
+
+
+.quoteblock.abstract blockquote::before,
+.quoteblock.excerpt blockquote::before,
+.quoteblock .quoteblock blockquote::before {
+  display: none
+}
+
+
+.quoteblock.abstract blockquote,
+.quoteblock.abstract p,
+.quoteblock.excerpt blockquote,
+.quoteblock.excerpt p,
+.quoteblock .quoteblock blockquote,
+.quoteblock .quoteblock p {
+  line-height: 1.6;
+  word-spacing: 0
+}
+
+
+.quoteblock.abstract {
+  margin: 0 1em 1.25em;
+  display: block
+}
+
+
+.quoteblock.abstract>.title {
+  margin: 0 0 .375em;
+  font-size: 1.15em;
+  text-align: center
+}
+
+
+.quoteblock.excerpt>blockquote,
+.quoteblock .quoteblock {
+  padding: 0 0 .25em 1em;
+  border-left: .25em solid #30363d
+}
+
+
+.quoteblock.excerpt,
+.quoteblock .quoteblock {
+  margin-left: 0
+}
+
+
+.quoteblock.excerpt blockquote,
+.quoteblock.excerpt p,
+.quoteblock .quoteblock blockquote,
+.quoteblock .quoteblock p {
+  color: inherit;
+  font-size: 1.0625rem
+}
+
+
+.quoteblock.excerpt .attribution,
+.quoteblock .quoteblock .attribution {
+  color: inherit;
+  font-size: .85rem;
+  text-align: left;
+  margin-right: 0
+}
+
+
+p.tableblock:last-child {
+  margin-bottom: 0
+}
+
+
+td.tableblock>.content {
+  margin-bottom: 1.25em;
+  word-wrap: anywhere
+}
+
+
+td.tableblock>.content>:last-child {
+  margin-bottom: -1.25em
+}
+
+
+table.tableblock,
+th.tableblock,
+td.tableblock {
+  border: 0 solid #30363d
+}
+
+
+table.grid-all>*>tr>* {
+  border-width: 1px
+}
+
+
+table.grid-cols>*>tr>* {
+  border-width: 0 1px
+}
+
+
+table.grid-rows>*>tr>* {
+  border-width: 1px 0
+}
+
+
+table.frame-all {
+  border-width: 1px
+}
+
+
+table.frame-ends {
+  border-width: 1px 0
+}
+
+
+table.frame-sides {
+  border-width: 0 1px
+}
+
+
+table.frame-none>colgroup+*>:first-child>*,
+table.frame-sides>colgroup+*>:first-child>* {
+  border-top-width: 0
+}
+
+
+table.frame-none>:last-child>:last-child>*,
+table.frame-sides>:last-child>:last-child>* {
+  border-bottom-width: 0
+}
+
+
+table.frame-none>*>tr>:first-child,
+table.frame-ends>*>tr>:first-child {
+  border-left-width: 0
+}
+
+
+table.frame-none>*>tr>:last-child,
+table.frame-ends>*>tr>:last-child {
+  border-right-width: 0
+}
+
+
+table.stripes-all>tbody>tr,
+table.stripes-odd>tbody>tr:nth-of-type(odd),
+table.stripes-even>tbody>tr:nth-of-type(even),
+table.stripes-hover>tbody>tr:hover {
+  background: #161b22
+}
+
+
+th.halign-left,
+td.halign-left {
+  text-align: left
+}
+
+
+th.halign-right,
+td.halign-right {
+  text-align: right
+}
+
+
+th.halign-center,
+td.halign-center {
+  text-align: center
+}
+
+
+th.valign-top,
+td.valign-top {
+  vertical-align: top
+}
+
+
+th.valign-bottom,
+td.valign-bottom {
+  vertical-align: bottom
+}
+
+
+th.valign-middle,
+td.valign-middle {
+  vertical-align: middle
+}
+
+
+table thead th,
+table tfoot th {
+  font-weight: bold
+}
+
+
+tbody tr th {
+  background: #161b22
+}
+
+
+tbody tr th,
+tbody tr th p,
+tfoot tr th,
+tfoot tr th p {
+  color: #c9d1d9;
+  font-weight: bold
+}
+
+
+p.tableblock>code:only-child {
+  background: none;
+  padding: 0
+}
+
+
+p.tableblock {
+  font-size: 1em
+}
+
+
+ol {
+  margin-left: 1.75em
+}
+
+
+ul li ol {
+  margin-left: 1.5em
+}
+
+
+dl dd:last-child,
+dl dd:last-child>:last-child {
+  margin-bottom: 0
+}
+
+
+li p,
+ul dd,
+ol dd,
+.olist .olist,
+.ulist .ulist,
+.ulist .olist,
+.olist .ulist {
+  margin-bottom: .625em
+}
+
+
+ul.checklist,
+ul.none,
+ol.none,
+ul.no-bullet,
+ol.no-bullet,
+ol.unnumbered,
+ul.unstyled,
+ol.unstyled {
+  list-style-type: none
+}
+
+
+ul.no-bullet,
+ol.no-bullet,
+ol.unnumbered {
+  margin-left: .625em
+}
+
+
+ul.unstyled,
+ol.unstyled {
+  margin-left: 0
+}
+
+
+li>p:empty:only-child::before {
+  content: "";
+  display: inline-block
+}
+
+
+ul.checklist>li>p:first-child {
+  margin-left: -1em
+}
+
+
+ul.checklist>li>p:first-child>.fa-square-o:first-child,
+ul.checklist>li>p:first-child>.fa-check-square-o:first-child {
+  width: 1.25em;
+  font-size: .8em;
+  position: relative;
+  bottom: .125em
+}
+
+
+ul.checklist>li>p:first-child>input[type=checkbox]:first-child {
+  font: inherit;
+  margin: 0 .25em 0 0;
+  padding: 0
+}
+
+
+ul.inline {
+  display: flex;
+  flex-flow: row wrap;
+  list-style: none;
+  margin: 0 0 .625em -1.25em
+}
+
+
+ul.inline>li {
+  margin-left: 1.25em
+}
+
+
+.unstyled dl dt {
+  font-weight: 400;
+  font-style: normal
+}
+
+
+ol.arabic {
+  list-style-type: decimal
+}
+
+
+ol.decimal {
+  list-style-type: decimal-leading-zero
+}
+
+
+ol.loweralpha {
+  list-style-type: lower-alpha
+}
+
+
+ol.upperalpha {
+  list-style-type: upper-alpha
+}
+
+
+ol.lowerroman {
+  list-style-type: lower-roman
+}
+
+
+ol.upperroman {
+  list-style-type: upper-roman
+}
+
+
+ol.lowergreek {
+  list-style-type: lower-greek
+}
+
+
+.hdlist>table,
+.colist>table {
+  border: 0;
+  background: none
+}
+
+
+.hdlist>table>tbody>tr,
+.colist>table>tbody>tr {
+  background: none
+}
+
+
+td.hdlist1,
+td.hdlist2 {
+  vertical-align: top;
+  padding: 0 .625em
+}
+
+
+td.hdlist1 {
+  font-weight: bold;
+  padding-bottom: 1.25em
+}
+
+
+td.hdlist2 {
+  word-wrap: anywhere
+}
+
+
+.literalblock+.colist,
+.listingblock+.colist {
+  margin-top: -.5em
+}
+
+
+.colist td:not([class]):first-child {
+  padding: .4em .75em 0;
+  line-height: 1;
+  vertical-align: top
+}
+
+
+.colist td:not([class]):first-child img {
+  max-width: none
+}
+
+
+.colist td:not([class]):last-child {
+  padding: .25em 0
+}
+
+
+.thumb,
+.th {
+  line-height: 0;
+  display: inline-block;
+  border: 4px solid #161b22;
+  box-shadow: 0 0 0 1px #30363d
+}
+
+
+.imageblock.left {
+  margin: .25em .625em 1.25em 0
+}
+
+
+.imageblock.right {
+  margin: .25em 0 1.25em .625em
+}
+
+
+.imageblock>.title {
+  margin-bottom: 0
+}
+
+
+.imageblock.thumb,
+.imageblock.th {
+  border-width: 6px
+}
+
+
+.imageblock.thumb>.title,
+.imageblock.th>.title {
+  padding: 0 .125em
+}
+
+
+.image.left,
+.image.right {
+  margin-top: .25em;
+  margin-bottom: .25em;
+  display: inline-block;
+  line-height: 0
+}
+
+
+.image.left {
+  margin-right: .625em
+}
+
+
+.image.right {
+  margin-left: .625em
+}
+
+
+a.image {
+  text-decoration: none;
+  display: inline-block
+}
+
+
+a.image object {
+  pointer-events: none
+}
+
+
+sup.footnote,
+sup.footnoteref {
+  font-size: .875em;
+  position: static;
+  vertical-align: super
+}
+
+
+sup.footnote a,
+sup.footnoteref a {
+  text-decoration: none
+}
+
+
+sup.footnote a:active,
+sup.footnoteref a:active,
+#footnotes .footnote a:first-of-type:active {
+  text-decoration: underline
+}
+
+
+#footnotes {
+  padding-top: .75em;
+  padding-bottom: .75em;
+  margin-bottom: .625em
+}
+
+
+#footnotes hr {
+  width: 20%;
+  min-width: 6.25em;
+  margin: -.25em 0 .75em;
+  border-width: 1px 0 0
+}
+
+
+#footnotes .footnote {
+  padding: 0 .375em 0 .225em;
+  line-height: 1.3334;
+  font-size: .875em;
+  margin-left: 1.2em;
+  margin-bottom: .2em
+}
+
+
+#footnotes .footnote a:first-of-type {
+  font-weight: bold;
+  text-decoration: none;
+  margin-left: -1.05em
+}
+
+
+#footnotes .footnote:last-of-type {
+  margin-bottom: 0
+}
+
+
+#content #footnotes {
+  margin-top: -.625em;
+  margin-bottom: 0;
+  padding: .75em 0
+}
+
+
+div.page-break {
+  display: none
+}
+
+
+div.unbreakable {
+  -moz-column-break-inside: avoid;
+  break-inside: avoid
+}
+
+
+.big {
+  font-size: larger
+}
+
+
+.small {
+  font-size: smaller
+}
+
+
+.underline {
+  text-decoration: underline
+}
+
+
+.overline {
+  text-decoration: overline
+}
+
+
+.line-through {
+  text-decoration: line-through
+}
+
+
+.aqua {
+  color: #56d4dd
+}
+
+
+.aqua-background {
+  background: #0d6972
+}
+
+
+.black {
+  color: #0d1117
+}
+
+
+.black-background {
+  background: #010409
+}
+
+
+.blue {
+  color: #58a6ff
+}
+
+
+.blue-background {
+  background: #0d419d
+}
+
+
+.fuchsia {
+  color: #d2a8ff
+}
+
+
+.fuchsia-background {
+  background: #6e2c9c
+}
+
+
+.gray {
+  color: #8b949e
+}
+
+
+.gray-background {
+  background: #30363d
+}
+
+
+.green {
+  color: #3fb950
+}
+
+
+.green-background {
+  background: #033a16
+}
+
+
+.lime {
+  color: #7ee787
+}
+
+
+.lime-background {
+  background: #04692c
+}
+
+
+.maroon {
+  color: #f85149
+}
+
+
+.maroon-background {
+  background: #8e1519
+}
+
+
+.navy {
+  color: #1f6feb
+}
+
+
+.navy-background {
+  background: #0c2d6b
+}
+
+
+.olive {
+  color: #d29922
+}
+
+
+.olive-background {
+  background: #4d2d00
+}
+
+
+.purple {
+  color: #bc8cff
+}
+
+
+.purple-background {
+  background: #5a3c94
+}
+
+
+.red {
+  color: #ff7b72
+}
+
+
+.red-background {
+  background: #8e1519
+}
+
+
+.silver {
+  color: #6e7681
+}
+
+
+.silver-background {
+  background: #161b22
+}
+
+
+.teal {
+  color: #39c5cf
+}
+
+
+.teal-background {
+  background: #0e6f76
+}
+
+
+.white {
+  color: #c9d1d9
+}
+
+
+.white-background {
+  background: #161b22
+}
+
+
+.yellow {
+  color: #f0883e
+}
+
+
+.yellow-background {
+  background: #762d0a
+}
+
+
+span.icon>.fa {
+  cursor: default
+}
+
+
+a span.icon>.fa {
+  cursor: inherit
+}
+
+
+.admonitionblock td.icon [class^="fa icon-"] {
+  font-size: 2.5em;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, .5);
+  cursor: default
+}
+
+
+.admonitionblock td.icon .icon-note::before {
+  content: "\f05a";
+  color: #58a6ff
+}
+
+
+.admonitionblock td.icon .icon-tip::before {
+  content: "\f0eb";
+  text-shadow: 1px 1px 2px rgba(210, 153, 34, .8);
+  color: #c9d1d9
+}
+
+
+.admonitionblock td.icon .icon-warning::before {
+  content: "\f071";
+  color: #d29922
+}
+
+
+.admonitionblock td.icon .icon-caution::before {
+  content: "\f06d";
+  color: #f0883e
+}
+
+
+.admonitionblock td.icon .icon-important::before {
+  content: "\f06a";
+  color: #f85149
+}
+
+
+.conum[data-value] {
+  display: inline-block;
+  color: #fff !important;
+  background: #21262d;
+  border-radius: 50%;
+  text-align: center;
+  font-size: .75em;
+  width: 1.67em;
+  height: 1.67em;
+  line-height: 1.67em;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  font-style: normal;
+  font-weight: bold
+}
+
+
+.conum[data-value] * {
+  color: #fff !important
+}
+
+
+.conum[data-value]+b {
+  display: none
+}
+
+
+.conum[data-value]::after {
+  content: attr(data-value)
+}
+
+
+pre .conum[data-value] {
+  position: relative;
+  top: -.125em
+}
+
+
+b.conum * {
+  color: inherit !important
+}
+
+
+.conum:not([data-value]):empty {
+  display: none
+}
+
+
+dt,
+th.tableblock,
+td.content,
+div.footnote {
+  text-rendering: optimizeLegibility
+}
+
+
+h1,
+h2,
+p,
+td.content,
+span.alt,
+summary {
+  letter-spacing: -.01em
+}
+
+
+p strong,
+td.content strong,
+div.footnote strong {
+  letter-spacing: -.005em
+}
+
+
+p,
+blockquote,
+dt,
+td.content,
+td.hdlist1,
+span.alt,
+summary {
+  font-size: 1.0625rem
+}
+
+
+.sidebarblock p,
+.sidebarblock dt,
+.sidebarblock td.content,
+p.tableblock {
+  font-size: 1em
+}
+
+
+.print-only {
+  display: none !important
+}
+
+
+@page {
+  margin: 1.25cm .75cm
+}
+
+
+@media print {
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important
+  }
+
+
+  html {
+    font-size: 80%
+  }
+
+
+  a {
+    color: inherit !important;
+    text-decoration: underline !important
+  }
+
+
+  a.bare,
+  a[href^="#"],
+  a[href^="mailto:"] {
+    text-decoration: none !important
+  }
+
+
+  a[href^="http:"]:not(.bare)::after,
+  a[href^="https:"]:not(.bare)::after {
+    content: "(" attr(href) ")";
+    display: inline-block;
+    font-size: .875em;
+    padding-left: .25em
+  }
+
+
+  abbr[title] {
+    border-bottom: 1px dotted
+  }
+
+
+  abbr[title]::after {
+    content: " (" attr(title) ")"
+  }
+
+
+  pre,
+  blockquote,
+  tr,
+  img,
+  object,
+  svg {
+    -moz-column-break-inside: avoid;
+    break-inside: avoid
+  }
+
+
+  thead {
+    display: table-header-group
+  }
+
+
+  p,
+  blockquote,
+  dt,
+  td.content {
+    font-size: 1em;
+    orphans: 3;
+    widows: 3
+  }
+
+
+  h2,
+  h3,
+  #toctitle,
+  .sidebarblock>.content>.title {
+    -moz-column-break-after: avoid;
+    break-after: avoid
+  }
+
+
+  body>div[id] {
+    max-width: none
+  }
+
+
+  #toc,
+  .sidebarblock,
+  .exampleblock>.content {
+    background: none !important
+  }
+
+
+  #toc {
+    border-bottom: 1px solid #30363d !important;
+    padding-bottom: 0 !important
+  }
+
+
+  body.book #header {
+    text-align: center
+  }
+
+
+  body.book #header>h1:first-child {
+    border: 0 !important;
+    margin: 2.5em 0 1em
+  }
+
+
+  body.book #header .details {
+    border: 0 !important;
+    display: block;
+    padding: 0 !important
+  }
+
+
+  body.book #header .details span:first-child {
+    margin-left: 0 !important
+  }
+
+
+  body.book #header .details br {
+    display: block
+  }
+
+
+  body.book #header .details br+span::before {
+    content: none !important
+  }
+
+
+  body.book #toc {
+    border: 0 !important;
+    text-align: left !important;
+    padding: 0 !important;
+    margin: 0 !important
+  }
+
+
+  body.book #toc,
+  body.book #preamble,
+  body.book h1.sect0,
+  body.book .sect1>h2 {
+    -moz-column-break-before: page;
+    break-before: page
+  }
+
+
+  .listingblock code[data-lang]::before {
+    display: block
+  }
+
+
+  div.page-break {
+    display: block;
+    -moz-column-break-after: page;
+    break-after: page
+  }
+
+
+  #footer {
+    padding: 0 .9375em
+  }
+
+
+  .hide-on-print {
+    display: none !important
+  }
+
+
+  .print-only {
+    display: block !important
+  }
+
+
+  .hide-for-print {
+    display: none !important
+  }
+
+
+  .show-for-print {
+    display: inherit !important
+  }
+}
+
+
+@media amzn-kf8,
+print {
+  #header>h1:first-child {
+    margin-top: 1.25rem
+  }
+
+
+  .sect1 {
+    padding: 0 !important
+  }
+
+
+  .sect1+.sect1 {
+    border: 0
+  }
+
+
+  #footer {
+    background: none
+  }
+
+
+  #footer-text {
+    color: #8b949e;
+    font-size: .9em
+  }
+}
+
+
+@media amzn-kf8 {
+  body>div[id] {
+    padding: 0
+  }
+}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body class="book toc2 toc-left">
+<div id="header">
+<h1><span class="image"><img src="./images/arc42-logo-light.png" alt="arc42"></span> yovi_en2b</h1>
+<div class="details">
+<span id="revnumber">version 8.2 EN,</span>
+<span id="revdate">January 2023</span>
+<br><span id="revremark">(based upon AsciiDoc version)</span>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of contents</div>
+<ul class="sectlevel1">
+<li><a href="#section-introduction-and-goals">1. Introduction and Goals</a>
+<ul class="sectlevel2">
+<li><a href="#_requirements_overview">1.1. Requirements Overview</a></li>
+<li><a href="#_quality_goals">1.2. Quality Goals</a></li>
+<li><a href="#_stakeholders">1.3. Stakeholders</a></li>
+</ul>
+</li>
+<li><a href="#section-architecture-constraints">2. Architecture Constraints</a>
+<ul class="sectlevel2">
+<li><a href="#_technical_constraints">2.1. Technical Constraints</a></li>
+<li><a href="#_organizational_constraints">2.2. Organizational Constraints</a></li>
+<li><a href="#_conventions">2.3. Conventions</a></li>
+</ul>
+</li>
+<li><a href="#section-context-and-scope">3. Context and Scope</a>
+<ul class="sectlevel2">
+<li><a href="#_business_context">3.1. Business Context</a></li>
+<li><a href="#_technical_context">3.2. Technical Context</a></li>
+</ul>
+</li>
+<li><a href="#section-solution-strategy">4. Solution Strategy</a>
+<ul class="sectlevel2">
+<li><a href="#_technology_decisions">4.1. Technology decisions</a></li>
+<li><a href="#_quality_goal_realization">4.2. Quality Goal Realization</a></li>
+<li><a href="#_organizational_decisions">4.3. Organizational decisions</a></li>
+</ul>
+</li>
+<li><a href="#section-building-block-view">5. Building Block View</a>
+<ul class="sectlevel2">
+<li><a href="#_whitebox_overall_system">5.1. Whitebox Overall System</a></li>
+<li><a href="#_level_2">5.2. Level 2</a></li>
+</ul>
+</li>
+<li><a href="#section-runtime-view">6. Runtime View</a>
+<ul class="sectlevel2">
+<li><a href="#_human_vs_computer_match">6.1. Human vs Computer Match</a></li>
+<li><a href="#_user_registration_and_history_consultation">6.2. User Registration and History Consultation</a></li>
+<li><a href="#_computer_strategy_execution">6.3. Computer Strategy Execution</a></li>
+<li><a href="#_external_bot_interaction">6.4. External Bot Interaction</a></li>
+</ul>
+</li>
+<li><a href="#section-deployment-view">7. Deployment View</a>
+<ul class="sectlevel2">
+<li><a href="#_infrastructure_level_1_cloud_environment">7.1. Infrastructure Level 1: Cloud Environment</a></li>
+<li><a href="#_infrastructure_level_2_execution_environment_docker">7.2. Infrastructure Level 2: Execution Environment (Docker)</a></li>
+<li><a href="#_network_and_connectivity">7.3. Network and Connectivity</a></li>
+<li><a href="#_deployment_pipeline_cicd">7.4. Deployment Pipeline (CI/CD)</a></li>
+</ul>
+</li>
+<li><a href="#section-concepts">8. Cross-cutting Concepts</a>
+<ul class="sectlevel2">
+<li><a href="#_yen_game_state_format">8.1. YEN — Game State Format</a></li>
+<li><a href="#_rest_conventions">8.2. REST Conventions</a></li>
+<li><a href="#_authentication">8.3. Authentication</a></li>
+<li><a href="#_service_routing_and_orchestration">8.4. Service Routing and Orchestration</a></li>
+<li><a href="#_development_workflow">8.5. Development Workflow</a></li>
+<li><a href="#_user_experience_ux">8.6. User Experience (UX)</a></li>
+<li><a href="#_configuration_and_secrets">8.7. Configuration and Secrets</a></li>
+</ul>
+</li>
+<li><a href="#section-design-decisions">9. Architecture Decisions</a>
+<ul class="sectlevel2">
+<li><a href="#_adr_001_dedicated_game_service_owns_all_session_state">9.1. ADR-001: Dedicated game service owns all session state</a></li>
+<li><a href="#_adr_002_nginx_as_single_public_entry_point_with_path_based_routing">9.2. ADR-002: Nginx as single public entry point with path-based routing</a></li>
+<li><a href="#_adr_003_shared_jwt_secret_with_local_token_verification">9.3. ADR-003: Shared JWT secret with local token verification</a></li>
+<li><a href="#_adr_004_one_mariadb_instance_with_strict_table_ownership_per_service">9.4. ADR-004: One MariaDB instance with strict table ownership per service</a></li>
+<li><a href="#_adr_005_stateless_bot_engine_gamey">9.5. ADR-005: Stateless bot engine (gamey)</a></li>
+<li><a href="#_adr_006_hs256_for_jwt_signing">9.6. ADR-006: HS256 for JWT signing</a></li>
+<li><a href="#_adr_007_secrets_and_configuration_via_environment_variables">9.7. ADR-007: Secrets and configuration via environment variables</a></li>
+</ul>
+</li>
+<li><a href="#section-quality-scenarios">10. Quality Requirements</a>
+<ul class="sectlevel2">
+<li><a href="#_quality_tree">10.1. Quality Tree</a></li>
+<li><a href="#_quality_scenarios">10.2. Quality Scenarios</a></li>
+</ul>
+</li>
+<li><a href="#section-technical-risks">11. Risks and Technical Debts</a>
+<ul class="sectlevel2">
+<li><a href="#_technical_risks">11.1. Technical Risks</a></li>
+<li><a href="#_technical_debt">11.2. Technical Debt</a></li>
+</ul>
+</li>
+<li><a href="#section-glossary">12. Glossary</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<style>
+.arc42help {
+    font-size: small;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    overflow: hidden;
+    position: absolute;
+    right: 0;
+    padding: 0;
+    text-align: center;
+    cursor: pointer;
+}
+.arc42help::before {
+    content: "?";
+}
+.arc42help:hover {
+    width: auto;
+    height: auto;
+    line-height: normal;
+    z-index: 100;
+    padding: 10px;
+    text-align: left;
+}
+.arc42help:hover::before {
+    content: "";
+}
+@media print {
+    .arc42help {display: none;}
+}
+</style>
+<div class="paragraph">
+<p><strong>About arc42</strong></p>
+</div>
+<div class="paragraph lead">
+<p>arc42, the template for documentation of software and system architecture.</p>
+</div>
+<div class="paragraph">
+<p>Template Version 8.2 EN. (based upon AsciiDoc version), January 2023</p>
+</div>
+<div class="paragraph">
+<p>Created, maintained and &#169; by Dr. Peter Hruschka, Dr. Gernot Starke and contributors.
+See <a href="https://arc42.org" class="bare">https://arc42.org</a>.</p>
+</div>
+<hr>
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>This version of the template contains some help and explanations.
+It is used for familiarization with arc42 and the understanding of the concepts.
+For documentation of your own system you use better the <em>plain</em> version.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-introduction-and-goals">1. Introduction and Goals</h2>
+<div class="sectionbody">
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<p>Describes the relevant requirements and the driving forces that software architects and development team must consider.
+These include</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>underlying business goals,</p>
+</li>
+<li>
+<p>essential features,</p>
+</li>
+<li>
+<p>essential functional requirements,</p>
+</li>
+<li>
+<p>quality goals for the architecture and</p>
+</li>
+<li>
+<p>relevant stakeholders and their expectations</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>The project that was proposed was implementing the "Game Y" (similar to the best-known board game "Hex"), all while mantaining a professional
+workflow simulating real life situations, covering all the aspects that could happen, these include:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Backend development</p>
+</li>
+<li>
+<p>Frontend development</p>
+</li>
+<li>
+<p>Management of the APIs</p>
+</li>
+<li>
+<p>Overcome difficulties with new software</p>
+</li>
+<li>
+<p>Quality control</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>If all of these are followed correctly the resulting project should go according to the theory.</p>
+</div>
+<div class="sect2">
+<h3 id="_requirements_overview">1.1. Requirements Overview</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>The game will be available as a web application.</p>
+</li>
+<li>
+<p>Players can register, log in, play matches, and have their results stored and accessible from their profile.</p>
+</li>
+<li>
+<p>The game includes an AI opponent whose behavior depends on the selected difficulty, ranging from easy to hard.</p>
+</li>
+</ul>
+</div>
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Contents</div>
+<p>Short description of the functional requirements, driving forces, extract (or abstract)
+of requirements. Link to (hopefully existing) requirements documents
+(with version number and information where to find it).</p>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>From the point of view of the end users a system is created or modified to
+improve support of a business activity and/or improve the quality.</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>Short textual description, probably in tabular use-case format.
+If requirements documents exist this overview should refer to these documents.</p>
+</div>
+<div class="paragraph">
+<p>Keep these excerpts as short as possible. Balance readability of this document with potential redundancy w.r.t to requirements documents.</p>
+</div>
+<div class="paragraph">
+<div class="title">Further Information</div>
+<p>See <a href="https://docs.arc42.org/section-1/">Introduction and Goals</a> in the arc42 documentation.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_quality_goals">1.2. Quality Goals</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 33.3333%;">
+<col style="width: 50.0001%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Priority</th>
+<th class="tableblock halign-left valign-top">Quality Goal</th>
+<th class="tableblock halign-left valign-top">Scenario</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usability</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new player can register, log in, select a difficulty, and start a match against the bot in under 30 seconds without reading documentation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Performance</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">For typical board sizes, bot move computation stays below 500 ms on "Hard" to keep gameplay fluid; worst cases must degrade gracefully (e.g., show a "thinking" state rather than freezing).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Maintainability</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new bot strategy or feature can be implemented and integrated in &#8656; 1 work day without breaking the existing frontend or any published API contract.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Security</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Only authenticated users can submit results to their own profile; the system must prevent score spoofing attempts (e.g., forged results or manipulated game states).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Reliability</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game results are reliably persisted: at least 99% of save operations complete without data loss, and failures are reported explicitly (no silent loss).</p></td>
+</tr>
+</tbody>
+</table>
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Contents</div>
+<p>The top three (max five) quality goals for the architecture whose fulfillment is of highest importance to the major stakeholders.
+We really mean quality goals for the architecture. Don&#8217;t confuse them with project goals.
+They are not necessarily identical.</p>
+</div>
+<div class="paragraph">
+<p>Consider this overview of potential topics (based upon the ISO 25010 standard):</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/01_2_iso-25010-topics-EN.drawio.png" alt="Categories of Quality Requirements">
+</div>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>You should know the quality goals of your most important stakeholders, since they will influence fundamental architectural decisions.
+Make sure to be very concrete about these qualities, avoid buzzwords.
+If you as an architect do not know how the quality of your work will be judged&#8230;&#8203;</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>A table with quality goals and concrete scenarios, ordered by priorities</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_stakeholders">1.3. Stakeholders</h3>
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Contents</div>
+<p>Explicit overview of stakeholders of the system, i.e. all person, roles or organizations that</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>should know the architecture</p>
+</li>
+<li>
+<p>have to be convinced of the architecture</p>
+</li>
+<li>
+<p>have to work with the architecture or with code</p>
+</li>
+<li>
+<p>need the documentation of the architecture for their work</p>
+</li>
+<li>
+<p>have to come up with decisions about the system or its development</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>You should know all parties involved in development of the system or affected by the system.
+Otherwise, you may get nasty surprises later in the development process.
+These stakeholders determine the extent and the level of detail of your work and its results.</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>Table with role names, person names, and their expectations with respect to the architecture and its documentation.</p>
+</div>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 40%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Role/Name</th>
+<th class="tableblock halign-left valign-top">Contact</th>
+<th class="tableblock halign-left valign-top">Expectations</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Project Sponsor (Micrati)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Company (Micrati)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Expects a working, publicly accessible web game with a clear architecture, documented APIs, and a deliverable aligned with the assignment scope and timeline.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Project Supervisor (Teacher)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Teaching Staff</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Expects a professional development workflow, clean and documented code, and fulfillment of all functional requirements (bot + web application).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Development Team (Team)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Team members</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Expect to learn new technologies (API management, frontend/backend), gain experience in professional workflows, and achieve a high grade.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>End Users (Players)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Web</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Expect a functional and entertaining game, a challenging bot difficulty, and the ability to save their progress reliably.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>API Consumers (Bot developers / external clients)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Public API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Expect a stable and well-documented API contract, with clear error messages and examples.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Quality Assurance (Team / reviewers)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Team members</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Expect the code to be testable and the game to be free of critical bugs before deployment.</p></td>
+</tr>
+</tbody>
+</table>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-architecture-constraints">2. Architecture Constraints</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_technical_constraints">2.1. Technical Constraints</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Constraint</th>
+<th class="tableblock halign-left valign-top">Background and/or Motivation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Web-based Access</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The game must be accessible via a standard web browser (Chrome, Firefox, etc.) without requiring local installation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Public Deployment</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The application must be deployed and publicly accessible via the Web (academic delivery constraint).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Backend/Frontend Separation</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The logic (APIs/services) and the presentation (UI) must be decoupled to keep clear client/server boundaries and enable independent development.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Bot Implementation</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system must include an algorithmic bot with selectable difficulty and/or multiple strategies (exact number of difficulty levels is not fixed).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Persistence</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A database or persistent storage must be used to save player profiles and game history.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>YEN notation (JSON messages)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game state must be exchanged as JSON using YEN notation to ensure interoperability between modules.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_organizational_constraints">2.2. Organizational Constraints</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Constraint</th>
+<th class="tableblock halign-left valign-top">Background and/or Motivation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Team Structure</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Work is divided among students acting as a full-stack development team, requiring clear communication and task management.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Deadline</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The project must be completed and documented within the academic semester timeframe.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Technology adoption (learning curve)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The project requires using technologies that are new to the team (e.g., Docker, TypeScript, Rust), which may affect planning and delivery.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_conventions">2.3. Conventions</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Constraint</th>
+<th class="tableblock halign-left valign-top">Background and/or Motivation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>arc42 Documentation</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The software architecture must be documented using the arc42 template.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Version Control</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use of Git (e.g., GitHub or GitLab) is mandatory to track progress and manage collaborative code changes.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>YEN notation</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use YEN notation in JSON messages whenever a game state is exchanged.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Contents</div>
+<p>Any requirement that constraints software architects in their freedom of design and implementation decisions or decision about the development process.
+These constraints sometimes go beyond individual systems and are valid for whole organizations and companies.</p>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>Architects should know exactly where they are free in their design decisions and where they must adhere to constraints.
+Constraints must always be dealt with; they may be negotiable, though.</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>Simple tables of constraints with explanations.
+If needed you can subdivide them into
+technical constraints, organizational and political constraints and
+conventions (e.g. programming or versioning guidelines, documentation or naming conventions)</p>
+</div>
+<div class="paragraph">
+<div class="title">Further Information</div>
+<p>See <a href="https://docs.arc42.org/section-2/">Architecture Constraints</a> in the arc42 documentation.</p>
+</div>
+</div>
+</div>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-context-and-scope">3. Context and Scope</h2>
+<div class="sectionbody">
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Contents</div>
+<p>Context and scope - as the name suggests - delimits your system (i.e. your scope) from all its communication partners
+(neighboring systems and users, i.e. the context of your system). It thereby specifies the external interfaces.</p>
+</div>
+<div class="paragraph">
+<p>If necessary, differentiate the business context (domain specific inputs and outputs) from the technical context (channels, protocols, hardware).</p>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>The domain interfaces and technical interfaces to communication partners are among your system&#8217;s most critical aspects. Make sure that you completely understand them.</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>Various options:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Context diagrams</p>
+</li>
+<li>
+<p>Lists of communication partners and their interfaces.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">Further Information</div>
+<p>See <a href="https://docs.arc42.org/section-3/">Context and Scope</a> in the arc42 documentation.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_business_context">3.1. Business Context</h3>
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Contents</div>
+<p>Specification of <strong>all</strong> communication partners (users, IT-systems, &#8230;&#8203;) with explanations of domain specific inputs and outputs or interfaces.</p>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>All stakeholders should understand which data are exchanged with the environment of the system.</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>All kinds of diagrams that show the system as a black box and specify the domain interfaces to communication partners.
+Alternatively (or additionally) you can use a table.</p>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>The business context defines the external actors and how they interact with the YOVI system.
+The system exposes two public API surfaces (user management and game interaction) and delegates core game validation / bot move selection to the internal Rust engine.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. Communication Partners</caption>
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 40%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Communication Partner</th>
+<th class="tableblock halign-left valign-top">Inputs</th>
+<th class="tableblock halign-left valign-top">Outputs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Human Player (Web client)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Registration/login, game actions (moves), game configuration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">UI feedback, game state, personal profile and history</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">External Client (Public User API consumer)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Register/login, profile/history requests (JWT-based)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JWT tokens, user/profile/history data</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">External Client (Public Game API consumer)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game requests (create/join room, play), board state in YEN/JSON when required</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game state updates, bot next move (when playing vs AI), error responses</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Operator (Project team / admin role)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service status queries (health) and basic operational requests</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service status information and basic diagnostics</p></td>
+</tr>
+</tbody>
+</table>
+<div class="sect3">
+<h4 id="_domain_interfaces">3.1.1. Domain Interfaces</h4>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Web UI:</strong> React-based interface for end-user interaction.</p>
+</li>
+<li>
+<p><strong>Public User API:</strong> REST endpoints for registration/login and user profile/history.</p>
+</li>
+<li>
+<p><strong>Public Game API:</strong> REST endpoints to interact with the game (including playing against the bot using JSON/YEN).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_technical_context">3.2. Technical Context</h3>
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Contents</div>
+<p>Technical interfaces (channels and transmission media) linking your system to its environment. In addition a mapping of domain specific input/output to the channels, i.e. an explanation which I/O uses which channel.</p>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>Many stakeholders make architectural decision based on the technical interfaces between the system and its context. Especially infrastructure or hardware designers decide these technical interfaces.</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>E.g. UML deployment diagram describing channels to neighboring systems,
+together with a mapping table showing the relationships between channels and input/output.</p>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>The technical context describes the protocols and communication channels between services and external clients.</p>
+</div>
+<div class="sect3">
+<h4 id="_technical_interfaces_and_channels">3.2.1. Technical Interfaces and Channels</h4>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 2. Technical Interfaces and Channels</caption>
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Interface</th>
+<th class="tableblock halign-left valign-top">Channel / Protocol</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Frontend ↔ Webapp-backend</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP / REST</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The React application (Vite) communicates with the Node.js backend using REST endpoints.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Frontend ↔ Webapp-backend (realtime)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">WebSocket</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Realtime channel used for gameplay/multiplayer events (when enabled).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Webapp-backend ↔ gamey (Rust engine)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP / JSON (YEN)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Node.js service delegates game validation and bot move computation to the Rust engine.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Webapp-backend ↔ users</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP / REST</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Webapp-backend calls the users service for authentication/authorization and user-related operations.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">External clients ↔ users</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP / REST</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Public user management API (register/login/profile/history).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Users ↔ MariaDB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MariaDB protocol</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistence of user data and credentials.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_mapping_of_inputsoutputs_to_channels">3.2.2. Mapping of Inputs/Outputs to Channels</h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Access Management:</strong> Login/registration requests are handled by the Users service, which returns a JWT on success.</p>
+</li>
+<li>
+<p><strong>Move Processing:</strong> Game flow uses REST and/or WebSockets from client to Webapp-backend; bot move/validation is delegated to gamey via HTTP using JSON/YEN.</p>
+</li>
+<li>
+<p><strong>Persistence:</strong> User data and history are persisted in MariaDB via the Users service; additional persistence responsibilities are TBD (if introduced later).</p>
+</li>
+</ol>
+</div>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-solution-strategy">4. Solution Strategy</h2>
+<div class="sectionbody">
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Contents</div>
+<p>A short summary and explanation of the fundamental decisions and solution strategies, that shape system architecture. It includes</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>technology decisions</p>
+</li>
+<li>
+<p>decisions about the top-level decomposition of the system, e.g. usage of an architectural pattern or design pattern</p>
+</li>
+<li>
+<p>decisions on how to achieve key quality goals</p>
+</li>
+<li>
+<p>relevant organizational decisions, e.g. selecting a development process or delegating certain tasks to third parties.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>These decisions form the cornerstones for your architecture. They are the foundation for many other detailed decisions or implementation rules.</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>Keep the explanations of such key decisions short.</p>
+</div>
+<div class="paragraph">
+<p>Motivate what was decided and why it was decided that way,
+based upon problem statement, quality goals and key constraints.
+Refer to details in the following sections.</p>
+</div>
+<div class="paragraph">
+<div class="title">Further Information</div>
+<p>See <a href="https://docs.arc42.org/section-4/">Solution Strategy</a> in the arc42 documentation.</p>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>The architecture of the YOVI system follows a modular client/server approach that separates the user interface from backend services and the core game engine. This strategy supports maintainability and interoperability by keeping clear boundaries between UI, user management, and game logic.
+The system exposes public APIs for user management and game interaction, while the Rust game engine remains internal and focused on validation and bot move computation.</p>
+</div>
+<div class="sect2">
+<h3 id="_technology_decisions">4.1. Technology decisions</h3>
+<div class="paragraph">
+<p>The web client is implemented in TypeScript to enable fast development of an interactive UI using modern web frameworks.
+Backend services are implemented as HTTP APIs, and the game engine is implemented in Rust for performance and memory safety when running validation and search-based bot strategies.
+Inter-service communication uses JSON and the YEN notation as the game-state contract.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_quality_goal_realization">4.2. Quality Goal Realization</h3>
+<div class="paragraph">
+<p>Correctness and reliability are improved by enforcing game rules and validating YEN/JSON game states in the Rust engine.
+Usability is addressed through a simple web-based flow (register/login/start game) and a clear UI.
+Performance is addressed by using a compiled Rust engine for the computationally intensive bot logic and by keeping service calls bounded (timeouts) to avoid hanging requests.
+Maintainability is supported by the separation into services (webapp-backend, users, gamey) and stable API contracts between them.
+Security is handled through JWT-based authentication and role-based authorization (player/admin) for protected operations.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_organizational_decisions">4.3. Organizational decisions</h3>
+<div class="paragraph">
+<p>The system is developed by a four-member team with shared responsibilities across the stack. Version control and issue tracking support collaborative work and code quality through reviews and automated checks.</p>
+</div>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-building-block-view">5. Building Block View</h2>
+<div class="sectionbody">
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Content</div>
+<p>The building block view shows the static decomposition of the system into building blocks (modules, components, subsystems, classes, interfaces, packages, libraries, frameworks, layers, partitions, tiers, functions, macros, operations, data structures, &#8230;&#8203;) as well as their dependencies (relationships, associations, &#8230;&#8203;)</p>
+</div>
+<div class="paragraph">
+<p>This view is mandatory for every architecture documentation.
+In analogy to a house this is the <em>floor plan</em>.</p>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>Maintain an overview of your source code by making its structure understandable through
+abstraction.</p>
+</div>
+<div class="paragraph">
+<p>This allows you to communicate with your stakeholder on an abstract level without disclosing implementation details.</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>The building block view is a hierarchical collection of black boxes and white boxes
+(see figure below) and their descriptions.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/05_building_blocks-EN.png" alt="Hierarchy of building blocks">
+</div>
+</div>
+<div class="paragraph">
+<p><strong>Level 1</strong> is the white box description of the overall system together with black
+box descriptions of all contained building blocks.</p>
+</div>
+<div class="paragraph">
+<p><strong>Level 2</strong> zooms into some building blocks of level 1.
+Thus it contains the white box description of selected building blocks of level 1, together with black box descriptions of their internal building blocks.</p>
+</div>
+<div class="paragraph">
+<p><strong>Level 3</strong> zooms into selected building blocks of level 2, and so on.</p>
+</div>
+<div class="paragraph">
+<div class="title">Further Information</div>
+<p>See <a href="https://docs.arc42.org/section-5/">Building Block View</a> in the arc42 documentation.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_whitebox_overall_system">5.1. Whitebox Overall System</h3>
+<div class="imageblock">
+<div class="content">
+<img src="./images/overview-diagram.svg" alt="overview diagram" width="1201" height="246">
+</div>
+</div>
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<p>Here you describe the decomposition of the overall system using the following white box template. It contains</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>an overview diagram</p>
+</li>
+<li>
+<p>a motivation for the decomposition</p>
+</li>
+<li>
+<p>black box descriptions of the contained building blocks. For these we offer you alternatives:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>use <em>one</em> table for a short and pragmatic overview of all contained building blocks and their interfaces</p>
+</li>
+<li>
+<p>use a list of black box descriptions of the building blocks according to the black box template (see below).
+Depending on your choice of tool this list could be sub-chapters (in text files), sub-pages (in a Wiki) or nested elements (in a modeling tool).</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>(optional:) important interfaces, that are not explained in the black box templates of a building block, but are very important for understanding the white box.
+Since there are so many ways to specify interfaces why do not provide a specific template for them.
+ In the worst case you have to specify and describe syntax, semantics, protocols, error handling,
+ restrictions, versions, qualities, necessary compatibilities and many things more.
+In the best case you will get away with examples or simple signatures.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Rationale</dt>
+<dd>
+<p>We applied <strong>functional decomposition</strong> to separate responsibilities within the YOVI system and keep clear client/server boundaries.</p>
+</dd>
+<dt class="hdlist1">Contained Blackboxes</dt>
+</dl>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Building Block</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Web Frontend</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Browser-based TypeScript application. Renders the Y game board, handles user interaction, and communicates with the public APIs via REST (and WebSockets when realtime gameplay is enabled).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">webapp-backend (Game API / BFF)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node/TypeScript service exposing the public Game API (match flow, play actions, game-related statistics). Orchestrates calls to <code>gamey</code> using JSON/YEN and calls <code>users</code> when authentication/profile data is required.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">users service (User API / Auth)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service exposing the public User API (register/login/profile). Issues and verifies JWTs, applies basic authorization (roles), and is the only component that accesses MariaDB.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">gamey (Rust engine)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rust service responsible for validating game states and computing the next move. Uses YEN notation for board representation and exposes a minimal JSON-based web service interface to <code>webapp-backend</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Database (MariaDB)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistent storage for user accounts and credentials/roles. Accessed exclusively by the <code>users</code> service.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Player (external)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Human user interacting through the Web Frontend to play matches and manage their account.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">External client (external)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Any third-party client consuming the public APIs (User API and/or Game API) over HTTP, e.g., automated gameplay clients.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_level_2">5.2. Level 2</h3>
+<div class="imageblock">
+<div class="content">
+<img src="./images/level2-diagram.svg" alt="level2 diagram" width="1232" height="211">
+</div>
+</div>
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<p>Here you can specify the inner structure of (some) building blocks from level 1 as white boxes.</p>
+</div>
+<div class="paragraph">
+<p>You have to decide which building blocks of your system are important enough to justify such a detailed description.
+Please prefer relevance over completeness. Specify important, surprising, risky, complex or volatile building blocks.
+Leave out normal, simple, boring or standardized parts of your system</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_level_2_webapp_backend_game_api_bff">5.2.1. Level 2 - webapp-backend (Game API / BFF)</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Building Block</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Routes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Single entry point for the public APIs exposed by <code>webapp-backend</code>. Delegates game requests to <strong>MatchService</strong> and forwards authentication/profile operations to the <code>users</code> service.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MatchService</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Encapsulates game workflow logic: creating matches/rooms, updating board states, and coordinating validation and next-move computations. Calls <code>users</code> only for authentication/profile data when required.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RustClient</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP client responsible for invoking the <code>gamey</code> service. Sends board state in JSON/YEN format to request validation or next-move suggestions.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_level_2_users_service_user_api_auth">5.2.2. Level 2 - users service (User API / Auth)</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Building Block</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Routes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles HTTP requests entering the User API. Delegates to <strong>UserService</strong>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">UserService</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Business logic for authentication and user operations (issue/verify JWTs, profile management, role checks). Coordinates persistence via <strong>UserRepository</strong>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">UserRepository</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistence component managing user accounts and credentials/roles (create, read, update, delete). Accessed exclusively via <strong>UserService</strong>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_level_2_gamey_rust_engine">5.2.3. Level 2 - gamey (Rust engine)</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Building Block</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Axum API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Minimal internal HTTP interface invoked by <code>webapp-backend</code> for validation and choose-move requests.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">YENAdapter</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Parses and serializes YEN/JSON game states and converts them to/from internal board representation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Validator + Bot</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Enforces game rules and computes next moves.</p></td>
+</tr>
+</tbody>
+</table>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-runtime-view">6. Runtime View</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The runtime view describes the behaviour and interactions of the system&#8217;s building blocks through
+selected scenarios. It captures how the TypeScript services (<code>game</code>, <code>users</code>) and the Rust engine
+(<code>gamey</code>) cooperate to fulfil the requirements.</p>
+</div>
+<div class="sect2">
+<h3 id="_human_vs_computer_match">6.1. Human vs Computer Match</h3>
+<div class="paragraph">
+<p>This scenario references the high-level requirement: <em>Classic version of Game Y, player-vs-machine
+mode.</em>
+It covers the complete server-side round trip that occurs when a human player makes a move in a PvE
+game session.</p>
+</div>
+<div class="sect3">
+<h4 id="_quality_context">6.1.1. Quality Context</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Source</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Human Player</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Stimulus</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Selects a position on the board via the Web Frontend</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Artifact</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">System (<code>game</code> service + <code>gamey</code> Rust engine)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Environment</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Normal operation, active PvE game session</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The move is validated, the bot responds, the state is persisted, and the full
+  updated board is returned to the frontend in a single round trip</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response Measure</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The UI reflects the new state (human move + bot move) in under 500 ms
+  for medium difficulty (<code>fast_bot</code>)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_interaction_sequence">6.1.2. Interaction sequence</h4>
+<div class="imageblock text-center">
+<div class="content">
+<img src="./images/human_computer.svg" alt="Human vs Computer Match Sequence" width="700">
+</div>
+</div>
+<div class="paragraph">
+<p><strong>1.</strong> The User selects a cell on the board via the Web Frontend.</p>
+</div>
+<div class="paragraph">
+<p><strong>2.</strong> The Frontend sends <code>POST /game/api/games/{id}/move</code> to the <code>game</code> service with <code>{ row, col, player }</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>3.</strong> The <code>game</code> service validates the move: it checks that the game is active, the player&#8217;s turn is
+correct, and the target cell is unoccupied. A <code>409 Conflict</code> is returned immediately if any check
+fails.</p>
+</div>
+<div class="paragraph">
+<p><strong>4.</strong> The <code>game</code> service applies the human player&#8217;s move to the in-memory board state.</p>
+</div>
+<div class="paragraph">
+<p><strong>5.</strong> In PvE mode, the <code>game</code> service encodes the updated board in YEN notation and calls <code>gamey</code>
+(<code>POST /ybot/choose/{botId}</code>) to obtain the bot&#8217;s response. The bot identifier is determined by the
+session&#8217;s configured difficulty level: <code>random_bot</code> (easy), <code>fast_bot</code> (medium), or <code>smart_bot</code>
+(hard).</p>
+</div>
+<div class="paragraph">
+<p><strong>6.</strong> <code>gamey</code> computes the next move using the selected strategy within its time budget and returns
+the chosen cell coordinate.</p>
+</div>
+<div class="paragraph">
+<p><strong>7.</strong> The <code>game</code> service applies the bot&#8217;s move to the board state and evaluates the win condition.</p>
+</div>
+<div class="paragraph">
+<p><strong>8.</strong> The <code>game</code> service persists the updated board state, current turn, winner (if any), and both
+move records to MariaDB.</p>
+</div>
+<div class="paragraph">
+<p><strong>9.</strong> If the game has ended, the <code>game</code> service posts the match result to the <code>users</code> service
+(via <code>USERS_SERVICE_URL</code>) so that it is recorded in the <code>match_records</code> table.</p>
+</div>
+<div class="paragraph">
+<p><strong>10.</strong> The <code>game</code> service returns the complete, updated <code>GameState</code> JSON — containing the post-bot-move
+board, status, winner, and timer — to the Frontend in a single HTTP response.</p>
+</div>
+<div class="paragraph">
+<p><strong>11.</strong> The Frontend renders the new board state and displays the game result or continues awaiting
+the next player input.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_user_registration_and_history_consultation">6.2. User Registration and History Consultation</h3>
+<div class="paragraph">
+<p>This scenario references the high-level requirement: <em>Users will be able to register and consult
+their participation history.</em>
+It describes how a user creates an account and later views their match statistics.</p>
+</div>
+<div class="sect3">
+<h4 id="_quality_context_2">6.2.1. Quality Context</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Source</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Human Player</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Stimulus</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provides registration details via the Web Frontend; later requests their match
+  history</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Artifact</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">System (<code>users</code> service)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Environment</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Normal operation</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The user account is created and a session is established; history is retrieved from
+  persistent storage and rendered</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response Measure</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Both operations complete and the UI reflects the new state in under 500 ms</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_interaction_sequence_2">6.2.2. Interaction sequence</h4>
+<table class="tableblock frame-none grid-none stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="imageblock">
+<div class="content">
+<img src="./images/registration.svg" alt="registration" width="100%">
+</div>
+<div class="title">Figure 1. User registration</div>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="imageblock">
+<div class="content">
+<img src="./images/history.svg" alt="history" width="100%">
+</div>
+<div class="title">Figure 2. History consultation</div>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><strong>1.</strong> The User provides registration credentials (username, e-mail, password) via the Web Frontend.</p>
+</div>
+<div class="paragraph">
+<p><strong>2.</strong> The Frontend sends <code>POST /users/api/auth/register</code> to the <code>users</code> service.</p>
+</div>
+<div class="paragraph">
+<p><strong>3.</strong> The <code>users</code> service validates the input, hashes the password with bcrypt, and writes the new
+account to the <code>users</code> table in MariaDB.</p>
+</div>
+<div class="paragraph">
+<p><strong>4.</strong> The <code>users</code> service returns the created user object and a JWT to the Frontend, which stores the
+token for subsequent authenticated requests.</p>
+</div>
+<div class="paragraph">
+<p><strong>5.</strong> When the registered User later requests their match history, the Frontend sends an authenticated
+request to the <code>users</code> service.</p>
+</div>
+<div class="paragraph">
+<p><strong>6.</strong> The <code>users</code> service queries the <code>match_records</code> table in MariaDB for all records belonging to
+the authenticated user.</p>
+</div>
+<div class="paragraph">
+<p><strong>7.</strong> The <code>users</code> service returns the raw match records (opponent, result, duration, timestamp) to
+the Frontend.</p>
+</div>
+<div class="paragraph">
+<p><strong>8.</strong> The Frontend computes summary metrics (win rate, total games, etc.) and renders the history
+view.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_computer_strategy_execution">6.3. Computer Strategy Execution</h3>
+<div class="paragraph">
+<p>This scenario references the high-level requirement: <em>The game against the computer must implement
+more than one strategy, and the user shall be able to select which strategy to use.</em>
+It describes how the <code>game</code> service and <code>gamey</code> cooperate to produce the bot&#8217;s response move.</p>
+</div>
+<div class="sect3">
+<h4 id="_quality_context_3">6.3.1. Quality Context</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Source</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>game</code> service (triggered by a human player&#8217;s move in a PvE session)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Stimulus</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The human move has been applied; the <code>game</code> service must obtain the bot&#8217;s response</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Artifact</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gamey</code> Rust engine</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Environment</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Normal operation</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gamey</code> selects a legal move using the strategy configured for this session and
+  returns the chosen cell</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response Measure</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">p95 ≤ 500 ms for <code>fast_bot</code> (medium); p95 ≤ 3 000 ms for <code>smart_bot</code>
+  (hard), with "thinking" indicator shown in the UI</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_interaction_sequence_3">6.3.2. Interaction sequence</h4>
+<div class="imageblock text-center">
+<div class="content">
+<img src="./images/computer_strat.svg" alt="Computer Strategy Execution Sequence" width="600">
+</div>
+</div>
+<div class="paragraph">
+<p><strong>1.</strong> After applying the human move, the <code>game</code> service encodes the current board state in YEN
+notation (<code>{ size, turn, players, layout }</code>).</p>
+</div>
+<div class="paragraph">
+<p><strong>2.</strong> The <code>game</code> service sends <code>POST /ybot/choose/{botId}</code> to <code>gamey</code>, where <code>botId</code> is one of:
+<code>random_bot</code> (easy), <code>fast_bot</code> (medium, 500 ms budget), or <code>smart_bot</code> (hard, up to 3 000 ms
+budget).</p>
+</div>
+<div class="paragraph">
+<p><strong>3.</strong> <code>gamey</code> deserialises the YEN payload via its <code>YENAdapter</code> and invokes the corresponding
+strategy algorithm. <code>fast_bot</code> and <code>smart_bot</code> use minimax with alpha-beta pruning and iterative
+deepening; <code>random_bot</code> selects a uniformly random legal cell.</p>
+</div>
+<div class="paragraph">
+<p><strong>4.</strong> <code>gamey</code> returns the chosen move as a barycentric coordinate string (<code>"x,y,z"</code>) to the <code>game</code>
+service.</p>
+</div>
+<div class="paragraph">
+<p><strong>5.</strong> The <code>game</code> service applies the bot&#8217;s move and continues with win detection and state
+persistence (see Human vs Computer Match, steps 7–11).</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_external_bot_interaction">6.4. External Bot Interaction</h3>
+<div class="paragraph">
+<p>This scenario references the high-level requirement: <em>The API will enable a bot to play against the
+application. A 'play' method will be exposed, requiring at least one 'position' parameter indicating
+the board state in YEN notation.</em>
+It describes how a third-party bot interacts with the system through the interop service.</p>
+</div>
+<div class="sect3">
+<h4 id="_quality_context_4">6.4.1. Quality Context</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Source</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">External Bot</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Stimulus</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Invokes <code>POST /games/play</code> on the interop service, supplying a <code>position</code> in YEN
+  notation and optionally a <code>bot_id</code> or <code>strategy</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Artifact</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">interop service + <code>gamey</code> Rust engine</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Environment</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Normal operation</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system validates the YEN position, computes the bot&#8217;s next move via <code>gamey</code>,
+  and returns it together with the updated board layout</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Response Measure</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The interop service returns the response in YEN notation within the
+  configured timeout (2 s for <code>random_bot</code>; up to 3 s for minimax strategies)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_interaction_sequence_4">6.4.2. Interaction sequence</h4>
+<div class="imageblock text-center">
+<div class="content">
+<img src="./images/bot_interaction.svg" alt="External Bot Interaction Sequence" width="700">
+</div>
+</div>
+<div class="paragraph">
+<p><strong>1.</strong> The External Bot calls <code>POST /games/play</code> on the interop service with the request body
+<code>{ position: YEN, bot_id?, strategy? }</code>.</p>
+</div>
+<div class="paragraph">
+<p><strong>2.</strong> The interop service validates the <code>position</code> field (structure, size, layout consistency). A
+<code>400 INVALID_POSITION</code> error is returned immediately if the YEN object is malformed.</p>
+</div>
+<div class="paragraph">
+<p><strong>3.</strong> The interop service resolves the target bot: <code>bot_id</code> takes priority over <code>strategy</code>; if
+neither is supplied, <code>random_bot</code> is used as the default.</p>
+</div>
+<div class="paragraph">
+<p><strong>4.</strong> The interop service forwards the YEN board state to <code>gamey</code> to compute the bot&#8217;s move.</p>
+</div>
+<div class="paragraph">
+<p><strong>5.</strong> <code>gamey</code> calculates the next move using the resolved strategy and returns the chosen cell
+coordinate.</p>
+</div>
+<div class="paragraph">
+<p><strong>6.</strong> The interop service constructs the response <code>{ move: "x,y,z", position: updatedLayout, bot_id }</code>
+and returns it to the External Bot. The <code>position</code> field in the response contains the updated YEN
+layout string after the bot&#8217;s move has been applied.</p>
+</div>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-deployment-view">7. Deployment View</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The deployment view describes the physical environment in which the YOVI system executes and the
+automation processes that manage its lifecycle.</p>
+</div>
+<div class="sect2">
+<h3 id="_infrastructure_level_1_cloud_environment">7.1. Infrastructure Level 1: Cloud Environment</h3>
+<div class="paragraph">
+<p>The system is deployed on Microsoft Azure using the "Azure for Students" subscription. A virtual
+machine with the following profile was provisioned, balancing performance against cost:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Location:</strong> France Central</p>
+</li>
+<li>
+<p><strong>Operating System:</strong> Linux Ubuntu</p>
+</li>
+<li>
+<p><strong>Hardware Profile:</strong> Standard B2ats v2 (2 vCPUs, 1 GiB memory)</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_infrastructure_level_2_execution_environment_docker">7.2. Infrastructure Level 2: Execution Environment (Docker)</h3>
+<div class="paragraph">
+<p>The system follows a "Cattle not Pets" approach, using Docker containers coordinated by Docker
+Compose to ensure consistency between development and production environments.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 14.2857%;">
+<col style="width: 28.5714%;">
+<col style="width: 14.2857%;">
+<col style="width: 42.8572%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Container</th>
+<th class="tableblock halign-left valign-top">Technology</th>
+<th class="tableblock halign-left valign-top">Port</th>
+<th class="tableblock halign-left valign-top">Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>webapp</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nginx + React 18 (TypeScript, Vite)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">80 / 443</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Serves the React SPA as static files and acts as the Nginx reverse proxy, routing
+  <code>/users/</code> to the <code>users</code> service, <code>/game/</code> to the <code>game</code> service, and proxying Grafana and
+  Prometheus paths.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>users</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TypeScript / Node.js 22 (Express, TypeORM)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Authentication, user profiles, match history, and ranking. Manages the <code>users</code> and
+  <code>match_records</code> tables.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>game</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TypeScript / Node.js 22 (Express, TypeORM)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5000</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game session management, move validation, bot orchestration, and timer enforcement. Manages the
+  <code>games</code> and <code>game_moves</code> tables. Delegates bot move computation to <code>gamey</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gamey</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rust (Axum)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4000 <strong>(internal only)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bot AI engine. Computes the next move for a given YEN board position using the configured
+  strategy (random_bot, fast_bot, smart_bot). Never directly reachable from the browser.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>mariadb</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MariaDB 11.4</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3306 <strong>(internal only)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistent storage for all application data. Both <code>users</code> and <code>game</code> share the same
+  <code>users_db</code> database instance.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>prometheus</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9090</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Metrics collection. Scrapes the <code>/metrics</code> endpoint exposed by the <code>users</code> service.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>grafana</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grafana</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9091 (host) → 3000 (container)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Metrics visualisation dashboards, pre-provisioned via the <code>users/monitoring/grafana</code> directory.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_network_and_connectivity">7.3. Network and Connectivity</h3>
+<div class="paragraph">
+<p>The Virtual Machine is configured with a public IP and specific inbound port rules:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Port 80 / 443:</strong> Public HTTPS access, handled by Nginx inside the <code>webapp</code> container. Nginx
+proxies all API traffic to the internal services:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><code>/users/</code> → <code>users</code> service on port 3000</p>
+</li>
+<li>
+<p><code>/game/</code> → <code>game</code> service on port 5000</p>
+</li>
+<li>
+<p><code>/grafana</code> → Grafana on port 3000 (container-internal)</p>
+</li>
+<li>
+<p><code>/prometheus</code> → Prometheus on port 9090</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Port 9090:</strong> Direct access to Prometheus metrics (restricted in production).</p>
+</li>
+<li>
+<p><strong>Port 9091:</strong> Direct access to Grafana dashboards (restricted in production).</p>
+</li>
+<li>
+<p><strong>Port 22:</strong> SSH access, restricted to the CI/CD deployment pipeline.</p>
+</li>
+<li>
+<p><strong>Ports 3000, 4000, 5000, 3306:</strong> Internal to the Docker network (<code>monitor-net</code>); not publicly
+routed.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_deployment_pipeline_cicd">7.4. Deployment Pipeline (CI/CD)</h3>
+<div class="paragraph">
+<p>The system uses GitHub Actions for continuous delivery. The pipeline is triggered automatically
+when a new release is created or a version tag is pushed to the repository.</p>
+</div>
+<div class="imageblock text-center">
+<div class="content">
+<img src="./images/deployment_pipeline.svg" alt="CI/CD Pipeline" width="800">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Automation:</strong> Workflow configuration is stored as YAML files in <code>.github/workflows</code>.</p>
+</li>
+<li>
+<p><strong>Build and Test:</strong> Docker images are built for all services; unit, integration, and SonarCloud
+quality-gate checks are executed.</p>
+</li>
+<li>
+<p><strong>Artifact Management:</strong> Docker images are pushed to the GitHub Container Registry (GHCR) under
+the <code>ghcr.io/arquisoft/yovi_en2b-*</code> namespace.</p>
+</li>
+<li>
+<p><strong>Deployment:</strong> GitHub Actions SSHs into the Azure VM and executes <code>docker compose pull &amp;&amp; docker
+compose up -d</code> to update all running containers with the latest images.</p>
+</li>
+<li>
+<p><strong>Secrets Management:</strong> Sensitive values (SSH keys, DB passwords, JWT secret, MariaDB credentials)
+are stored as GitHub Actions Secrets and injected as environment variables at runtime; they are
+never committed to the repository or baked into images.</p>
+</li>
+</ol>
+</div>
+<div class="sect3">
+<h4 id="_documentation_deployment">7.4.1. Documentation Deployment</h4>
+<div class="paragraph">
+<p>Following the "Documentation as Code" principle, the arc42 documentation is automatically built and
+published.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Automation:</strong> A dedicated GitHub Action tracks changes in the <code>docs/</code> directory.</p>
+</li>
+<li>
+<p><strong>Build Process:</strong> The action runs <code>npm install</code> and <code>npm run build</code>, generating an HTML version
+from the AsciiDoc source files using Asciidoctor with diagram support.</p>
+</li>
+<li>
+<p><strong>Publication:</strong> The build artefact is pushed to the <code>gh-pages</code> branch via the <code>gh-pages</code> npm
+package and served via GitHub Pages.</p>
+</li>
+</ol>
+</div>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-concepts">8. Cross-cutting Concepts</h2>
+<div class="sectionbody">
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Content</div>
+<p>This section describes overall, principal regulations and solution ideas that are relevant in multiple parts (= cross-cutting) of your system.
+Such concepts are often related to multiple building blocks.
+They can include many different topics, such as</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>models, especially domain models</p>
+</li>
+<li>
+<p>architecture or design patterns</p>
+</li>
+<li>
+<p>rules for using specific technology</p>
+</li>
+<li>
+<p>principal, often technical decisions of an overarching (= cross-cutting) nature</p>
+</li>
+<li>
+<p>implementation rules</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>Concepts form the basis for <em>conceptual integrity</em> (consistency, homogeneity) of the architecture.
+Thus, they are an important contribution to achieve inner qualities of your system.</p>
+</div>
+<div class="paragraph">
+<p>Some of these concepts cannot be assigned to individual building blocks, e.g. security or safety.</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>The form can be varied:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>concept papers with any kind of structure</p>
+</li>
+<li>
+<p>cross-cutting model excerpts or scenarios using notations of the architecture views</p>
+</li>
+<li>
+<p>sample implementations, especially for technical concepts</p>
+</li>
+<li>
+<p>reference to typical usage of standard frameworks (e.g. using Hibernate for object/relational mapping)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">Structure</div>
+<p>A potential (but not mandatory) structure for this section could be:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Domain concepts</p>
+</li>
+<li>
+<p>User Experience concepts (UX)</p>
+</li>
+<li>
+<p>Safety and security concepts</p>
+</li>
+<li>
+<p>Architecture and design patterns</p>
+</li>
+<li>
+<p>"Under-the-hood"</p>
+</li>
+<li>
+<p>development concepts</p>
+</li>
+<li>
+<p>operational concepts</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Note: it might be difficult to assign individual concepts to one specific topic
+on this list.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/08-concepts-EN.drawio.png" alt="Possible topics for crosscutting concepts">
+</div>
+</div>
+<div class="paragraph">
+<div class="title">Further Information</div>
+<p>See <a href="https://docs.arc42.org/section-8/">Concepts</a> in the arc42 documentation.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_yen_game_state_format">8.1. YEN — Game State Format</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Purpose</dt>
+<dd>
+<p>A shared format for representing a Game Y board at a specific point in time. Used as the data contract between the <code>game</code> service and <code>gamey</code>.</p>
+</dd>
+<dt class="hdlist1">Format</dt>
+<dd>
+<p>The game state is encoded as JSON following YEN notation.</p>
+</dd>
+</dl>
+</div>
+<div class="listingblock">
+<div class="title">Example:</div>
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "size": 4,
+  "turn": "R",
+  "players": [ "B", "R" ],
+  "layout": "B/.B/RB./B..R"
+}</code></pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Rules</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p><code>size</code>: integer greater than 0.</p>
+</li>
+<li>
+<p><code>turn</code>: must be one of the player IDs listed in <code>players</code>.</p>
+</li>
+<li>
+<p><code>players</code>: list of player identifiers (currently <code>"B"</code> and <code>"R"</code>).</p>
+</li>
+<li>
+<p><code>layout</code>: board encoded as a string; <code>/</code> separates rows, <code>.</code> marks an empty cell.</p>
+</li>
+<li>
+<p>Invalid states are rejected with a 4xx error.</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">Compatibility</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>One version of the API is published. Any breaking change must be reflected in the documentation and contract tests.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rest_conventions">8.2. REST Conventions</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Scope</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>Browser → <code>users</code> service (authentication, stats, ranking)</p>
+</li>
+<li>
+<p>Browser → <code>game</code> service (game sessions and moves)</p>
+</li>
+<li>
+<p><code>game</code> service → <code>gamey</code> (bot move requests, internal only)</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">Conventions</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>JSON is the default payload format.</p>
+</li>
+<li>
+<p>HTTP status codes: 2xx for success, 4xx for client errors, 5xx for server errors.</p>
+</li>
+<li>
+<p>Calls from <code>game</code> to <code>gamey</code> must use finite timeouts.</p>
+</li>
+<li>
+<p>Non-idempotent operations are not retried automatically.</p>
+</li>
+<li>
+<p>Recommended headers: <code>Content-Type: application/json</code>, <code>Accept: application/json</code>.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_authentication">8.3. Authentication</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Scope</dt>
+<dd>
+<p>All endpoints exposed by <code>users</code> (registration, login, profile) and <code>game</code> (game sessions and moves).</p>
+</dd>
+<dt class="hdlist1">How it works</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p><code>users</code> issues JWTs signed with HS256. Clients send them as <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+</li>
+<li>
+<p><code>game</code> and <code>users</code> share the same secret key and verify tokens locally — no inter-service call is made per request.</p>
+</li>
+<li>
+<p><code>game</code> endpoints use optional authentication: requests without a token are accepted as guest sessions; requests with an invalid or expired token are rejected with 401.</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">Authorization</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>Role-based: <code>player</code> and <code>admin</code>. A user can only read or modify their own data by default.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_service_routing_and_orchestration">8.4. Service Routing and Orchestration</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">How requests flow</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>Nginx is the single public entry point. It routes requests by path prefix: <code>/users/</code> → users service, <code>/game/</code> → game service, <code>/</code> → SPA static files.</p>
+</li>
+<li>
+<p>The <code>game</code> service is the only component that calls <code>gamey</code>. The browser never reaches the bot engine directly, and its port is not exposed through Nginx.</p>
+</li>
+<li>
+<p>This keeps game logic and bot calls on the server side, preventing clients from interfering with game state.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_development_workflow">8.5. Development Workflow</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Rules</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>Short-lived branches merged into master via Pull Request.</p>
+</li>
+<li>
+<p>Each PR requires at least one human approval and a passing CI run before merging.</p>
+</li>
+<li>
+<p>PRs are merged using squash merge to keep a linear history.</p>
+</li>
+<li>
+<p>No feature flags — changes go straight to master once approved.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_user_experience_ux">8.6. User Experience (UX)</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Goals</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>Players should be able to start a game with as little friction as possible.</p>
+</li>
+<li>
+<p>The UI must give clear feedback at every step, especially when waiting for the bot.</p>
+</li>
+</ul>
+</div>
+</dd>
+<dt class="hdlist1">Key principles</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Guest-first access</strong> — Players can start a game without registering. An account is only required to save match history and appear in the ranking. This lowers the barrier to try the game.</p>
+</li>
+<li>
+<p><strong>Server-authoritative rendering</strong> — The board state shown to the player always comes from the server. The UI does not maintain its own copy of the game logic; it only renders what the <code>game</code> service returns. This keeps the frontend simple and prevents the display from going out of sync.</p>
+</li>
+<li>
+<p><strong>Visible bot feedback</strong> — When the bot is computing a move (which can take up to 3 seconds on large boards), the UI shows a "thinking…" indicator. The player cannot interact with the board during this time. This avoids confusion about whether the game is frozen.</p>
+</li>
+<li>
+<p><strong>Accessible components</strong> — UI primitives are built with Radix UI, which provides keyboard navigation and screen-reader support out of the box.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuration_and_secrets">8.7. Configuration and Secrets</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Rules</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p>All environment-specific configuration is injected via environment variables (Docker Compose locally, GitHub Secrets in CI).</p>
+</li>
+<li>
+<p>Sensitive values (JWT key, database password) are never committed to the repository and never baked into container images. Local development uses a gitignored <code>.env</code> file.</p>
+</li>
+<li>
+<p>Secrets must never appear in logs.</p>
+</li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-design-decisions">9. Architecture Decisions</h2>
+<div class="sectionbody">
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Contents</div>
+<p>Important, expensive, large scale or risky architecture decisions including rationales.
+With "decisions" we mean selecting one alternative based on given criteria.</p>
+</div>
+<div class="paragraph">
+<p>Please use your judgement to decide whether an architectural decision should be documented
+here in this central section or whether you better document it locally
+(e.g. within the white box template of one building block).</p>
+</div>
+<div class="paragraph">
+<p>Avoid redundancy.
+Refer to section 4, where you already captured the most important decisions of your architecture.</p>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>Stakeholders of your system should be able to comprehend and retrace your decisions.</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>Various options:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>ADR (<a href="https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions">Documenting Architecture Decisions</a>) for every important decision</p>
+</li>
+<li>
+<p>List or table, ordered by importance and consequences or:</p>
+</li>
+<li>
+<p>more detailed in form of separate sections per decision</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">Further Information</div>
+<p>See <a href="https://docs.arc42.org/section-9/">Architecture Decisions</a> in the arc42 documentation.
+There you will find links and examples about ADR.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_adr_001_dedicated_game_service_owns_all_session_state">9.1. ADR-001: Dedicated game service owns all session state</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Status</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon"><i class="fa fa-check-circle"></i></span> APPROVED</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game session state (board, turns, moves, timers) must live on the server to prevent cheating and keep the browser thin. We needed to decide which component owns this state.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A dedicated <code>game</code> service owns all game session state. It validates moves, calls <code>gamey</code> for bot moves, and writes match results to the <code>users</code> service when a game ends. The browser only renders what the server returns.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Clear ownership of game logic; the browser cannot modify game state directly. Adding game features means touching the <code>game</code> service, not the frontend.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_adr_002_nginx_as_single_public_entry_point_with_path_based_routing">9.2. ADR-002: Nginx as single public entry point with path-based routing</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Status</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon"><i class="fa fa-check-circle"></i></span> APPROVED</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system has two backend services and a frontend SPA. Clients need a single address to reach all of them.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nginx routes requests by path prefix: <code>/users/</code> → users service, <code>/game/</code> → game service, <code>/</code> → SPA static files. The bot engine port (4000) is never exposed through Nginx.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One public entry point with simple routing rules. The bot engine stays internal. Adding a new service requires a new Nginx route.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_adr_003_shared_jwt_secret_with_local_token_verification">9.3. ADR-003: Shared JWT secret with local token verification</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Status</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon"><i class="fa fa-check-circle"></i></span> APPROVED</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Both <code>game</code> and <code>users</code> need to verify user identity. Calling <code>users</code> on every authenticated request adds latency and a runtime dependency.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>game</code> and <code>users</code> share the same <code>JWT_SECRET</code> and verify tokens locally using the same algorithm (HS256). No inter-service call is made per request.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No extra round-trip for authentication. The shared secret must be identical across both services and kept confidential.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_adr_004_one_mariadb_instance_with_strict_table_ownership_per_service">9.4. ADR-004: One MariaDB instance with strict table ownership per service</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Status</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon"><i class="fa fa-check-circle"></i></span> APPROVED</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Both services need persistent storage. Running two separate database instances adds operational overhead for an academic project.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Both services connect to the same MariaDB instance (<code>users_db</code>). Table ownership is strict: <code>users</code> and <code>match_records</code> belong to the users service; <code>games</code> and <code>game_moves</code> belong to the game service. Neither service queries the other&#8217;s tables directly.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One database container to manage. The services remain logically independent as long as table boundaries are respected.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_adr_005_stateless_bot_engine_gamey">9.5. ADR-005: Stateless bot engine (gamey)</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Status</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon"><i class="fa fa-check-circle"></i></span> APPROVED</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The bot only needs the current board position to compute a move. Storing session state in the Rust service would complicate deployment and testing.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gamey</code> is stateless. Each request carries the full board state in YEN format; the engine computes one move and discards the state.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simple deployment and testing for the Rust service. The <code>game</code> service is responsible for sending the full board on every bot request.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_adr_006_hs256_for_jwt_signing">9.6. ADR-006: HS256 for JWT signing</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Status</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon"><i class="fa fa-check-circle"></i></span> APPROVED</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>users</code> issues tokens and <code>game</code> verifies them. A signing algorithm must be chosen.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use HMAC-SHA256 (HS256) with a shared secret for JWT signing and verification.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simple setup and fast verification. Asymmetric keys are not needed since both services are internal and controlled by the same team.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_adr_007_secrets_and_configuration_via_environment_variables">9.7. ADR-007: Secrets and configuration via environment variables</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Status</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><span class="icon"><i class="fa fa-check-circle"></i></span> APPROVED</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Context</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sensitive values (JWT key, database password) must not be stored in the repository or baked into container images.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">All sensitive configuration is injected at runtime via environment variables. Locally, a gitignored <code>.env</code> file is used. In CI and production, values come from GitHub Secrets.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Consequences</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Secrets never enter version control. Developers must copy <code>.env.example</code> to get started locally.</p></td>
+</tr>
+</tbody>
+</table>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-quality-scenarios">10. Quality Requirements</h2>
+<div class="sectionbody">
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Content</div>
+<p>This section contains all quality requirements as quality tree with scenarios. The most important ones have already been described in section 1.2. (quality goals)</p>
+</div>
+<div class="paragraph">
+<p>Here you can also capture quality requirements with lesser priority,
+which will not create high risks when they are not fully achieved.</p>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>Since quality requirements will have a lot of influence on architectural
+decisions you should know for every stakeholder what is really important to them,
+concrete and measurable.</p>
+</div>
+<div class="paragraph">
+<div class="title">Further Information</div>
+<p>See <a href="https://docs.arc42.org/section-10/">Quality Requirements</a> in the arc42 documentation.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_quality_tree">10.1. Quality Tree</h3>
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Content</div>
+<p>The quality tree (as defined in ATAM – Architecture Tradeoff Analysis Method) with quality/evaluation scenarios as leafs.</p>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>The tree structure with priorities provides an overview for a sometimes large number of quality requirements.</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>The quality tree is a high-level overview of the quality goals and requirements:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>tree-like refinement of the term "quality". Use "quality" or "usefulness" as a root</p>
+</li>
+<li>
+<p>a mind map with quality categories as main branches</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>In any case the tree should include links to the scenarios of the following section.</p>
+</div>
+</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/quality-tree-horizontal.svg" alt="quality tree horizontal" width="1580" height="275">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_quality_scenarios">10.2. Quality Scenarios</h3>
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Contents</div>
+<p>Concretization of (sometimes vague or implicit) quality requirements using (quality) scenarios.</p>
+</div>
+<div class="paragraph">
+<p>These scenarios describe what should happen when a stimulus arrives at the system.</p>
+</div>
+<div class="paragraph">
+<p>For architects, two kinds of scenarios are important:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Usage scenarios (also called application scenarios or use case scenarios) describe the system&#8217;s runtime reaction to a certain stimulus. This also includes scenarios that describe the system&#8217;s efficiency or performance. Example: The system reacts to a user&#8217;s request within one second.</p>
+</li>
+<li>
+<p>Change scenarios describe a modification of the system or of its immediate environment. Example: Additional functionality is implemented or requirements for a quality attribute change.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>Scenarios make quality requirements concrete and allow to
+more easily measure or decide whether they are fulfilled.</p>
+</div>
+<div class="paragraph">
+<p>Especially when you want to assess your architecture using methods like
+ATAM you need to describe your quality goals (from section 1.2)
+more precisely down to a level of scenarios that can be discussed and evaluated.</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>Tabular or free form text.</p>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>This section makes quality requirements concrete through a quality tree and measurable scenarios, referencing the quality goals defined in section 1.2 <a href="#_quality_goals">Quality Goals</a> where applicable.
+The quality-attribute taxonomy follows ISO/IEC 25010.
+Scenarios make quality requirements precise by stating stimulus, response, and measurable criteria.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 12.5%;">
+<col style="width: 12.5%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ID</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Stimulus</th>
+<th class="tableblock halign-left valign-top">Response</th>
+<th class="tableblock halign-left valign-top">Measure / Acceptance criteria</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-01"></a><strong>QS-01</strong> (Fast start)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new player accesses the application for the first time.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">They can register, log in, and start a game against the bot.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Completes the flow in &lt; 30 s without needing instructions (quality goal 1).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-02"></a><strong>QS-02</strong> (Playable UI)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A player starts a game and makes a move.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The UI reflects the new state without noticeable delay.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Main interaction (render + confirmation) does not exceed 500 ms on the client (TBD: to be measured).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-03"></a><strong>QS-03</strong> (API latency — no bot)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A standard request to the Node.js backend (e.g., login, profile) that does not involve the bot engine.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system responds with the result.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">p95 &#8656; 50 ms for ~10 concurrent users (internal target).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-04"></a><strong>QS-04</strong> (Bot engine health check)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>game</code> service calls the bot engine health-check endpoint.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">It receives a status response and can disable bot features if the engine is down.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">p95 &#8656; 50 ms.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-05"></a><strong>QS-05</strong> (Bot move latency by board size)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A player requests the next bot move (random strategy or minimax with alpha-beta pruning).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The service returns a valid move.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p>"Hard" difficulty (board size 4–12): p95 &#8656; 500 ms (quality goal 2).</p>
+</li>
+<li>
+<p>"Hard" difficulty (board size 13–16): p95 &#8656; 3000 ms; the UI shows a "thinking…" indicator without blocking the session.</p>
+</li>
+<li>
+<p>Note: thresholds will be validated with real measurements.</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-06"></a><strong>QS-06</strong> (Add bot strategy in 1 day)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Change</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new bot strategy or difficulty level is added to the Rust module.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The feature is integrated without breaking the frontend or API contracts.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Effort &#8656; 1 work day; the <code>/v1/ybot/choose/{bot_id}</code> endpoint contract remains compatible (quality goal 3).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-07"></a><strong>QS-07</strong> (Extend board size)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Change</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Board-size support is extended within the allowed range.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The change does not require rewriting the UI or the persistence layer.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Changes are localized and tests are updated; the YEN format is not broken.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-08"></a><strong>QS-08</strong> (Persist match result)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A game ends and the result is saved to the database.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The result is persisted and appears in the user&#8217;s history.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">99% of save operations succeed (quality goal 4); on failure, an explicit error is returned and no match is falsely confirmed as saved.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-09"></a><strong>QS-09</strong> (Recovery after restart)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The server restarts unexpectedly.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system comes back online and retains previously persisted data.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service recovers after restart (TBD: &#8656; 5 min); live sessions in progress may be lost, but finished match records are kept.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-10"></a><strong>QS-10</strong> (Authenticated score submission)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An unauthenticated client tries to submit a match result or access private data.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The backend rejects the request.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Only authenticated users can submit results linked to their own account (quality goal 5).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-11"></a><strong>QS-11</strong> (Score spoofing)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An authenticated user attempts to submit a result without having played, or sends a manipulated game state to obtain an illegitimate score.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>game</code> service validates the state server-side and rejects the operation.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Both spoofing scenarios are prevented (quality goal 5).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-12"></a><strong>QS-12</strong> (Abuse / rate limiting)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A client attempts brute force or spam against the <code>users</code> service endpoints.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system limits and logs the requests.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rate limiting is enabled (TBD: thresholds per IP/user) and security events are logged.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-13"></a><strong>QS-13</strong> (Documented external API)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A third party builds a bot using the public interoperability API.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">They can integrate without reverse engineering the system.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The API is fully documented (OpenAPI/Swagger with examples) as required by the assignment.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-14"></a><strong>QS-14</strong> (Observability)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usage</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An error occurs during a match or latency increases.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The team can diagnose the issue using metrics and logs.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Basic metrics (p95 latencies, error rate, bot engine health) are available; logs include a correlation ID (TBD implementation).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a id="QS-15"></a><strong>QS-15</strong> (Architecture documentation quality)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Change</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The team reviews the architecture and its decisions.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">They can trace decisions and quality attributes without ambiguity.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Complete arc42 documentation with relevant ADRs recorded per evaluation criteria.</p></td>
+</tr>
+</tbody>
+</table>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-technical-risks">11. Risks and Technical Debts</h2>
+<div class="sectionbody">
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Contents</div>
+<p>A list of identified technical risks or technical debts, ordered by priority</p>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>"Risk management is project management for grown-ups" (Tim Lister, Atlantic Systems Guild.)</p>
+</div>
+<div class="paragraph">
+<p>This should be your motto for systematic detection and evaluation of risks and technical debts in the architecture, which will be needed by management stakeholders (e.g. project managers, product owners) as part of the overall risk analysis and measurement planning.</p>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>List of risks and/or technical debts, probably including suggested measures to minimize, mitigate or avoid risks or reduce technical debts.</p>
+</div>
+<div class="paragraph">
+<div class="title">Further Information</div>
+<p>See <a href="https://docs.arc42.org/section-11/">Risks and Technical Debt</a> in the arc42 documentation.</p>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>This section lists identified technical risks and technical debts, ordered by priority.</p>
+</div>
+<div class="sect2">
+<h3 id="_technical_risks">11.1. Technical Risks</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 22.2222%;">
+<col style="width: 11.1111%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ID</th>
+<th class="tableblock halign-left valign-top">Priority</th>
+<th class="tableblock halign-left valign-top">Impact</th>
+<th class="tableblock halign-left valign-top">Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-01</strong> (Minimax does not scale beyond board size 11)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>HIGH</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The current minimax implementation (alpha-beta pruning + iterative deepening) cannot handle boards of size 11+ within acceptable time limits, which restricts the variable board size requirement.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p>Option A: Cap maximum board size at 10 for "Hard" difficulty.</p>
+</li>
+<li>
+<p>Option B: Optimize the algorithm (transposition tables, better move ordering) or reduce search depth for larger boards.</p>
+</li>
+<li>
+<p>Option C: Add a time-limit cutoff and return the best move found so far; show a "thinking…" indicator to the user.</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-02</strong> (Bot engine failure blocks PvE games)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>HIGH</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">If <code>gamey</code> becomes unavailable, players cannot continue games against the bot. Note: win detection runs in the <code>game</code> service (Node.js), so it is not affected by this failure.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p>Implement graceful degradation: switch to a local two-player mode with a clear message ("Bot unavailable; switching to local multiplayer").</p>
+</li>
+<li>
+<p>Add health-check monitoring to detect and alert when <code>gamey</code> is down.</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-03</strong> (WebSocket integration is unproven)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>HIGH</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The team has not yet implemented WebSocket support for real-time online multiplayer. Lack of experience increases the risk of bugs or incomplete implementation.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p>Prototype WebSocket basics early (by sprint N, TBD).</p>
+</li>
+<li>
+<p>Allocate extra time for debugging connection and state-sync issues.</p>
+</li>
+<li>
+<p>If not ready in time, online multiplayer can be deferred; player-vs-bot and local multiplayer remain functional.</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-04</strong> (Limited observability in production)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>HIGH</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Without structured logs and metrics, diagnosing problems on the deployed server is difficult and slow.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p>Add structured logging with a correlation ID (request tracing across Node and Rust).</p>
+</li>
+<li>
+<p>Expose basic metrics (error rate, p95 latencies, bot engine health) via Prometheus and Grafana.</p>
+</li>
+<li>
+<p>Address this before final deployment.</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-05</strong> (Team inexperience with the stack)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>MEDIUM</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The team is relatively new to some parts of the stack (React, Node.js, Rust), which may slow development and increase the bug rate.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p>The academic schedule allows time for learning.</p>
+</li>
+<li>
+<p>Code reviews and pair programming help spread knowledge across the team.</p>
+</li>
+<li>
+<p>SonarQube enforces quality standards and catches common mistakes early (see TD-01).</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-06</strong> (Scope creep from optional features)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>MEDIUM</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The assignment includes many optional features (game variants, i18n, mobile, undo, hints, etc.). Taking on too many risks overcommitment.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p>Lock scope early: prioritize one or two optional features aligned with grading criteria (e.g., leaderboard).</p>
+</li>
+<li>
+<p>Do not start optional features until the core requirements (player-vs-bot, API, user management) are stable and tested.</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>R-07</strong> (Documentation has open TBD sections)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>MEDIUM</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Some documentation sections still contain TBD placeholders, which may affect the final evaluation.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p>Schedule a documentation review before final delivery.</p>
+</li>
+<li>
+<p>Assign an owner to each open TBD to ensure it gets closed.</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_technical_debt">11.2. Technical Debt</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 37.5%;">
+<col style="width: 37.5%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ID</th>
+<th class="tableblock halign-left valign-top">Debt</th>
+<th class="tableblock halign-left valign-top">Impact / Plan</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TD-01</strong> (SonarQube slows development)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Quality gates are enabled and catch issues early, but they add overhead to the development workflow.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p><strong>Impact</strong>: Reduced short-term velocity, higher long-term code quality.</p>
+</li>
+<li>
+<p><strong>Plan</strong>: Accept the trade-off. SonarQube prevents worse debt from accumulating (poor code, security issues). Thresholds can be adjusted if they become unreasonably strict for the project scope.</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TD-02</strong> (<code>interop</code> service not connected in docker-compose)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The <code>interop</code> service (required by the assignment for bot interoperability) is implemented and tested but not wired into <code>docker-compose.yml</code>. It cannot be reached in the current deployment.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p><strong>Impact</strong>: The interoperability requirement is not met in production until this is enabled.</p>
+</li>
+<li>
+<p><strong>Plan</strong>: Add the <code>interop</code> service to <code>docker-compose.yml</code> before final delivery. The required configuration is documented in section 5.</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>TD-03</strong> (<code>pvp-online</code> mode not implemented)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The online multiplayer mode (<code>pvp-online</code>) is defined in the type system and reserved in the game service, but the matching logic and real-time synchronization are not implemented.</p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="ulist">
+<ul>
+<li>
+<p><strong>Impact</strong>: Online multiplayer is unavailable. Player-vs-bot and local multiplayer are not affected.</p>
+</li>
+<li>
+<p><strong>Plan</strong>: Implement once WebSocket infrastructure is in place (linked to R-03). Treat as a separate delivery.</p>
+</li>
+</ul>
+</div></div></td>
+</tr>
+</tbody>
+</table>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-glossary">12. Glossary</h2>
+<div class="sectionbody">
+<div class="sidebarblock arc42help">
+<div class="content">
+<div class="paragraph">
+<div class="title">Contents</div>
+<p>The most important domain and technical terms that your stakeholders use when discussing the system.</p>
+</div>
+<div class="paragraph">
+<p>You can also see the glossary as source for translations if you work in multi-language teams.</p>
+</div>
+<div class="paragraph">
+<div class="title">Motivation</div>
+<p>You should clearly define your terms, so that all stakeholders</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>have an identical understanding of these terms</p>
+</li>
+<li>
+<p>do not use synonyms and homonyms</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<div class="title">Form</div>
+<p>A table with columns &lt;Term&gt; and &lt;Definition&gt;.</p>
+</div>
+<div class="paragraph">
+<div class="title">Further Information</div>
+<p>See <a href="https://docs.arc42.org/section-12/">Glossary</a> in the arc42 documentation.</p>
+</div>
+</div>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Term</th>
+<th class="tableblock halign-left valign-top">Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">YOVI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">System name: a web-based platform to play Game Y through a browser and public APIs.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game Y</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The board game implemented by the system: players compete to connect three sides of a triangular board.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Micrati</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Company behind the project in the assignment context (project sponsor).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SPA (Single-Page Application)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Web application that loads once and updates the UI dynamically by calling backend APIs.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Web Frontend</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Browser-based TypeScript SPA that renders the board and interacts with backend services via HTTP.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">users (service)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service responsible for authentication and user management. Exposes the public User API (register, login, profile, stats, ranking) and persists user data in MariaDB.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">game (service)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service responsible for all game session logic. It validates moves, manages board state, calls <code>gamey</code> for bot moves, and writes match results to the <code>users</code> service when a game ends.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">gamey (Rust engine)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Internal Rust service that computes bot moves. Accepts a board position in YEN format and returns one move. Invoked only by the <code>game</code> service — never directly by the browser.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">interop (service)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Standalone service that exposes a public API allowing external bots or clients to play against the bot engine. Required by the assignment for interoperability with other teams. Implemented but not yet connected in <code>docker-compose.yml</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Public HTTP API for user management (register, login, profile, history) provided by the <code>users</code> service.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Public HTTP API for game interaction (create session, play moves, surrender) provided by the <code>game</code> service.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">YEN</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Notation for representing a Game Y board state: includes board size, current player turn, player identifiers, and the board layout.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">YEN/JSON game state</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A JSON payload encoding a game state in YEN format. Invalid states are rejected by the engine.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JSON</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default payload format used in all API and service-to-service communication.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">REST</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP-based request/response style used across all services in the system.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">WebSocket</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bidirectional communication channel planned for real-time online multiplayer.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JWT (JSON Web Token)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Token format used for authentication. Clients send it in the <code>Authorization: Bearer &lt;token&gt;</code> header.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HS256</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HMAC-SHA256 algorithm used to sign and verify JWTs using a shared secret key.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Authentication</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The process of verifying who a user is. Handled by the <code>users</code> service via JWT issuance; verified locally by both <code>users</code> and <code>game</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Authorization</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The process of deciding what a user is allowed to do. Implemented as role-based checks (<code>player</code> / <code>admin</code>).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MariaDB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Relational database used by both the <code>users</code> and <code>game</code> services to persist data (user accounts, match records, game sessions, and move history).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ADR (Architecture Decision Record)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Short document describing an important architectural decision, its context, and its consequences.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">arc42</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Software architecture documentation template used to structure this documentation (sections 1–12).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">M1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">First project milestone, focused on delivering end-to-end functionality.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Error envelope</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Standard JSON structure for error responses, using <code>errorCode</code>, <code>message</code>, and <code>requestId</code> fields.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">requestId</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Identifier included in error responses to help correlate client-visible failures with server-side logs.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Version 8.2 EN<br>
+Last updated 2026-04-21 10:15:29 UTC
+</div>
+</div>
+</body>
+</html>
