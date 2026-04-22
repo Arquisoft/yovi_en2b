@@ -7,12 +7,14 @@ export function useGameModeController() {
 
   const handleSelectMode = useCallback(
     (mode: GameMode) => {
-      navigate(`/games/y/config/${mode}`)
+      if (mode === 'pvp-online') {
+        navigate('/games/y/online')
+      } else {
+        navigate(`/games/y/config/${mode}`)
+      }
     },
-    [navigate]
+    [navigate],
   )
 
-  return {
-    handleSelectMode,
-  }
+  return { handleSelectMode }
 }
