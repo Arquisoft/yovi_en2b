@@ -226,7 +226,7 @@ export interface MatchHistoryFilter {
 
 // ==================== Ranking ====================
 
-export type RankingMode = 'pve-easy' | 'pve-medium' | 'pve-hard'
+export type RankingMode = 'pve-easy' | 'pve-medium' | 'pve-hard' | 'pvp-online'
 
 export interface RankingEntry {
   rank: number

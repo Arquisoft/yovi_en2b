@@ -6,10 +6,11 @@ import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { GameMode } from '@/types'
 
+// pvp-online ahora está habilitado para permitir el juego multijugador
 const modes: { mode: GameMode; disabled?: boolean }[] = [
   { mode: 'pvp-local' },
   { mode: 'pve' },
-  { mode: 'pvp-online', disabled: true },
+  { mode: 'pvp-online' },
 ]
 
 export function GameModePage() {
