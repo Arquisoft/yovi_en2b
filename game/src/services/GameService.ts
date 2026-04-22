@@ -8,6 +8,7 @@ import {
 import { getBotMove, getBotPieOpening, getBotPieDecision } from './BotService';
 import type {
   GameConfig, GameState, PieDecision, Player, PlayerColor, TimerState, Move, BotLevel,
+  GameSummary,
 } from '../types/game';
 
 const USERS_PUBLIC_URL = process.env.USERS_PUBLIC_URL || 'http://localhost:3000';
@@ -32,6 +33,8 @@ export class GameService {
     await this.gameRepo.update({ id: gameId }, { player2Id });
   }
 
+  
+
   async createGame(config: GameConfig, userId: number | null, username: string, token?: string, guestId?: string): Promise<GameState> {
     const [player1, player2] = this.buildPlayers(config, userId, username, guestId);
     const board = createEmptyBoard(config.boardSize);
@@ -54,6 +57,44 @@ export class GameService {
     if (!game) return null;
     const moves = await this.moveRepo.find({ where: { game: { id: gameId } }, order: { playedAt: 'ASC' } });
     return this.toGameState(game, moves);
+  }
+
+   async getUserGames(userId: number): Promise<GameSummary[]> {
+    const games = await this.gameRepo.find({
+      where: { player1Id: userId },
+      order: { updatedAt: 'DESC' },
+      take: 50,
+    });
+ 
+    if (games.length === 0) return [];
+ 
+    const gameIds = games.map(g => g.id);
+ 
+    // Count moves per game in a single efficient query
+    const moveCounts = await this.moveRepo
+      .createQueryBuilder('move')
+      .innerJoin('move.game', 'game')
+      .select('game.id', 'gameId')
+      .addSelect('COUNT(move.id)', 'cnt')
+      .where('game.id IN (:...gameIds)', { gameIds })
+      .groupBy('game.id')
+      .getRawMany<{ gameId: string; cnt: string }>();
+ 
+    const countMap = new Map<string, number>(
+      moveCounts.map(r => [r.gameId, Number.parseInt(r.cnt, 10)])
+    );
+ 
+    return games.map(game => ({
+      id: game.id,
+      config: game.config,
+      status: game.status,
+      phase: game.phase ?? 'playing',
+      players: game.players,
+      winner: game.winner,
+      moveCount: countMap.get(game.id) ?? 0,
+      createdAt: game.createdAt.toISOString(),
+      updatedAt: game.updatedAt.toISOString(),
+    }));
   }
 
   async playMove(gameId: string, row: number, col: number, player: PlayerColor, token?: string): Promise<GameState> {
