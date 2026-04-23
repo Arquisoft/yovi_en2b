@@ -6,6 +6,8 @@ export type ClientMessage =
   | { type: 'auth'; token: string }
   | { type: 'join_queue' }
   | { type: 'leave_queue' }
+  | { type: 'join_game'; gameId: string }
+  | { type: 'leave_game'; gameId: string }
   | { type: 'move'; gameId: string; row: number; col: number }
   | { type: 'surrender'; gameId: string }
   | { type: 'ping' }

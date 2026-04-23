@@ -39,24 +39,29 @@ export function useGameYController() {
 
   // ── Carga inicial del juego ──────────────────────────────────────────────
   useEffect(() => {
-    if (!gameId) return
-    const load = async () => {
-      try {
-        const state = await gameService.getGameState(gameId)
-        if (!state) {
-          setError('Game not found')
-          return
-        }
-        setGame(state)
-        setChatMessages(await gameService.getChatMessages(gameId))
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load game')
-      } finally {
-        setIsLoading(false)
+  if (!gameId) return
+  const load = async () => {
+    try {
+      const state = await gameService.getGameState(gameId)
+      if (!state) {
+        setError('Game not found')
+        return
       }
+      setGame(state)
+      setChatMessages(await gameService.getChatMessages(gameId))
+
+      // Para pvp-online, registrar en el servidor WS que estamos en esta partida
+      if (state.config.mode === 'pvp-online') {
+        wsService.send({ type: 'join_game', gameId })
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load game')
+    } finally {
+      setIsLoading(false)
     }
-    load()
-  }, [gameId])
+  }
+  load()
+}, [gameId])
 
   // ── Listeners de WebSocket (pvp-online) ──────────────────────────────────
   useEffect(() => {
@@ -71,11 +76,21 @@ export function useGameYController() {
     const unsubReconnected = wsService.on('opponent_reconnected', () => {
       setOpponentDisconnected(false)
     })
+      const unsubError = wsService.on('error', (data: any) => {
+    if (data.code === 'MOVE_FAILED') {
+      // Revertir al estado anterior recargando desde servidor
+      gameService.getGameState(gameId!).then(state => {
+        if (state) setGame(state)
+      })
+      setMoveError(data.message ?? 'Move failed')
+    }
+  })
 
     return () => {
       unsubUpdate()
       unsubDisconnected()
       unsubReconnected()
+      unsubError()
     }
   }, [game?.id, game?.config?.mode])
 
@@ -104,10 +119,10 @@ export function useGameYController() {
   useEffect(() => {
     if (!game?.timer || game.status !== 'playing' || !game.timer.activePlayer) return
 
-    const botColor: PlayerColor | null =
-      game.config.mode === 'pve'
-        ? (game.players.player1.isBot ? 'player1' : 'player2')
-        : null
+    let botColor: PlayerColor | null = null
+    if (game.config.mode === 'pve') {
+      botColor = game.players.player1.isBot ? 'player1' : 'player2'
+    }
 
     const activePlayer = isBotThinking && botColor ? botColor : game.timer.activePlayer
 
@@ -150,61 +165,74 @@ export function useGameYController() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleCellClick = useCallback(async (row: number, col: number) => {
-    if (!game || !gameId || !canPlay()) return
+  if (!game || !gameId || !canPlay()) return
 
-    const snapshot = game
+  // pvp-online: los movimientos van por WebSocket
+  // El game_update llegará via el listener 'game_update' ya registrado
+  if (game.config.mode === 'pvp-online') {
     // Actualización optimista del tablero
     const optimisticBoard = game.board.map((boardRow, r) =>
       boardRow.map((cell, c) =>
         r === row && c === col ? { ...cell, owner: game.currentTurn as PlayerColor } : cell
       )
     )
-    
     setGame({ ...game, board: optimisticBoard })
     setMoveError(null)
+    wsService.send({ type: 'move', gameId, row, col })
+    return
+  }
 
-    // Ajuste de cronómetro local para PVE
-    if (game.config.mode === 'pve' && game.timer) {
-      timerBaseRef.current = {
-        player1Ms: liveTimer?.player1RemainingMs ?? game.timer.player1RemainingMs,
-        player2Ms: liveTimer?.player2RemainingMs ?? game.timer.player2RemainingMs,
-      }
-      clockStartedAtRef.current = Date.now()
+  // pve y pvp-local: siguen usando REST
+  const snapshot = game
+  const optimisticBoard = game.board.map((boardRow, r) =>
+    boardRow.map((cell, c) =>
+      r === row && c === col ? { ...cell, owner: game.currentTurn as PlayerColor } : cell
+    )
+  )
+
+  setGame({ ...game, board: optimisticBoard })
+  setMoveError(null)
+
+  if (game.config.mode === 'pve' && game.timer) {
+    timerBaseRef.current = {
+      player1Ms: liveTimer?.player1RemainingMs ?? game.timer.player1RemainingMs,
+      player2Ms: liveTimer?.player2RemainingMs ?? game.timer.player2RemainingMs,
     }
+    clockStartedAtRef.current = Date.now()
+  }
 
-    const willBotResolvePie =
-      game.config.pieRule === true &&
-      game.moves.length === 0 &&
-      game.config.mode === 'pve' &&
-      game.players.player2.isBot === true
+  const willBotResolvePie =
+    game.config.pieRule === true &&
+    game.moves.length === 0 &&
+    game.config.mode === 'pve' &&
+    game.players.player2.isBot === true
 
-    setIsBotThinking(game.config.mode === 'pve')
-    if (willBotResolvePie) setIsBotResolvingPie(true)
+  setIsBotThinking(game.config.mode === 'pve')
+  if (willBotResolvePie) setIsBotResolvingPie(true)
 
-    try {
-      const updated = await gameService.playMove(gameId, row, col, game.currentTurn as PlayerColor, effectiveToken)
-      setGame(updated)
-      
-      // Manejo de la animación si el Bot decide usar la Pie Rule (Swap)
-      if (willBotResolvePie) {
-        const contestedCell = updated.board[row]?.[col]
-        if (contestedCell?.owner === 'player2') {
-          setSwapAnimationStone({ row, col })
-          setIsSwapAnimating(true)
-          setTimeout(() => {
-            setIsSwapAnimating(false)
-            setSwapAnimationStone(null)
-          }, SWAP_ANIM_MS)
-        }
+  try {
+    const updated = await gameService.playMove(gameId, row, col, game.currentTurn as PlayerColor, effectiveToken)
+    setGame(updated)
+
+    if (willBotResolvePie) {
+      const contestedCell = updated.board[row]?.[col]
+      if (contestedCell?.owner === 'player2') {
+        setSwapAnimationStone({ row, col })
+        setIsSwapAnimating(true)
+        setTimeout(() => {
+          setIsSwapAnimating(false)
+          setSwapAnimationStone(null)
+        }, SWAP_ANIM_MS)
       }
-    } catch (err) {
-      setGame(snapshot)
-      setMoveError(err instanceof Error ? err.message : 'Failed to play move')
-    } finally {
-      setIsBotThinking(false)
-      setIsBotResolvingPie(false)
     }
-  }, [game, gameId, canPlay, effectiveToken, liveTimer])
+  } catch (err) {
+    setGame(snapshot)
+    setMoveError(err instanceof Error ? err.message : 'Failed to play move')
+  } finally {
+    setIsBotThinking(false)
+    setIsBotResolvingPie(false)
+  }
+}, [game, gameId, canPlay, effectiveToken, liveTimer])
 
   const handleSurrender = useCallback(async () => {
     if (!game || !gameId) return
@@ -260,15 +288,25 @@ export function useGameYController() {
     }
   }, [game, gameId, effectiveToken])
 
-  const handlePlayAgain = useCallback(() => {
-    if (!game) return
-    if (game.config.mode === 'pvp-online') {
-      wsService.disconnect()
-      navigate('/games/y/online')
-    } else {
-      navigate(`/games/y/config/${game.config.mode}`)
+useEffect(() => {
+  return () => {
+    if (game?.config.mode === 'pvp-online' && gameId) {
+      wsService.send({ type: 'leave_game', gameId })
     }
-  }, [game, navigate])
+  }
+}, [game?.config.mode, gameId])
+
+// Y en handlePlayAgain, enviar leave_game antes de desconectar:
+const handlePlayAgain = useCallback(() => {
+  if (!game || !gameId) return
+  if (game.config.mode === 'pvp-online') {
+    wsService.send({ type: 'leave_game', gameId })
+    wsService.disconnect()
+    navigate('/games/y/online')
+  } else {
+    navigate(`/games/y/config/${game.config.mode}`)
+  }
+}, [game, gameId, navigate])
 
   return {
     game,

@@ -124,6 +124,17 @@ export class WebSocketManager {
         this.sendTo(client.ws, { type: 'pong' })
         break
 
+      case 'join_game':
+        // Restaurar currentGameId cuando el cliente navega a la página del juego
+        client.currentGameId = message.gameId
+        break
+    
+      case 'leave_game':
+        if (client.currentGameId === message.gameId) {
+          client.currentGameId = undefined
+        }
+        break
+
       case 'join_queue':
         await this.handleJoinQueue(client)
         break
@@ -321,11 +332,13 @@ export class WebSocketManager {
 
   private clearGame(userId: number): void {
     const client = this.clients.get(userId)
-    if (client) client.currentGameId = undefined
+    if (!client?.currentGameId) return
 
-    // Also clear from opponent
+    const gameId = client.currentGameId
+
+    // Limpiar a todos los clientes que estén en esta partida
     for (const [, c] of this.clients) {
-      if (c.currentGameId && this.isOpponent(userId, c.userId)) {
+      if (c.currentGameId === gameId) {
         c.currentGameId = undefined
       }
     }
