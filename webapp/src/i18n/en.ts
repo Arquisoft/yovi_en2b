@@ -10,6 +10,7 @@ const en = {
     logout: 'Logout', guestBadge: 'Guest', signOut: 'Sign out',
     signOutConfirmTitle: 'Sign out',
     signOutConfirmDescription: 'Are you sure you want to sign out of your account?',
+    history: 'Game History',
   },
   auth: {
     welcomeTitle: 'Welcome to YOVI', welcomeSubtitle: 'Sign in to your account to continue',
@@ -112,6 +113,45 @@ const en = {
       'pve-easy': 'Easy Bot', 'pve-medium': 'Medium Bot',
       'pve-hard': 'Hard Bot', 'pvp-online': 'Online',
     },
+  },
+  // ── Game History ──────────────────────────────────────────────────────────────
+  history: {
+    title: 'Game History',
+    tableTitle: 'All Games',
+    noGames: 'No games played yet.',
+    watchReplay: 'Replay',
+    moves: '{{count}} moves',
+    colDate: 'Date',
+    colMode: 'Mode',
+    colOpponent: 'Opponent',
+    colBoard: 'Board',
+    colMoves: 'Moves',
+    colResult: 'Result',
+    result: {
+      win: 'Win',
+      loss: 'Loss',
+      draw: 'Draw',
+    },
+    mode: {
+      pve: 'vs Bot',
+      'pvp-local': 'Local',
+      'pvp-online': 'Online',
+    },
+  },
+ 
+  // ── Replay ────────────────────────────────────────────────────────────────────
+  replay: {
+    emptyBoard: 'Start position',
+    played: 'played at ({{row}}, {{col}})',
+    stepOf: '{{step}} / {{total}}',
+    start: 'Start',
+    end: 'End',
+    goToStart: 'Go to start',
+    previousMove: 'Previous move',
+    nextMove: 'Next move',
+    goToEnd: 'Go to end',
+    scrubber: 'Move scrubber',
+    keyboardHint: '← → arrow keys to step through moves',
   },
   notFound: { heading: '404', message: 'Page not found', backToGames: 'Back to Games' },
   language: { switchTo: 'Español', ariaLabel: 'Switch language' },

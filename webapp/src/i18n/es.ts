@@ -7,6 +7,7 @@ const es = {
   app: { loading: 'Cargando YOVI...', name: 'YOVI' },
   nav: {
     toggleTheme: 'Cambiar tema', statistics: 'Estadísticas', ranking: 'Clasificación',
+    history: 'Historial de partidas',
     logout: 'Cerrar sesión', guestBadge: 'Invitado', signOut: 'Cerrar sesión',
     signOutConfirmTitle: 'Cerrar sesión',
     signOutConfirmDescription: '¿Seguro que quieres cerrar sesión?',
@@ -112,6 +113,45 @@ const es = {
       'pve-easy': 'Bot fácil', 'pve-medium': 'Bot intermedio',
       'pve-hard': 'Bot difícil', 'pvp-online': 'Online',
     },
+  },
+   // ── Game History ──────────────────────────────────────────────────────────────
+  history: {
+    title: 'Historial de partidas',
+    tableTitle: 'Todas las partidas',
+    noGames: 'Aún no has jugado ninguna partida.',
+    watchReplay: 'Repetición',
+    moves: '{{count}} movimientos',
+    colDate: 'Fecha',
+    colMode: 'Modo',
+    colOpponent: 'Oponente',
+    colBoard: 'Tablero',
+    colMoves: 'Jugadas',
+    colResult: 'Resultado',
+    result: {
+      win: 'Victoria',
+      loss: 'Derrota',
+      draw: 'Empate',
+    },
+    mode: {
+      pve: 'vs Bot',
+      'pvp-local': 'Local',
+      'pvp-online': 'Online',
+    },
+  },
+
+  // ── Replay ────────────────────────────────────────────────────────────────────
+  replay: {
+    emptyBoard: 'Posición inicial',
+    played: 'jugó en ({{row}}, {{col}})',
+    stepOf: '{{step}} / {{total}}',
+    start: 'Inicio',
+    end: 'Final',
+    goToStart: 'Ir al inicio',
+    previousMove: 'Jugada anterior',
+    nextMove: 'Jugada siguiente',
+    goToEnd: 'Ir al final',
+    scrubber: 'Control de jugadas',
+    keyboardHint: 'Teclas ← → para avanzar jugada a jugada',
   },
   notFound: { heading: '404', message: 'Página no encontrada', backToGames: 'Volver a juegos' },
   language: { switchTo: 'English', ariaLabel: 'Cambiar idioma' },

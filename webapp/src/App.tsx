@@ -13,6 +13,8 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { StatsPage } from './pages/StatsPage'
 import { RankingPage } from './pages/RankingPage'
 import { useTranslation } from 'react-i18next'
+import { GameReplayPage } from './pages/GameReplayPage'
+import { GameHistoryPage } from './pages/GameHistoryPage'
 
 function App() {
   const { isLoading } = useAuth()
@@ -46,6 +48,9 @@ function App() {
           <Route path="/games/y/play/:gameId" element={<GameYPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/ranking" element={<RankingPage />} />
+          {/* Game history & step-through replay */}
+          <Route path="/history" element={<GameHistoryPage />} />
+          <Route path="/games/y/replay/:gameId" element={<GameReplayPage />} />
         </Route>
       </Route>
 
