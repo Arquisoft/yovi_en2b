@@ -241,10 +241,12 @@ const es = {
     colBoard: 'Tablero',
     colMoves: 'Jugadas',
     colResult: 'Resultado',
+    resume: 'Reanudar',
     result: {
       win: 'Victoria',
       loss: 'Derrota',
       draw: 'Empate',
+      active: 'En curso',
     },
     mode: {
       pve: 'vs Bot',

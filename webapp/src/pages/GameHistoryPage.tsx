@@ -50,9 +50,14 @@ function formatDate(iso: string): string {
 
 // ─── Row component ────────────────────────────────────────────────────────────
 
-function GameRow({ game, onReplay }: Readonly<{ game: GameSummary; onReplay: () => void }>) {
+function GameRow({ game, onReplay, onResume }: Readonly<{ 
+  game: GameSummary
+  onReplay: () => void
+  onResume: () => void 
+}>) {
   const { t } = useTranslation()
   const result = resultForGame(game, t)
+  const isActive = game.status === 'playing' 
 
   return (
     <tr className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
@@ -86,28 +91,45 @@ function GameRow({ game, onReplay }: Readonly<{ game: GameSummary; onReplay: () 
 
       {/* Result */}
       <td className="py-3 pr-4">
-        <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full', result.className)}>
-          {result.label}
-        </span>
+        {isActive ? (
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-yellow-600 bg-yellow-500/10">
+            {t('history.result.active')}
+          </span>
+        ) : (
+          <span className={cn('text-xs font-semibold px-2 py-0.5 rounded-full', result.className)}>
+            {result.label}
+          </span>
+        )}
       </td>
 
       {/* Action */}
       <td className="py-3">
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={onReplay}
-          className="gap-1.5 h-7 text-xs"
-          disabled={game.moveCount === 0}
-        >
-          <Play className="w-3 h-3" />
-          {t('history.watchReplay')}
-        </Button>
+        {isActive ? (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onResume}
+            className="gap-1.5 h-7 text-xs text-primary"
+          >
+            <Play className="w-3 h-3" />
+            {t('history.resume')}
+          </Button>
+        ) : (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onReplay}
+            className="gap-1.5 h-7 text-xs"
+            disabled={game.moveCount === 0}
+          >
+            <Play className="w-3 h-3" />
+            {t('history.watchReplay')}
+          </Button>
+        )}
       </td>
     </tr>
   )
 }
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function GameHistoryPage() {
@@ -154,6 +176,7 @@ export function GameHistoryPage() {
                 key={game.id}
                 game={game}
                 onReplay={() => navigate(`/games/y/replay/${game.id}`)}
+                onResume={() => navigate(`/games/y/play/${game.id}`)}
               />
             ))}
           </tbody>
