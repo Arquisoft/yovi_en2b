@@ -21,8 +21,8 @@ function toRankingMode(config: GameConfig): string | null {
 }
 
 export class GameService {
-  private gameRepo: Repository<Game>;
-  private moveRepo: Repository<GameMove>;
+  private readonly gameRepo: Repository<Game>;
+  private readonly moveRepo: Repository<GameMove>;
 
   constructor() {
     this.gameRepo = AppDataSource.getRepository(Game);
