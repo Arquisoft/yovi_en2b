@@ -224,7 +224,7 @@ describe('GameHistoryPage — active game', () => {
   it('clicking Resume navigates to the game page', () => {
     renderPage({ games: [makeSummary({ id: 'g1', status: 'playing', winner: null })] })
     fireEvent.click(screen.getByText('Resume'))
-    expect(mockNavigate).toHaveBeenCalledWith('/games/y/g1')
+    expect(mockNavigate).toHaveBeenCalledWith('/games/y/play/g1')
   })
 
   it('shows "In progress" badge instead of a result badge for an active game', () => {
@@ -260,7 +260,7 @@ describe('GameHistoryPage — active game', () => {
       ],
     })
     fireEvent.click(screen.getByText('Resume'))
-    expect(mockNavigate).toHaveBeenCalledWith('/games/y/active-game')
+    expect(mockNavigate).toHaveBeenCalledWith('/games/y/play/active-game')
   })
 })
 
