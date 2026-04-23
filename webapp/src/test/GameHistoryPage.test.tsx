@@ -212,6 +212,58 @@ describe('GameHistoryPage — replay action', () => {
   })
 })
 
+// ─── Active game (resume) ─────────────────────────────────────────────────────
+
+describe('GameHistoryPage — active game', () => {
+  it('shows "Resume" button instead of "Replay" for an active game', () => {
+    renderPage({ games: [makeSummary({ status: 'playing', winner: null })] })
+    expect(screen.queryByText('Replay')).toBeNull()
+    expect(screen.getByText('Resume')).toBeDefined()
+  })
+
+  it('clicking Resume navigates to the game page', () => {
+    renderPage({ games: [makeSummary({ id: 'g1', status: 'playing', winner: null })] })
+    fireEvent.click(screen.getByText('Resume'))
+    expect(mockNavigate).toHaveBeenCalledWith('/games/y/g1')
+  })
+
+  it('shows "In progress" badge instead of a result badge for an active game', () => {
+    renderPage({ games: [makeSummary({ status: 'playing', winner: null })] })
+    expect(screen.getByText('In progress')).toBeDefined()
+    expect(screen.queryByText('Win')).toBeNull()
+    expect(screen.queryByText('Loss')).toBeNull()
+    expect(screen.queryByText('Draw')).toBeNull()
+  })
+
+  it('finished games still show Replay and not Resume', () => {
+    renderPage({ games: [makeSummary({ status: 'finished', winner: 'player1' })] })
+    expect(screen.getByText('Replay')).toBeDefined()
+    expect(screen.queryByText('Resume')).toBeNull()
+  })
+
+  it('shows Resume for active game mixed with Replay for finished game', () => {
+    renderPage({
+      games: [
+        makeSummary({ id: 'g1', status: 'playing', winner: null }),
+        makeSummary({ id: 'g2', status: 'finished', winner: 'player1' }),
+      ],
+    })
+    expect(screen.getByText('Resume')).toBeDefined()
+    expect(screen.getByText('Replay')).toBeDefined()
+  })
+
+  it('Resume navigates to the correct game when multiple games are listed', () => {
+    renderPage({
+      games: [
+        makeSummary({ id: 'active-game', status: 'playing', winner: null }),
+        makeSummary({ id: 'finished-game', status: 'finished', winner: 'player1' }),
+      ],
+    })
+    fireEvent.click(screen.getByText('Resume'))
+    expect(mockNavigate).toHaveBeenCalledWith('/games/y/active-game')
+  })
+})
+
 // ─── Guest upsell ─────────────────────────────────────────────────────────────
 
 describe('GameHistoryPage — guest view', () => {
