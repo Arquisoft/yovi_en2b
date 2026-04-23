@@ -29,9 +29,21 @@ export class GameService {
     this.moveRepo = AppDataSource.getRepository(GameMove);
   }
 
-  async setPlayer2Id(gameId: string, player2Id: number): Promise<void> {
-    await this.gameRepo.update({ id: gameId }, { player2Id });
-  }
+  async setPlayer2Id(gameId: string, player2Id: number, player2Username: string): Promise<void> {
+  const game = await this.gameRepo.findOne({ where: { id: gameId } });
+  if (!game) return;
+  
+  game.player2Id = player2Id;
+  game.players = {
+    ...game.players,
+    player2: {
+      ...game.players.player2,
+      id: String(player2Id),
+      name: player2Username,
+    }
+  };
+  await this.gameRepo.save(game);
+}
 
   
 

@@ -208,7 +208,7 @@ export class WebSocketManager {
       )
 
       // Persist both player IDs on the game
-      await this.gameService.setPlayer2Id(game.id, entry2.userId)
+      await this.gameService.setPlayer2Id(game.id, entry2.userId, entry2.username)
 
       client1.currentGameId = game.id
       client2.currentGameId = game.id
@@ -240,10 +240,10 @@ export class WebSocketManager {
   // ── Game events ────────────────────────────────────────────────────────────
 
   private async handleMove(
-    client: ConnectedClient,
-    gameId: string,
-    row: number,
-    col: number,
+  client: ConnectedClient,
+  gameId: string,
+  row: number,
+  col: number,
   ): Promise<void> {
     if (client.currentGameId !== gameId) {
       this.sendTo(client.ws, { type: 'error', code: 'WRONG_GAME', message: 'Not your current game' })
@@ -251,8 +251,9 @@ export class WebSocketManager {
     }
 
     try {
-      const game = await this.gameService.playMove(gameId, row, col, undefined as any, client.token)
-      // Send full game state to both players
+      const playerColor = await this.getPlayerColor(client.userId, gameId)
+      const game = await this.gameService.playMove(gameId, row, col, playerColor, client.token)
+
       this.sendToUser(client.userId, { type: 'game_update', game })
       this.broadcastToOpponent(client.userId, { type: 'game_update', game })
 
