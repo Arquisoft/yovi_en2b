@@ -30,22 +30,20 @@ export class GameService {
   }
 
   async setPlayer2Id(gameId: string, player2Id: number, player2Username: string): Promise<void> {
-  const game = await this.gameRepo.findOne({ where: { id: gameId } });
-  if (!game) return;
-  
-  game.player2Id = player2Id;
-  game.players = {
-    ...game.players,
-    player2: {
-      ...game.players.player2,
-      id: String(player2Id),
-      name: player2Username,
-    }
-  };
-  await this.gameRepo.save(game);
-}
+    const game = await this.gameRepo.findOne({ where: { id: gameId } });
+    if (!game) return;
 
-  
+    game.player2Id = player2Id;
+    game.players = {
+      ...game.players,
+      player2: {
+        ...game.players.player2,
+        id: String(player2Id),
+        name: player2Username,
+      }
+    };
+    await this.gameRepo.save(game);
+  }
 
   async createGame(config: GameConfig, userId: number | null, username: string, token?: string, guestId?: string): Promise<GameState> {
     const [player1, player2] = this.buildPlayers(config, userId, username, guestId);
@@ -71,17 +69,41 @@ export class GameService {
     return this.toGameState(game, moves);
   }
 
-   async getUserGames(userId: number): Promise<GameSummary[]> {
-    const games = await this.gameRepo.find({
-      where: { player1Id: userId },
-      order: { updatedAt: 'DESC' },
-      take: 50,
-    });
- 
-    if (games.length === 0) return [];
- 
-    const gameIds = games.map(g => g.id);
- 
+  async getUserGames(userId: number): Promise<GameSummary[]> {
+    // Fetch games where the user is either player1 or player2
+    const [gamesAsP1, gamesAsP2] = await Promise.all([
+      this.gameRepo.find({
+        where: { player1Id: userId },
+        order: { updatedAt: 'DESC' },
+        take: 50,
+      }),
+      this.gameRepo.find({
+        where: { player2Id: userId },
+        order: { updatedAt: 'DESC' },
+        take: 50,
+      }),
+    ]);
+
+    // Merge, deduplicate (a user could theoretically appear as both), and sort
+    const seen = new Set<string>();
+    const games: Game[] = [];
+
+    for (const game of [...gamesAsP1, ...gamesAsP2]) {
+      if (!seen.has(game.id)) {
+        seen.add(game.id);
+        games.push(game);
+      }
+    }
+
+    games.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+
+    // Trim to 50 after merge
+    const trimmed = games.slice(0, 50);
+
+    if (trimmed.length === 0) return [];
+
+    const gameIds = trimmed.map(g => g.id);
+
     // Count moves per game in a single efficient query
     const moveCounts = await this.moveRepo
       .createQueryBuilder('move')
@@ -91,12 +113,12 @@ export class GameService {
       .where('game.id IN (:...gameIds)', { gameIds })
       .groupBy('game.id')
       .getRawMany<{ gameId: string; cnt: string }>();
- 
+
     const countMap = new Map<string, number>(
       moveCounts.map(r => [r.gameId, Number.parseInt(r.cnt, 10)])
     );
- 
-    return games.map(game => ({
+
+    return trimmed.map(game => ({
       id: game.id,
       config: game.config,
       status: game.status,
@@ -210,7 +232,7 @@ export class GameService {
     return this.toGameState(game, moves);
   }
 
-  // ── Private helpers ────────────────────────────────────────────────────────
+  // ── Private helpers ────────────────────────────────────────────────────────────────────
 
   private assertPlayMoveValid(game: Game | null, row: number, col: number, player: PlayerColor): asserts game is Game {
     if (!game) throw Object.assign(new Error('Game not found'), { status: 404 });

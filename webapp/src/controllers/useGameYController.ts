@@ -11,7 +11,7 @@ export function useGameYController() {
   const { gameId } = useParams<{ gameId: string }>()
   const navigate = useNavigate()
   const { user, token, isGuest } = useAuth()
-  
+
   const effectiveToken = isGuest ? undefined : (token ?? undefined)
 
   // --- Estado del Juego ---
@@ -37,31 +37,45 @@ export function useGameYController() {
   const clockStartedAtRef = useRef(Date.now())
   const timerBaseRef = useRef({ player1Ms: 0, player2Ms: 0 })
 
+  // Ref to track whether this is an online game (used in cleanup)
+  const isOnlineRef = useRef(false)
+  const gameIdRef = useRef(gameId)
+  gameIdRef.current = gameId
+
   // ── Carga inicial del juego ──────────────────────────────────────────────
   useEffect(() => {
-  if (!gameId) return
-  const load = async () => {
-    try {
-      const state = await gameService.getGameState(gameId)
-      if (!state) {
-        setError('Game not found')
-        return
-      }
-      setGame(state)
-      setChatMessages(await gameService.getChatMessages(gameId))
+    if (!gameId) return
+    const load = async () => {
+      try {
+        const state = await gameService.getGameState(gameId)
+        if (!state) {
+          setError('Game not found')
+          return
+        }
+        setGame(state)
+        setChatMessages(await gameService.getChatMessages(gameId))
 
-      // Para pvp-online, registrar en el servidor WS que estamos en esta partida
-      if (state.config.mode === 'pvp-online') {
-        wsService.send({ type: 'join_game', gameId })
+        if (state.config.mode === 'pvp-online') {
+          isOnlineRef.current = true
+          // Tell the server we're viewing this game so it can relay moves to us
+          wsService.send({ type: 'join_game', gameId })
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load game')
+      } finally {
+        setIsLoading(false)
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load game')
-    } finally {
-      setIsLoading(false)
     }
-  }
-  load()
-}, [gameId])
+    load()
+
+    // On unmount: only leave the game if the component is truly being destroyed
+    // (e.g. navigating away), NOT on hot-reload or React StrictMode double-invoke.
+    return () => {
+      // We intentionally do NOT send leave_game here.
+      // leave_game should only be sent when the user explicitly navigates away
+      // (handled in handlePlayAgain / handleGoHome).
+    }
+  }, [gameId])
 
   // ── Listeners de WebSocket (pvp-online) ──────────────────────────────────
   useEffect(() => {
@@ -70,27 +84,37 @@ export function useGameYController() {
     const unsubUpdate = wsService.on('game_update', (data: any) => {
       setGame(data.game as GameState)
     })
+
     const unsubDisconnected = wsService.on('opponent_disconnected', () => {
       setOpponentDisconnected(true)
     })
+
     const unsubReconnected = wsService.on('opponent_reconnected', () => {
       setOpponentDisconnected(false)
     })
-      const unsubError = wsService.on('error', (data: any) => {
-    if (data.code === 'MOVE_FAILED') {
-      // Revertir al estado anterior recargando desde servidor
-      gameService.getGameState(gameId!).then(state => {
-        if (state) setGame(state)
-      })
-      setMoveError(data.message ?? 'Move failed')
-    }
-  })
+
+    const unsubError = wsService.on('error', (data: any) => {
+      if (data.code === 'MOVE_FAILED') {
+        gameService.getGameState(gameId!).then(state => {
+          if (state) setGame(state)
+        })
+        setMoveError(data.message ?? 'Move failed')
+      }
+    })
+
+    // When the WS auto-reconnects (e.g. after a brief drop), re-join the game room
+    const unsubWsReconnect = wsService.on('reconnected', () => {
+      if (gameIdRef.current) {
+        wsService.send({ type: 'join_game', gameId: gameIdRef.current })
+      }
+    })
 
     return () => {
       unsubUpdate()
       unsubDisconnected()
       unsubReconnected()
       unsubError()
+      unsubWsReconnect()
     }
   }, [game?.id, game?.config?.mode])
 
@@ -104,7 +128,6 @@ export function useGameYController() {
     let player1Ms = game.timer.player1RemainingMs
     let player2Ms = game.timer.player2RemainingMs
 
-    // Si el juego terminó por tiempo, forzar el 0 del perdedor
     if (game.status === 'finished' && game.winner && game.timer.activePlayer === null) {
       const loser = game.winner === 'player1' ? 'player2' : 'player1'
       if (loser === 'player1') player1Ms = 0
@@ -158,93 +181,89 @@ export function useGameYController() {
     if (!game || game.status !== 'playing' || isBotThinking) return false
     if (game.phase === 'pie-decision') return false
     if (game.config.mode === 'pvp-local') return true
-    
+
     const currentPlayer = game.currentTurn === 'player1' ? game.players.player1 : game.players.player2
     return String(currentPlayer.id) === String(user?.id)
   }, [game, user, isBotThinking])
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleCellClick = useCallback(async (row: number, col: number) => {
-  if (!game || !gameId || !canPlay()) return
+    if (!game || !gameId || !canPlay()) return
 
-  // pvp-online: los movimientos van por WebSocket
-  // El game_update llegará via el listener 'game_update' ya registrado
-  if (game.config.mode === 'pvp-online') {
-    // Actualización optimista del tablero
+    if (game.config.mode === 'pvp-online') {
+      const optimisticBoard = game.board.map((boardRow, r) =>
+        boardRow.map((cell, c) =>
+          r === row && c === col ? { ...cell, owner: game.currentTurn as PlayerColor } : cell
+        )
+      )
+      setGame({ ...game, board: optimisticBoard })
+      setMoveError(null)
+      wsService.send({ type: 'move', gameId, row, col })
+      return
+    }
+
+    const snapshot = game
     const optimisticBoard = game.board.map((boardRow, r) =>
       boardRow.map((cell, c) =>
         r === row && c === col ? { ...cell, owner: game.currentTurn as PlayerColor } : cell
       )
     )
+
     setGame({ ...game, board: optimisticBoard })
     setMoveError(null)
-    wsService.send({ type: 'move', gameId, row, col })
-    return
-  }
 
-  // pve y pvp-local: siguen usando REST
-  const snapshot = game
-  const optimisticBoard = game.board.map((boardRow, r) =>
-    boardRow.map((cell, c) =>
-      r === row && c === col ? { ...cell, owner: game.currentTurn as PlayerColor } : cell
-    )
-  )
-
-  setGame({ ...game, board: optimisticBoard })
-  setMoveError(null)
-
-  if (game.config.mode === 'pve' && game.timer) {
-    timerBaseRef.current = {
-      player1Ms: liveTimer?.player1RemainingMs ?? game.timer.player1RemainingMs,
-      player2Ms: liveTimer?.player2RemainingMs ?? game.timer.player2RemainingMs,
-    }
-    clockStartedAtRef.current = Date.now()
-  }
-
-  const willBotResolvePie =
-    game.config.pieRule === true &&
-    game.moves.length === 0 &&
-    game.config.mode === 'pve' &&
-    game.players.player2.isBot === true
-
-  setIsBotThinking(game.config.mode === 'pve')
-  if (willBotResolvePie) setIsBotResolvingPie(true)
-
-  try {
-    const updated = await gameService.playMove(gameId, row, col, game.currentTurn as PlayerColor, effectiveToken)
-    setGame(updated)
-
-    if (willBotResolvePie) {
-      const contestedCell = updated.board[row]?.[col]
-      if (contestedCell?.owner === 'player2') {
-        setSwapAnimationStone({ row, col })
-        setIsSwapAnimating(true)
-        setTimeout(() => {
-          setIsSwapAnimating(false)
-          setSwapAnimationStone(null)
-        }, SWAP_ANIM_MS)
+    if (game.config.mode === 'pve' && game.timer) {
+      timerBaseRef.current = {
+        player1Ms: liveTimer?.player1RemainingMs ?? game.timer.player1RemainingMs,
+        player2Ms: liveTimer?.player2RemainingMs ?? game.timer.player2RemainingMs,
       }
+      clockStartedAtRef.current = Date.now()
     }
-  } catch (err) {
-    setGame(snapshot)
-    setMoveError(err instanceof Error ? err.message : 'Failed to play move')
-  } finally {
-    setIsBotThinking(false)
-    setIsBotResolvingPie(false)
-  }
-}, [game, gameId, canPlay, effectiveToken, liveTimer])
+
+    const willBotResolvePie =
+      game.config.pieRule === true &&
+      game.moves.length === 0 &&
+      game.config.mode === 'pve' &&
+      game.players.player2.isBot === true
+
+    setIsBotThinking(game.config.mode === 'pve')
+    if (willBotResolvePie) setIsBotResolvingPie(true)
+
+    try {
+      const updated = await gameService.playMove(gameId, row, col, game.currentTurn as PlayerColor, effectiveToken)
+      setGame(updated)
+
+      if (willBotResolvePie) {
+        const contestedCell = updated.board[row]?.[col]
+        if (contestedCell?.owner === 'player2') {
+          setSwapAnimationStone({ row, col })
+          setIsSwapAnimating(true)
+          setTimeout(() => {
+            setIsSwapAnimating(false)
+            setSwapAnimationStone(null)
+          }, SWAP_ANIM_MS)
+        }
+      }
+    } catch (err) {
+      setGame(snapshot)
+      setMoveError(err instanceof Error ? err.message : 'Failed to play move')
+    } finally {
+      setIsBotThinking(false)
+      setIsBotResolvingPie(false)
+    }
+  }, [game, gameId, canPlay, effectiveToken, liveTimer])
 
   const handleSurrender = useCallback(async () => {
     if (!game || !gameId) return
-    
+
     if (game.config.mode === 'pvp-online') {
       wsService.send({ type: 'surrender', gameId })
       return
     }
 
-    let surrenderingPlayer: PlayerColor = 
-      game.config.mode === 'pvp-local' 
-        ? game.currentTurn 
+    const surrenderingPlayer: PlayerColor =
+      game.config.mode === 'pvp-local'
+        ? game.currentTurn
         : (String(game.players.player1.id) === String(user?.id) ? 'player1' : 'player2')
 
     try {
@@ -288,25 +307,28 @@ export function useGameYController() {
     }
   }, [game, gameId, effectiveToken])
 
-useEffect(() => {
-  return () => {
+  const handlePlayAgain = useCallback(() => {
+    if (!game || !gameId) return
+    if (game.config.mode === 'pvp-online') {
+      // Explicitly leave the game room before disconnecting
+      wsService.send({ type: 'leave_game', gameId })
+      wsService.disconnect()
+      navigate('/games/y/online')
+    } else {
+      navigate(`/games/y/config/${game.config.mode}`)
+    }
+  }, [game, gameId, navigate])
+
+  /**
+   * Called when the user explicitly clicks "Back to Games" or navigates away
+   * via the overlay. This is the right place to send leave_game.
+   */
+  const handleGoHome = useCallback(() => {
     if (game?.config.mode === 'pvp-online' && gameId) {
       wsService.send({ type: 'leave_game', gameId })
     }
-  }
-}, [game?.config.mode, gameId])
-
-// Y en handlePlayAgain, enviar leave_game antes de desconectar:
-const handlePlayAgain = useCallback(() => {
-  if (!game || !gameId) return
-  if (game.config.mode === 'pvp-online') {
-    wsService.send({ type: 'leave_game', gameId })
-    wsService.disconnect()
-    navigate('/games/y/online')
-  } else {
-    navigate(`/games/y/config/${game.config.mode}`)
-  }
-}, [game, gameId, navigate])
+    navigate('/games')
+  }, [game, gameId, navigate])
 
   return {
     game,
@@ -331,6 +353,7 @@ const handlePlayAgain = useCallback(() => {
     handleSurrender,
     handleSendMessage,
     handlePlayAgain,
+    handleGoHome,
     currentUserId: user?.id ?? '',
   }
 }

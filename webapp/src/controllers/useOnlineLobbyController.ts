@@ -26,14 +26,14 @@ export function useOnlineLobbyController(): OnlineLobbyController {
   const [error, setError] = useState<string | null>(null)
   const [queueSize, setQueueSize] = useState(0)
 
-  // Referencia para evitar actualizaciones de estado tras desmontar el componente
   const mounted = useRef(true)
-  // Evita conexiones duplicadas causadas por el modo estricto de React
   const connectingRef = useRef(false)
+  // Track whether we've been matched — don't leave_queue on unmount if matched
+  const matchedRef = useRef(false)
 
   const connect = useCallback(async () => {
     if (connectingRef.current) return
-    
+
     if (!token || isGuest) {
       navigate('/login', { replace: true })
       return
@@ -43,8 +43,7 @@ export function useOnlineLobbyController(): OnlineLobbyController {
     try {
       await wsService.connect(token)
       if (!mounted.current) return
-      
-      // Una vez conectados, entramos automáticamente en la cola
+
       wsService.send({ type: 'join_queue' })
     } catch (err) {
       if (!mounted.current) return
@@ -57,21 +56,21 @@ export function useOnlineLobbyController(): OnlineLobbyController {
 
   useEffect(() => {
     mounted.current = true
+    matchedRef.current = false
 
-    // Suscripción: Confirmación de entrada en cola
     const unsubQueued = wsService.on('queue_joined', (data) => {
       if (!mounted.current) return
       setQueueSize((data.queueSize as number) ?? 0)
       setStatus('queuing')
     })
 
-    // Suscripción: Emparejamiento encontrado
     const unsubMatched = wsService.on('matched', (data) => {
       if (!mounted.current) return
+      matchedRef.current = true
       setOpponentName(data.opponentName as string)
       setStatus('matched')
-      
-      // Delay de 1.2s para que el usuario pueda ver quién es su oponente
+
+      // Brief delay so the user sees who they matched with
       setTimeout(() => {
         if (mounted.current) {
           navigate(`/games/y/play/${data.gameId}`)
@@ -79,7 +78,6 @@ export function useOnlineLobbyController(): OnlineLobbyController {
       }, 1200)
     })
 
-    // Suscripción: Errores del servidor (WS)
     const unsubError = wsService.on('error', (data) => {
       if (!mounted.current) return
       setStatus('error')
@@ -93,16 +91,18 @@ export function useOnlineLobbyController(): OnlineLobbyController {
       unsubQueued()
       unsubMatched()
       unsubError()
-      
-      // Si el usuario sale de la página antes de emparejarse, avisamos al servidor
-      if (status !== 'matched') {
+
+      // Only send leave_queue if we're still waiting (not matched yet).
+      // If we're matched, the WS is passed to the game page; don't interrupt it.
+      if (!matchedRef.current) {
         wsService.send({ type: 'leave_queue' })
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connect]) 
+  }, [connect])
 
   const leaveQueue = useCallback(() => {
+    matchedRef.current = false // reset so cleanup also sends leave_queue if needed
     wsService.send({ type: 'leave_queue' })
     wsService.disconnect()
     navigate('/games/y')
@@ -115,12 +115,12 @@ export function useOnlineLobbyController(): OnlineLobbyController {
     connect()
   }, [connect])
 
-  return { 
-    status, 
-    opponentName, 
-    error, 
-    queueSize, 
-    leaveQueue, 
-    retry 
+  return {
+    status,
+    opponentName,
+    error,
+    queueSize,
+    leaveQueue,
+    retry,
   }
 }

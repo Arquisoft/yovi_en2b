@@ -2,25 +2,41 @@ import { WS_URL } from '@/config/api'
 
 type MessageHandler = (data: Record<string, any>) => void
 
+const RECONNECT_DELAY_MS = 2000
+const MAX_RECONNECT_ATTEMPTS = 5
+
 /**
- * Wrapper ligero para el cliente WebSocket.
- * * - Gestiona la conexión única y la autenticación vía JWT.
- * - Enruta mensajes entrantes a sus respectivos listeners.
- * - Devuelve funciones de limpieza (unsubscribe) ideales para useEffect.
+ * Wrapper ligero para el cliente WebSocket con reconexión automática.
  */
 export class WebSocketService {
   private ws: WebSocket | null = null
   private readonly handlers = new Map<string, Set<MessageHandler>>()
+  private currentToken: string | null = null
+  private reconnectAttempts = 0
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private intentionalClose = false
+  private connectionPromise: Promise<void> | null = null
 
   constructor(private readonly url: string) {}
 
   /**
    * Abre la conexión y autentica con el JWT.
    * Resuelve cuando el servidor confirma con { type: 'authenticated' }.
+   * Si ya está conectado, resuelve inmediatamente.
    */
   connect(token: string): Promise<void> {
     if (this.ws?.readyState === WebSocket.OPEN) return Promise.resolve()
 
+    // If there's an in-flight connection attempt, return its promise
+    if (this.connectionPromise) return this.connectionPromise
+
+    this.currentToken = token
+    this.intentionalClose = false
+    this.connectionPromise = this._doConnect(token)
+    return this.connectionPromise
+  }
+
+  private _doConnect(token: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       const ws = new WebSocket(this.url)
       let settled = false
@@ -44,16 +60,15 @@ export class WebSocketService {
           return
         }
 
-        // Flujo inicial de autenticación
         if (!settled) {
           if (msg.type === 'authenticated') {
             this.ws = ws
-            // Reemplazamos el handler de mensaje por el dispatcher general
+            this.reconnectAttempts = 0
             ws.onmessage = (e: MessageEvent) => {
               try {
                 this.dispatch(JSON.parse(e.data))
               } catch {
-                /* Ignorar errores de parseo */
+                /* ignore parse errors */
               }
             }
             settle(resolve)
@@ -74,15 +89,58 @@ export class WebSocketService {
 
       ws.onclose = () => {
         settle(() => reject(new Error('Connection closed before authentication')))
-        if (this.ws === ws) this.ws = null
+        if (this.ws === ws) {
+          this.ws = null
+          this.connectionPromise = null
+          // Auto-reconnect only if not intentionally closed
+          if (!this.intentionalClose && this.currentToken) {
+            this._scheduleReconnect()
+          }
+        }
+      }
+    }).finally(() => {
+      // Clear connection promise when settled (success or failure)
+      // but only if ws is now open (success case keeps the ws)
+      if (!this.ws) {
+        this.connectionPromise = null
       }
     })
   }
 
+  private _scheduleReconnect(): void {
+    if (this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+      this.dispatch({ type: 'error', code: 'MAX_RECONNECT', message: 'Connection lost. Please refresh.' })
+      return
+    }
+
+    this.reconnectAttempts++
+    const delay = RECONNECT_DELAY_MS * Math.min(this.reconnectAttempts, 3)
+
+    this.reconnectTimer = setTimeout(async () => {
+      if (this.intentionalClose || !this.currentToken) return
+      try {
+        this.connectionPromise = this._doConnect(this.currentToken)
+        await this.connectionPromise
+        // Notify listeners that the connection was restored
+        this.dispatch({ type: 'reconnected' })
+      } catch {
+        // _doConnect already schedules the next attempt via onclose
+      }
+    }, delay)
+  }
+
   /** Cierra la conexión y limpia la referencia. */
   disconnect(): void {
+    this.intentionalClose = true
+    this.currentToken = null
+    this.reconnectAttempts = 0
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
     this.ws?.close()
     this.ws = null
+    this.connectionPromise = null
   }
 
   /** Envía un mensaje al servidor. Se ignora si no hay conexión. */
@@ -100,9 +158,7 @@ export class WebSocketService {
     if (!this.handlers.has(type)) {
       this.handlers.set(type, new Set())
     }
-    
     this.handlers.get(type)!.add(handler)
-    
     return () => {
       this.handlers.get(type)?.delete(handler)
     }
@@ -118,5 +174,4 @@ export class WebSocketService {
   }
 }
 
-// Exportamos una única instancia para toda la aplicación (Singleton)
 export const wsService = new WebSocketService(WS_URL)

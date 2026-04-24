@@ -7,7 +7,6 @@ import { PieRuleDecisionPanel } from '@/components/game-y/PieRuleDecisionPanel'
 import { AlertCircle, ChevronLeft, ChevronRight, XCircle, WifiOff } from 'lucide-react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useState, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 export function GameYPage() {
   const { t } = useTranslation()
@@ -16,10 +15,9 @@ export function GameYPage() {
     isBotThinking, isPieDecisionPending, isBotDecidingPie, isPieDecisionLoading, isSwapAnimating,
     isBotResolvingPie, swapAnimationStone, swapCommitted, opponentDisconnected,
     canPlay, handleCellClick, handlePieDecision, handleSurrender,
-    handleSendMessage, handlePlayAgain, currentUserId,
+    handleSendMessage, handlePlayAgain, handleGoHome, currentUserId,
   } = useGameYController()
 
-  const navigate = useNavigate()
   const isMobile = useMediaQuery('(max-width: 768px)')
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
@@ -115,7 +113,7 @@ export function GameYPage() {
               isBotThinking={isBotThinking} isMobile />
           </div>
         </div>
-        <GameOverlay game={game} currentUserId={currentUserId} onPlayAgain={handlePlayAgain} onGoHome={() => navigate('/games')} />
+        <GameOverlay game={game} currentUserId={currentUserId} onPlayAgain={handlePlayAgain} onGoHome={handleGoHome} />
       </div>
     )
   }
@@ -153,7 +151,7 @@ export function GameYPage() {
             </div>
           </aside>
         </div>
-        <GameOverlay game={game} currentUserId={currentUserId} onPlayAgain={handlePlayAgain} onGoHome={() => navigate('/games')} />
+        <GameOverlay game={game} currentUserId={currentUserId} onPlayAgain={handlePlayAgain} onGoHome={handleGoHome} />
       </div>
     </div>
   )
