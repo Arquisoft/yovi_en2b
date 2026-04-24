@@ -4,7 +4,7 @@ import { AppDataSource } from '../config/database'
 import { MatchRecord } from '../entities/MatchRecord'
 import { GameMode, RankingEntry } from '../types/ranking'
 
-const VALID_MODES: Set<GameMode> = new Set(['pve-easy', 'pve-medium', 'pve-hard'])
+const VALID_MODES: Set<GameMode> = new Set(['pve-easy', 'pve-medium', 'pve-hard', 'pvp-online'])
 
 export class RankingService {
   /**
