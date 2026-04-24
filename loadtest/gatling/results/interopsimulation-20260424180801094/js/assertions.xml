@@ -1,0 +1,95 @@
+<testsuite name="yovi.InteropSimulation" tests="31" errors="0" failures="0" time="0">
+  <testcase name="E1 · GET /health: percentage of failed events is 0.0" status="true" time="0">
+  <system-out>E1 · GET /health: percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="RandomBot_init / A1 · random_bot · empty size-4 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>RandomBot_init / A1 · random_bot · empty size-4 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="RandomBot_init / A2 · random_bot · mid-game size-4 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>RandomBot_init / A2 · random_bot · mid-game size-4 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="RandomBot_200 / A1 · random_bot · empty size-4 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>RandomBot_200 / A1 · random_bot · empty size-4 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="RandomBot_200 / A2 · random_bot · mid-game size-4 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>RandomBot_200 / A2 · random_bot · mid-game size-4 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="FastBot_init / B1 · fast_bot · empty size-5 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>FastBot_init / B1 · fast_bot · empty size-5 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="FastBot_init / B2 · fast_bot · mid-game size-5 · Red (turn 1): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>FastBot_init / B2 · fast_bot · mid-game size-5 · Red (turn 1): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="FastBot_init / B3 · fast_bot · empty size-6 · Red (turn 1): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>FastBot_init / B3 · fast_bot · empty size-6 · Red (turn 1): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="FastBot_200 / B1 · fast_bot · empty size-5 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>FastBot_200 / B1 · fast_bot · empty size-5 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="FastBot_200 / B2 · fast_bot · mid-game size-5 · Red (turn 1): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>FastBot_200 / B2 · fast_bot · mid-game size-5 · Red (turn 1): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="FastBot_200 / B3 · fast_bot · empty size-6 · Red (turn 1): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>FastBot_200 / B3 · fast_bot · empty size-6 · Red (turn 1): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="SmartBot_init / C1 · smart_bot · empty size-4 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>SmartBot_init / C1 · smart_bot · empty size-4 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="SmartBot_init / C2 · smart_bot · near-win size-4 · Red must block (turn 1): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>SmartBot_init / C2 · smart_bot · near-win size-4 · Red must block (turn 1): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="SmartBot_init / C3 · smart_bot · balanced mid-game size-6 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>SmartBot_init / C3 · smart_bot · balanced mid-game size-6 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="SmartBot_init / C4 · smart_bot · empty size-9 · maximum compute (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>SmartBot_init / C4 · smart_bot · empty size-9 · maximum compute (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="SmartBot_200 / C1 · smart_bot · empty size-4 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>SmartBot_200 / C1 · smart_bot · empty size-4 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="Default_init / D1 · no bot_id · empty size-4 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>Default_init / D1 · no bot_id · empty size-4 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="SmartBot_200 / C2 · smart_bot · near-win size-4 · Red must block (turn 1): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>SmartBot_200 / C2 · smart_bot · near-win size-4 · Red must block (turn 1): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="Default_init / D2 · no bot_id · early-game size-9 · Red (turn 1): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>Default_init / D2 · no bot_id · early-game size-9 · Red (turn 1): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="SmartBot_200 / C3 · smart_bot · balanced mid-game size-6 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>SmartBot_200 / C3 · smart_bot · balanced mid-game size-6 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="Default_200 / D1 · no bot_id · empty size-4 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>Default_200 / D1 · no bot_id · empty size-4 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="SmartBot_200 / C4 · smart_bot · empty size-9 · maximum compute (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>SmartBot_200 / C4 · smart_bot · empty size-9 · maximum compute (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="Default_200 / D2 · no bot_id · early-game size-9 · Red (turn 1): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>Default_200 / D2 · no bot_id · early-game size-9 · Red (turn 1): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="FastBot_503 / B3 · fast_bot · empty size-6 · Red (turn 1): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>FastBot_503 / B3 · fast_bot · empty size-6 · Red (turn 1): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="SmartBot_503 / C4 · smart_bot · empty size-9 · maximum compute (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>SmartBot_503 / C4 · smart_bot · empty size-9 · maximum compute (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="FastBot_503 / B2 · fast_bot · mid-game size-5 · Red (turn 1): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>FastBot_503 / B2 · fast_bot · mid-game size-5 · Red (turn 1): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="RandomBot_503 / A1 · random_bot · empty size-4 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>RandomBot_503 / A1 · random_bot · empty size-4 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="RandomBot_503 / A2 · random_bot · mid-game size-4 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>RandomBot_503 / A2 · random_bot · mid-game size-4 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="Default_503 / D2 · no bot_id · early-game size-9 · Red (turn 1): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>Default_503 / D2 · no bot_id · early-game size-9 · Red (turn 1): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="FastBot_503 / B1 · fast_bot · empty size-5 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>FastBot_503 / B1 · fast_bot · empty size-5 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="Default_503 / D1 · no bot_id · empty size-4 · Blue (turn 0): percentage of failed events is 0.0" status="true" time="0">
+  <system-out>Default_503 / D1 · no bot_id · empty size-4 · Blue (turn 0): percentage of failed events is 0.0</system-out>
+</testcase>
+</testsuite>
