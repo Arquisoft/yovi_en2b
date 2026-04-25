@@ -1,25 +1,21 @@
-# Load Testing Results Analysis — YOVI (en2b)
+# Load Testing Results Analysis — yovi_en2b
 
-**Course:** Software Architecture (ASW 25-26) · **Lab 9** — Load testing · Other tests
-**System under test:** YOVI (`yovi_en2b`), deployed at [`https://micrati.com`](https://micrati.com)
-**Tool:** Gatling 3.10.5 · Java DSL
-**Reports analysed:**
-- `InteropSimulation` — run of 2026-04-24 18:08:01 GMT, duration 2 m 59 s
-- `RecordedSimulation` — run of 2026-04-24 18:23:31 GMT, duration 3 m 13 s
+* **Course:** Software Architecture
+* **Tool:** Gatling 3.10.5 · Java DSL
 
 ---
 
 ## 1. Executive summary
 
-Two complementary Gatling simulations were executed against the production deployment of YOVI to evaluate its performance under load:
+Two Gatling simulations were executed against the production deployment of the application to evaluate its performance under load:
 
-- **`InteropSimulation`** stresses the **external bot API** (`/interop/games/play`) with four classes of concurrent callers, each invoking a different bot strategy. This is a **white-box** test: every request is deliberately crafted to land on the Rust engine and exercise a known compute cost (random vs. 500 ms minimax vs. 3 000 ms minimax).
+- **`InteropSimulation`** stresses the **external bot API** (`/interop/games/play`) with four classes of concurrent callers, each invoking a different bot strategy. This testing is desined so that every request lands on the Rust engine and exercises a known compute cost (random vs. 500 ms minimax vs. 3 000 ms minimax).
 - **`RecordedSimulation`** replays a **realistic end-user flow** (login → create a game → play a move → fetch stats) captured from a browser session, executed under a **stepped closed-workload injection profile** (10 → 20 → 30 concurrent users, 60 s each) so that the server dictates throughput and the system's capacity curve is readable.
 
 **Headline findings:**
 
-1. **Zero failed requests across both simulations** (6 986 total requests, 0 KOs). No 5xx errors, no 4xx errors on any endpoint that should have returned 2xx. All deployed services stayed up for the whole test.
-2. **The bottleneck is the Rust engine under `smart_bot` on the worst-case position** (empty size-9 board, 45 cells, full 3 000 ms minimax budget). This is the only request that consistently pushed the interop → gamey chain beyond its 2 000 ms timeout, generating 503 rejections. **The web app never reaches the engine in this state**, because a pie-rule size-9 match is not possible in the default UI flow; the bot API is the only way to trigger it.
+1. **There were no failed requests** (6 986 total requests, 0 KOs). No 5xx or 4xx errors on any endpoint that should have returned 2xx. All deployed services stayed up for the whole test.
+2. **The Rust engine is the bottleneck, specially under `smart_bot` on the worst-case position** (empty size-9 board, 45 cells, full 3 000 ms minimax budget). This is the only request that consistently pushed the interop → gamey chain beyond its 2 000 ms timeout, generating 503 rejections.
 3. **Under realistic user load (up to 30 concurrent users)** the full vertical stack (Nginx → webapp → users-service → game-service → Rust engine) stayed stable with **p50 flat at ≈ 200 ms and p95 < 650 ms**. Throughput scaled linearly with concurrency (11.8 → 23.4 → 35.4 req/s as users went 10 → 20 → 30). **No saturation point was reached** inside the tested range.
 4. The two findings combined show that the system's **practical capacity is gated by the Rust engine, not by the TypeScript services or the database**. Users never collide on the same expensive engine call during normal play because every game session is serialised (one move at a time per user); external bots calling `/interop/games/play` concurrently on large boards is the only realistic way to trigger 503s.
 
@@ -33,35 +29,31 @@ Two complementary Gatling simulations were executed against the production deplo
 |---|---|---|
 | **Target** | `/interop/games/play` only | Full Nginx → webapp → users → game → gamey chain |
 | **Auth** | None (interop is public) | JWT, issued on login |
-| **Workload model** | Open (Gatling schedules users at a fixed rate) | Closed (Gatling keeps a fixed number of users busy) |
 | **Peak concurrency** | 14 virtual users | 30 virtual users |
-| **Duration** | 2 m 59 s (capped by `maxDuration`) | 3 m 13 s (60 s × 3 plateaus + drain) |
+| **Duration** | 2 m 59 s | 3 m 13 s |
 | **Request count** | 2 506 | 4 480 |
 | **Objective** | Find the engine's compute bottleneck, quantify 503 rate per bot class | Find the concurrency at which the full-stack user experience degrades |
 
 ### 2.2 Why two simulations instead of one
 
-A single simulation cannot answer both questions without corrupting its own metrics. Mixing the two workloads in one Gatling run was explicitly rejected for three reasons:
-
-- The **metric granularity differs**: interop needs per-bot-strategy grouping (random vs. fast vs. smart), while the recorded flow needs per-phase grouping by concurrency.
-- The **workload models differ**: open is right for "how many 503s does the engine emit under X req/s of bot traffic?"; closed is right for "how does the user-perceived latency evolve as N users arrive simultaneously?" Mixing them means neither question is answered cleanly.
-- The **failure semantics differ**: in interop, a 503 is an accepted, grouped outcome; in the recorded flow, any non-2xx on `/game/api/games/*/move` is a real KO (the board can't refuse Move 1 on an empty board).
+A single Gatling simulation cannot answer both of our questions cleanly. The two workloads we want to measure — how much CPU pressure the bot API can absorb, and how the full user-facing stack behaves under realistic concurrent traffic — have fundamentally incompatible measurement requirements, and mixing them in one run produces a report whose averages mean nothing.
+The first incompatibility is the workload model. The interop test needs an open model, where Gatling pushes a fixed rate of requests at the engine regardless of how slowly it responds; this is what reveals the rate at which the engine starts emitting 503s. The recorded test needs a closed model, where Gatling holds a fixed number of concurrent users and lets the server's own throughput dictate the request rate; this is what reveals the latency a real user experiences at a given concurrency. If both were combined, every request's response time would be averaged into the same global p95, blending the engine's deliberate ~3 second computations with the webapp's ~50 ms login responses and producing a number that describes neither.
+The second incompatibility is failure semantics. In the interop test, a 503 is an accepted, expected outcome that we deliberately group and count — it tells us the engine refused work because it was overloaded, which is exactly the signal we are looking for. In the recorded test, a 503 (or any non-2xx) on /game/api/games/*/move is a real bug, because Move 1 on a fresh empty board cannot legitimately fail. A unified simulation cannot apply both interpretations to the same status code at the same time without either hiding genuine failures behind acceptance lists or counting expected overloads as test failures.
+Splitting the work into two simulations therefore is not just convenient; it is the only way to obtain meaningful numbers for either question.
 
 ### 2.3 Architectural lessons baked into the scripts
 
-Three architectural issues were fixed relative to earlier runs and deserve to be noted because they directly affect metric correctness:
+It is worth noting that several attempts had to be done untill the load test was carried out correctly. This involved some architectural issues needing fixing relative to earlier runs. Some are the following:
 
 - **503 camouflage** — earlier runs used `.check(status().in(200, 503))` without grouping, so the ~5 ms fast-reject 503s and the ~3 000 ms legitimate engine responses were averaged together in the report. Every play request in `InteropSimulation` now saves the HTTP status and is wrapped in `group(session -> "<Label>_" + status)`, producing separate `*_200` and `*_503` buckets.
-- **409 cascade** — the recorder originally captured 12 sequential `POST /move` calls with hard-coded cell coordinates. Under load the Rust engine's move choice varies (minimax depth depends on available CPU), so the pre-recorded coordinate would already be occupied by the time Gatling sent it, producing a 409. The first 409 then cascaded: moves 3–12 would all fail instantly against a desynchronised board, meaning the test was really measuring the *API's validation rejection*, not the engine. The scenario now keeps only Move 1 (guaranteed valid on an empty board), so every virtual user puts real computation on the engine.
-- **Uncontrolled queuing** — earlier runs used `rampUsers(50).during(30 s)` (open model). The report showed response times spiking to 23 s with 100 % of that time spent queuing, which makes "find the breakpoint" impossible. `constantConcurrentUsers` in stepped plateaus was substituted so the server's own throughput caps the request rate.
-
+- **409 cascade** — the recorder originally captured 12 sequential `POST /move` calls with hard-coded cell coordinates. Under load the Rust engine's move choice varies (minimax depth depends on available CPU), so the pre-recorded coordinate would already be occupied by the time Gatling sent it, producing a 409. The first 409 then cascaded: moves 3–12 would all fail instantly against a desynchronised board, meaning the test was really measuring the *API's validation rejection*, not the engine. The scenario now keeps only Move 1 (guaranteed valid on an empty board), so every virtual user puts real computation load onto the engine.
 ---
 
 ## 3. Simulation 1 — `InteropSimulation`
 
 ### 3.1 Purpose
 
-Stress the bot API and characterise the Rust engine's behaviour under concurrent compute-heavy requests. Five concurrent scenarios covering the full bot portfolio:
+Stress the bot API and characterise the Rust engine's behaviour under concurrent compute-heavy requests. Five concurrent scenarios covering the full bot portfolio were developed:
 
 - **A — RandomBot** (5 VUs): baseline — no minimax, measures pure interop overhead.
 - **B — FastBot** (3 VUs): minimax with a 500 ms budget.
@@ -157,7 +149,7 @@ This is the classic head-of-line blocking pattern of a single-threaded or lightl
 
 ### 4.1 Purpose
 
-Measure the **user-perceived** behaviour of the full vertical stack under realistic traffic shapes. The scenario was captured with Gatling Recorder from a real browser session on `https://micrati.com` and trimmed to the critical business path:
+Measure the **user-perceived** behaviour of the full vertical stack under realistic traffic conditions. The scenario was captured with Gatling Recorder from a real browser session on `https://micrati.com` and trimmed to the critical business path:
 
 ```
 login  →  static assets  →  create game  →  play move 1  →  fetch stats
@@ -166,9 +158,6 @@ login  →  static assets  →  create game  →  play move 1  →  fetch stats
 Move 1 is always a valid placement on a freshly-created empty board, so no 409 is possible; any non-2xx/201 on `/game/api/games/*/move` would be a real bug. Only one move per user is played, so under load every VU performs exactly one round-trip against the Rust engine (via the `game` service). Client-side "think pauses" originally recorded at 5–11 s were trimmed to 2 s each so that the closed model can actually exert load during the test window.
 
 ### 4.2 Injection profile
-
-Stepped **closed workload** (replaces the earlier `rampUsers(50).during(30 s)` open model):
-
 ```java
 scn.injectClosed(
   constantConcurrentUsers(10).during(Duration.ofSeconds(60)),
@@ -177,7 +166,7 @@ scn.injectClosed(
 )
 ```
 
-The closed model guarantees that a new virtual user is only started when an existing one completes the scenario. The server's own throughput, not Gatling's schedule, therefore dictates the request rate — which is exactly what is needed to read capacity off the latency-vs-concurrency curve without queue inflation distorting the numbers.
+This closed model guarantees that a new virtual user is only started when an existing one completes the scenario. The server's own throughput, not Gatling's schedule, therefore dictates the request rate — which is exactly what is needed to read capacity off the latency-vs-concurrency curve without queue inflation distorting the numbers.
 
 ### 4.3 Run summary
 
