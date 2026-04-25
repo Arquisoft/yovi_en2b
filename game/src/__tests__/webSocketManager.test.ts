@@ -2,23 +2,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { ConnectedClient } from '../websocket/types'
 
 // 1. Mocks de dependencias externas (deben ir antes de importar el Manager)
-vi.mock('ws', () => ({
-  WebSocketServer: vi.fn().mockImplementation(() => ({ 
-    on: vi.fn(), 
-    close: vi.fn() 
-  })),
-  WebSocket: { OPEN: 1, CLOSED: 3 },
-}))
+vi.mock('ws', () => {
+  const WebSocketServer = vi.fn(function (this: any) {
+    this.on = vi.fn()
+    this.close = vi.fn()
+  })
 
-vi.mock('../services/GameService', () => ({
-  GameService: vi.fn().mockImplementation(() => ({
-    createGame: vi.fn(),
-    getGame: vi.fn(),
-    playMove: vi.fn(),
-    surrender: vi.fn(),
-    setPlayer2Id: vi.fn(),
-  })),
-}))
+  // WebSocket must look like the real class so that
+  // `ws.readyState === WebSocket.OPEN` passes inside WebSocketManager.
+  // We expose OPEN/CLOSED as static-like properties on the constructor fn.
+  const WebSocket = vi.fn()
+  ;(WebSocket as any).OPEN   = 1
+  ;(WebSocket as any).CLOSED = 3
+
+  return { WebSocketServer, WebSocket }
+})
 
 vi.mock('jsonwebtoken', () => ({
   default: { verify: vi.fn() },
@@ -26,7 +24,6 @@ vi.mock('jsonwebtoken', () => ({
 }))
 
 import { WebSocketManager } from '../websocket/WebSocketManager'
-import { GameService } from '../services/GameService'
 import jwt from 'jsonwebtoken'
 
 // --- Helpers para los tests ---
@@ -35,7 +32,7 @@ function createMockWs() {
   return {
     send: vi.fn(),
     close: vi.fn(),
-    readyState: 1, // OPEN
+    readyState: 1, // must equal WebSocket.OPEN (1)
     on: vi.fn(),
   }
 }
@@ -53,7 +50,13 @@ function makeClient(userId: number, overrides: Partial<ConnectedClient> = {}): C
 
 function getManager() {
   const mockServer = { on: vi.fn() } as any
-  const gameService = new GameService() as any
+  const gameService = {
+    createGame: vi.fn(),
+    getGame: vi.fn(),
+    playMove: vi.fn(),
+    surrender: vi.fn(),
+    setPlayer2Id: vi.fn(),
+  } as any
   const manager = new WebSocketManager(mockServer, gameService)
   return { manager, gameService }
 }
@@ -89,9 +92,9 @@ describe('WebSocketManager', () => {
       const { manager } = getManager()
       const client = makeClient(1)
       manager._injectClient(client)
-      
+
       await manager.handleMessage(1, { type: 'ping' })
-      
+
       expect(client.ws.send).toHaveBeenCalledWith(JSON.stringify({ type: 'pong' }))
     })
   })
@@ -103,7 +106,7 @@ describe('WebSocketManager', () => {
       manager._injectClient(client)
 
       await manager.handleMessage(1, { type: 'join_queue' })
-      
+
       expect(manager.getQueueSize()).toBe(1)
       const msg = JSON.parse((client.ws.send as any).mock.calls[0][0])
       expect(msg.type).toBe('queue_joined')
@@ -115,7 +118,7 @@ describe('WebSocketManager', () => {
       manager._injectClient(client)
 
       await manager.handleMessage(1, { type: 'join_queue' })
-      
+
       const msg = JSON.parse((client.ws.send as any).mock.calls[0][0])
       expect(msg.type).toBe('error')
       expect(msg.code).toBe('IN_GAME')
@@ -132,7 +135,7 @@ describe('WebSocketManager', () => {
         timer: null, phase: 'playing',
         createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
       }
-      
+
       gameService.createGame.mockResolvedValue(mockGame)
       gameService.setPlayer2Id.mockResolvedValue(undefined)
 
@@ -153,7 +156,7 @@ describe('WebSocketManager', () => {
   describe('handleMessage — move', () => {
     it('relays game update to both players after valid move', async () => {
       const { manager, gameService } = getManager()
-      const updatedGame = {
+      const gameData = {
         id: 'game-1',
         status: 'playing',
         moves: [{ row: 0, col: 0 }],
@@ -162,8 +165,9 @@ describe('WebSocketManager', () => {
         winner: null, timer: null, phase: 'playing',
         createdAt: '', updatedAt: '',
       }
-      
-      gameService.playMove.mockResolvedValue(updatedGame)
+
+      gameService.getGame.mockResolvedValue(gameData)
+      gameService.playMove.mockResolvedValue(gameData)
 
       const c1 = makeClient(1, { currentGameId: 'game-1' })
       const c2 = makeClient(2, { currentGameId: 'game-1' })
@@ -184,7 +188,8 @@ describe('WebSocketManager', () => {
         config: { mode: 'pvp-online' }, board: [], moves: [], currentTurn: 'player1',
         timer: null, phase: 'playing', createdAt: '', updatedAt: '',
       }
-      
+
+      gameService.getGame.mockResolvedValue(finishedGame)
       gameService.playMove.mockResolvedValue(finishedGame)
 
       const c1 = makeClient(1, { currentGameId: 'game-1' })
@@ -206,7 +211,7 @@ describe('WebSocketManager', () => {
       manager._injectClient(client)
 
       await manager.handleMessage(1, { type: 'bad_type' } as any)
-      
+
       const msg = JSON.parse((client.ws.send as any).mock.calls[0][0])
       expect(msg.type).toBe('error')
       expect(msg.code).toBe('UNKNOWN_MESSAGE')
