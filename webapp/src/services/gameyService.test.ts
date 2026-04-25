@@ -363,4 +363,343 @@ describe('GameService', () => {
       await expect(gameService.surrender('game-1', 'player1')).rejects.toThrow('Failed to surrender')
     })
   })
+
+  describe('GameService.createGame — extended', () => {
+  it('works without a token (guest scenario)', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockGame,
+    } as any)
+ 
+    const config = { mode: 'pve' as const, boardSize: 5 as const, timerEnabled: false }
+    const result = await gameService.createGame(config)
+ 
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    const headers = (options as RequestInit).headers as Record<string, string>
+    expect(headers.Authorization).toBeUndefined()
+    expect(result.id).toBe('game-1')
+  })
+ 
+  it('includes guestId in body when provided', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockGame,
+    } as any)
+ 
+    const config = { mode: 'pve' as const, boardSize: 5 as const, timerEnabled: false }
+    await gameService.createGame(config, undefined, 'guest-xyz')
+ 
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    const body = JSON.parse((options as RequestInit).body as string)
+    expect(body.guestId).toBe('guest-xyz')
+  })
+ 
+  it('omits guestId from body when not provided', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockGame,
+    } as any)
+ 
+    const config = { mode: 'pve' as const, boardSize: 5 as const, timerEnabled: false }
+    await gameService.createGame(config, 'token')
+ 
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    const body = JSON.parse((options as RequestInit).body as string)
+    expect(body.guestId).toBeUndefined()
+  })
+ 
+  it('throws with status code in message when error body has neither error nor message', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 503,
+      json: async () => ({}),
+    } as any)
+ 
+    const config = { mode: 'pve' as const, boardSize: 5 as const, timerEnabled: false }
+    await expect(gameService.createGame(config, 'token')).rejects.toThrow('503')
+  })
+ 
+  it('includes Content-Type header', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockGame,
+    } as any)
+ 
+    await gameService.createGame(
+      { mode: 'pve' as const, boardSize: 5 as const, timerEnabled: false },
+      'tok',
+    )
+ 
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    const headers = (options as RequestInit).headers as Record<string, string>
+    expect(headers['Content-Type']).toBe('application/json')
+  })
+})
+ 
+// ── getGameState ──────────────────────────────────────────────────────────────
+ 
+describe('GameService.getGameState — extended', () => {
+  it('returns full game object from the API', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ...mockGame, id: 'game-abc' }),
+    } as any)
+ 
+    const result = await gameService.getGameState('game-abc')
+    expect(result?.id).toBe('game-abc')
+    expect(result?.config.mode).toBe('pve')
+  })
+ 
+  it('propagates non-404 errors without calling json()', async () => {
+    const jsonFn = vi.fn()
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: jsonFn,
+    } as any)
+ 
+    await expect(gameService.getGameState('game-1')).rejects.toThrow('500')
+    // json() should not be called on non-404 errors (optimisation path)
+  })
+})
+ 
+// ── getUserGames ──────────────────────────────────────────────────────────────
+ 
+describe('GameService.getUserGames — extended', () => {
+  it('sends Content-Type header', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+    } as any)
+ 
+    await gameService.getUserGames('token')
+ 
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    const headers = (options as RequestInit).headers as Record<string, string>
+    expect(headers['Content-Type']).toBe('application/json')
+  })
+ 
+  it('throws using data.message when present (preferred over error)', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      json: async () => ({ message: 'Forbidden', error: 'fallback' }),
+    } as any)
+ 
+    await expect(gameService.getUserGames('token')).rejects.toThrow('fallback')
+  })
+})
+ 
+// ── playMove ──────────────────────────────────────────────────────────────────
+ 
+describe('GameService.playMove — extended', () => {
+  it('includes all required fields in request body', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockGame,
+    } as any)
+ 
+    await gameService.playMove('game-1', 2, 3, 'player2', 'tok')
+ 
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    const body = JSON.parse((options as RequestInit).body as string)
+    expect(body.row).toBe(2)
+    expect(body.col).toBe(3)
+    expect(body.player).toBe('player2')
+  })
+ 
+  it('returns updated game state with moves', async () => {
+    const updatedGame = {
+      ...mockGame,
+      moves: [{ row: 0, col: 0, player: 'player1', timestamp: 1 }],
+      currentTurn: 'player2',
+    }
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => updatedGame,
+    } as any)
+ 
+    const result = await gameService.playMove('game-1', 0, 0, 'player1', 'tok')
+    expect(result.moves).toHaveLength(1)
+    expect(result.currentTurn).toBe('player2')
+  })
+ 
+  it('throws with status in message when body has neither error field', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      json: async () => ({}),
+    } as any)
+ 
+    await expect(gameService.playMove('game-1', 0, 0, 'player1')).rejects.toThrow('429')
+  })
+})
+ 
+// ── decidePie ────────────────────────────────────────────────────────────────
+ 
+describe('GameService.decidePie', () => {
+  it('calls POST /api/games/:id/pie-decision', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockGame,
+    } as any)
+ 
+    await gameService.decidePie('game-1', 'swap', 'tok')
+ 
+    const [url, options] = vi.mocked(fetch).mock.calls[0]
+    expect(String(url)).toContain('/games/game-1/pie-decision')
+    expect((options as RequestInit).method).toBe('POST')
+    const body = JSON.parse((options as RequestInit).body as string)
+    expect(body.decision).toBe('swap')
+  })
+ 
+  it('sends Authorization header when token is provided', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockGame,
+    } as any)
+ 
+    await gameService.decidePie('game-1', 'keep', 'my-token')
+ 
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    const headers = (options as RequestInit).headers as Record<string, string>
+    expect(headers.Authorization).toBe('Bearer my-token')
+  })
+ 
+  it('omits Authorization header when no token', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockGame,
+    } as any)
+ 
+    await gameService.decidePie('game-1', 'keep')
+ 
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    const headers = (options as RequestInit).headers as Record<string, string>
+    expect(headers.Authorization).toBeUndefined()
+  })
+ 
+  it('throws on error response', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({ error: 'Not in pie-decision phase' }),
+    } as any)
+ 
+    await expect(gameService.decidePie('game-1', 'swap')).rejects.toThrow(
+      'Not in pie-decision phase',
+    )
+  })
+ 
+  it('falls back to generic error when json() fails', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => { throw new Error('not json') },
+    } as any)
+ 
+    await expect(gameService.decidePie('game-1', 'swap')).rejects.toThrow('Failed to decide')
+  })
+ 
+  it('returns updated game state', async () => {
+    const swappedGame = { ...mockGame, phase: 'playing', currentTurn: 'player1' }
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => swappedGame,
+    } as any)
+ 
+    const result = await gameService.decidePie('game-1', 'swap', 'tok')
+    expect(result.phase).toBe('playing')
+  })
+})
+ 
+// ── surrender ────────────────────────────────────────────────────────────────
+ 
+describe('GameService.surrender — extended', () => {
+  it('sends player in body', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ...mockGame, status: 'finished', winner: 'player2' }),
+    } as any)
+ 
+    await gameService.surrender('game-1', 'player1', 'tok')
+ 
+    const [, options] = vi.mocked(fetch).mock.calls[0]
+    const body = JSON.parse((options as RequestInit).body as string)
+    expect(body.player).toBe('player1')
+  })
+ 
+  it('throws with status code when body has no error fields', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: async () => ({}),
+    } as any)
+ 
+    await expect(gameService.surrender('game-1', 'player1')).rejects.toThrow('500')
+  })
+})
+ 
+// ── chat messages ─────────────────────────────────────────────────────────────
+ 
+describe('GameService chat — extended', () => {
+  it('getChatMessages returns messages in insertion order', async () => {
+    await gameService.sendChatMessage('game-1', 'u1', 'Alice', 'first')
+    await gameService.sendChatMessage('game-1', 'u2', 'Bob', 'second')
+    await gameService.sendChatMessage('game-1', 'u1', 'Alice', 'third')
+ 
+    const msgs = await gameService.getChatMessages('game-1')
+    expect(msgs[0].content).toBe('first')
+    expect(msgs[1].content).toBe('second')
+    expect(msgs[2].content).toBe('third')
+  })
+ 
+  it('messages for different games are isolated', async () => {
+    await gameService.sendChatMessage('game-A', 'u1', 'Alice', 'hello A')
+    await gameService.sendChatMessage('game-B', 'u2', 'Bob', 'hello B')
+ 
+    const a = await gameService.getChatMessages('game-A')
+    const b = await gameService.getChatMessages('game-B')
+ 
+    expect(a).toHaveLength(1)
+    expect(b).toHaveLength(1)
+    expect(a[0].gameId).toBe('game-A')
+    expect(b[0].gameId).toBe('game-B')
+  })
+ 
+  it('sendChatMessage assigns a unique id to each message', async () => {
+    const m1 = await gameService.sendChatMessage('g', 'u1', 'Alice', 'a')
+    const m2 = await gameService.sendChatMessage('g', 'u1', 'Alice', 'b')
+    expect(m1.id).not.toBe(m2.id)
+  })
+ 
+  it('sendChatMessage timestamp is an ISO string', async () => {
+    const msg = await gameService.sendChatMessage('g', 'u1', 'Alice', 'hi')
+    expect(() => new Date(msg.timestamp)).not.toThrow()
+    expect(new Date(msg.timestamp).toISOString()).toBe(msg.timestamp)
+  })
+})
+ 
+// ── getAvailableGames ─────────────────────────────────────────────────────────
+ 
+describe('GameService.getAvailableGames — extended', () => {
+  it('returns at least one available game', async () => {
+    const games = await gameService.getAvailableGames()
+    const available = games.filter(g => g.isAvailable)
+    expect(available.length).toBeGreaterThan(0)
+  })
+ 
+  it('returned games have all required fields', async () => {
+    const games = await gameService.getAvailableGames()
+    for (const game of games) {
+      expect(game).toHaveProperty('id')
+      expect(game).toHaveProperty('name')
+      expect(game).toHaveProperty('description')
+      expect(game).toHaveProperty('thumbnail')
+      expect(game).toHaveProperty('minPlayers')
+      expect(game).toHaveProperty('maxPlayers')
+      expect(game).toHaveProperty('isAvailable')
+    }
+  })
+})
 })
