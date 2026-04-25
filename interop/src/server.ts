@@ -1,6 +1,12 @@
 import express from 'express';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
+import fs from 'node:fs';
+import path from 'node:path';
+import yaml from 'js-yaml';
 import gameRoutes from './routes/gameRoutes';
+
+const openApiSpec = yaml.load(fs.readFileSync(path.join(__dirname, '../openapi.yaml'), 'utf8')) as object;
 
 const app = express();
 const PORT = parseInt(process.env.WEBAPP_PORT ?? '3001', 10);
@@ -23,6 +29,7 @@ app.use(helmet({
 app.use(express.json());
 
 // ── Routes ───────────────────────────────────────────────────────────────────
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 app.use('/games', gameRoutes);
 
 app.get('/health', (_req, res) => {
