@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS match_records (
   opponent_name VARCHAR(50) NOT NULL,
   result ENUM('win', 'loss') NOT NULL,
   duration_seconds INT UNSIGNED NOT NULL,
+  game_mode VARCHAR(30) NULL,
   played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

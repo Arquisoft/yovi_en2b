@@ -127,10 +127,12 @@ const en = {
     colBoard: 'Board',
     colMoves: 'Moves',
     colResult: 'Result',
+    resume: 'Resume',
     result: {
       win: 'Win',
       loss: 'Loss',
       draw: 'Draw',
+      active: 'In progress',
     },
     mode: {
       pve: 'vs Bot',

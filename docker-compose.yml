@@ -159,8 +159,10 @@ services:
     volumes:
       - ./users/monitoring/grafana/provisioning:/etc/grafana/provisioning
     environment:
-      - GF_LOG_LEVEL=error
-      - GF_LOG_MODE=console
+      GF_LOG_LEVEL: error
+      GF_LOG_MODE: console
+      GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL}
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
     networks:
       - monitor-net
 
