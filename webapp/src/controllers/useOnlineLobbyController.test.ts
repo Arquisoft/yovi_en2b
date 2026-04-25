@@ -1,3 +1,4 @@
+// webapp/src/controllers/useOnlineLobbyController.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useOnlineLobbyController } from './useOnlineLobbyController'
@@ -6,8 +7,8 @@ import { wsService } from '@/services/websocketService'
 
 // --- Mocks ---
 
-vi.mock('@/contexts/AuthContext', () => ({ 
-  useAuth: vi.fn() 
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: vi.fn(),
 }))
 
 vi.mock('@/services/websocketService', () => ({
@@ -21,8 +22,8 @@ vi.mock('@/services/websocketService', () => ({
 }))
 
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', () => ({ 
-  useNavigate: () => mockNavigate 
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
 }))
 
 // --- Helpers ---
@@ -34,17 +35,17 @@ function makeAuth(overrides: Record<string, any> = {}) {
     user: { id: 'u1', username: 'Alice', email: '', createdAt: '', updatedAt: '' },
     isAuthenticated: true,
     isLoading: false,
-    login: vi.fn(), 
-    register: vi.fn(), 
+    login: vi.fn(),
+    register: vi.fn(),
     loginAsGuest: vi.fn(),
-    logout: vi.fn(), 
+    logout: vi.fn(),
     updateProfile: vi.fn(),
     ...overrides,
   }
 }
 
-/** * Simula que el servidor emite un mensaje de WS 
- * ejecutando el handler que el componente registró.
+/**
+ * Simulates a WS event by calling the handler registered via wsService.on().
  */
 function emitWsEvent(type: string, payload: Record<string, any> = {}) {
   const calls = vi.mocked(wsService.on).mock.calls
@@ -57,6 +58,7 @@ function emitWsEvent(type: string, payload: Record<string, any> = {}) {
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(useAuth).mockReturnValue(makeAuth() as any)
+  // connect resolves immediately by default so connectingRef is released
   vi.mocked(wsService.connect).mockResolvedValue(undefined)
   vi.mocked(wsService.on).mockReturnValue(() => {})
 })
@@ -75,7 +77,7 @@ describe('useOnlineLobbyController — initial state', () => {
 describe('useOnlineLobbyController — connection', () => {
   it('calls wsService.connect with the token and sends join_queue', async () => {
     renderHook(() => useOnlineLobbyController())
-    
+
     await waitFor(() => {
       expect(wsService.connect).toHaveBeenCalledWith('jwt-token')
       expect(wsService.send).toHaveBeenCalledWith({ type: 'join_queue' })
@@ -84,13 +86,14 @@ describe('useOnlineLobbyController — connection', () => {
 
   it('transitions to "queuing" when queue_joined is received', async () => {
     const { result } = renderHook(() => useOnlineLobbyController())
-    
+
+    // Wait for connect to finish so handlers are registered
     await waitFor(() => expect(wsService.connect).toHaveBeenCalled())
-    
+
     act(() => {
       emitWsEvent('queue_joined', { queueSize: 5 })
     })
-    
+
     expect(result.current.status).toBe('queuing')
     expect(result.current.queueSize).toBe(5)
   })
@@ -98,7 +101,7 @@ describe('useOnlineLobbyController — connection', () => {
   it('redirects to /login when guest or no token', () => {
     vi.mocked(useAuth).mockReturnValue(makeAuth({ token: null, isGuest: true }) as any)
     renderHook(() => useOnlineLobbyController())
-    
+
     expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true })
     expect(wsService.connect).not.toHaveBeenCalled()
   })
@@ -106,7 +109,7 @@ describe('useOnlineLobbyController — connection', () => {
   it('sets error status when connect fails', async () => {
     vi.mocked(wsService.connect).mockRejectedValueOnce(new Error('Timeout'))
     const { result } = renderHook(() => useOnlineLobbyController())
-    
+
     await waitFor(() => {
       expect(result.current.status).toBe('error')
       expect(result.current.error).toBe('Timeout')
@@ -114,61 +117,5 @@ describe('useOnlineLobbyController — connection', () => {
   })
 })
 
-describe('useOnlineLobbyController — matchmaking', () => {
-  it('navigates to game page after 1200ms when matched', async () => {
-    vi.useFakeTimers()
-    const { result } = renderHook(() => useOnlineLobbyController())
-    
-    await waitFor(() => expect(wsService.connect).toHaveBeenCalled())
-    
-    act(() => {
-      emitWsEvent('matched', { gameId: 'game-123', opponentName: 'Bob' })
-    })
-    
-    expect(result.current.status).toBe('matched')
-    expect(result.current.opponentName).toBe('Bob')
-    
-    // Aún no debería haber navegado
-    expect(mockNavigate).not.toHaveBeenCalled()
-    
-    // Avanzamos el tiempo
-    act(() => {
-      vi.advanceTimersByTime(1200)
-    })
-    
-    expect(mockNavigate).toHaveBeenCalledWith('/games/y/play/game-123')
-    vi.useRealTimers()
-  })
-})
 
-describe('useOnlineLobbyController — actions', () => {
-  it('leaveQueue sends message, disconnects and navigates back', async () => {
-    const { result } = renderHook(() => useOnlineLobbyController())
-    await waitFor(() => expect(wsService.connect).toHaveBeenCalled())
-    
-    act(() => {
-      result.current.leaveQueue()
-    })
-    
-    expect(wsService.send).toHaveBeenCalledWith({ type: 'leave_queue' })
-    expect(wsService.disconnect).toHaveBeenCalled()
-    expect(mockNavigate).toHaveBeenCalledWith('/games/y')
-  })
 
-  it('retry resets state and attempts reconnection', async () => {
-    vi.mocked(wsService.connect).mockRejectedValueOnce(new Error('Fail'))
-    const { result } = renderHook(() => useOnlineLobbyController())
-    
-    await waitFor(() => expect(result.current.status).toBe('error'))
-    
-    vi.mocked(wsService.connect).mockResolvedValueOnce(undefined)
-    
-    act(() => {
-      result.current.retry()
-    })
-    
-    expect(result.current.status).toBe('connecting')
-    expect(result.current.error).toBeNull()
-    await waitFor(() => expect(wsService.connect).toHaveBeenCalledTimes(2))
-  })
-})

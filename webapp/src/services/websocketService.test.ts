@@ -31,18 +31,27 @@ function createMockWs(): MockWs {
  * Simula que el servidor envía un mensaje al cliente
  */
 function serverSend(mockWs: MockWs, data: object) {
-  mockWs.onmessage?.({ 
-    data: JSON.stringify(data) 
+  mockWs.onmessage?.({
+    data: JSON.stringify(data),
   } as MessageEvent)
 }
 
 beforeEach(() => {
   mockWsInstance = createMockWs()
-  // Inyectamos el mock en el objeto global 'WebSocket'
-  vi.stubGlobal('WebSocket', vi.fn().mockImplementation(() => mockWsInstance))
-  
-  // Definimos la constante OPEN para que el servicio pueda validar estados
-  Object.defineProperty(global.WebSocket, 'OPEN', { value: 1, configurable: true })
+
+  // WebSocket must be stubbed as a proper constructor function (not an arrow
+  // function) so that `new WebSocket(url)` works inside the service.
+  const MockWebSocket = vi.fn(function (this: MockWs) {
+    return mockWsInstance
+  })
+
+  vi.stubGlobal('WebSocket', MockWebSocket)
+
+  // Define the OPEN constant so the service can check readyState === WebSocket.OPEN
+  Object.defineProperty(globalThis.WebSocket, 'OPEN', {
+    value: 1,
+    configurable: true,
+  })
 })
 
 afterEach(() => {
@@ -54,14 +63,14 @@ afterEach(() => {
 
 async function connectService(service: WebSocketService, token = 'test-token') {
   const connectPromise = service.connect(token)
-  
+
   // Paso 1: Simular apertura de conexión
   mockWsInstance.readyState = 1
   mockWsInstance.onopen?.(new Event('open'))
-  
+
   // Paso 2: Simular respuesta de autenticación exitosa
   serverSend(mockWsInstance, { type: 'authenticated', userId: 1, username: 'Alice' })
-  
+
   await connectPromise
   return service
 }
@@ -78,8 +87,8 @@ describe('WebSocketService — connect', () => {
     serverSend(mockWsInstance, { type: 'authenticated', userId: 1, username: 'Alice' })
 
     await connectPromise
-    
-    expect(global.WebSocket).toHaveBeenCalledWith('ws://test')
+
+    expect(globalThis.WebSocket).toHaveBeenCalledWith('ws://test')
     const sentData = JSON.parse(mockWsInstance.send.mock.calls[0][0])
     expect(sentData).toEqual({ type: 'auth', token: 'my-token' })
   })
@@ -111,12 +120,12 @@ describe('WebSocketService — connect', () => {
   it('resolves immediately if already connected', async () => {
     const svc = new WebSocketService('ws://test')
     await connectService(svc)
-    
-    const callCount = vi.mocked(global.WebSocket).mock.calls.length
+
+    const callCount = vi.mocked(globalThis.WebSocket).mock.calls.length
     await svc.connect('token')
-    
+
     // No debería haber creado un nuevo objeto WebSocket
-    expect(vi.mocked(global.WebSocket).mock.calls.length).toBe(callCount)
+    expect(vi.mocked(globalThis.WebSocket).mock.calls.length).toBe(callCount)
   })
 })
 
