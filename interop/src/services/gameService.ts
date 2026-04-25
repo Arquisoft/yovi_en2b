@@ -26,7 +26,7 @@ import { applyMove } from './yenService';
 // ── Configuration ─────────────────────────────────────────────────────────────
 
 const RUST_URL = process.env.RUST_INTERNAL_URL ?? 'http://localhost:4000';
-const RUST_TIMEOUT_MS = 2_000;
+const RUST_TIMEOUT_MS = 3_500;
 
 type BotId = 'random_bot' | 'fast_bot' | 'smart_bot';
 
