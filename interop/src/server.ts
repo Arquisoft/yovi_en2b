@@ -1,8 +1,8 @@
 import express from 'express';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import yaml from 'js-yaml';
 import gameRoutes from './routes/gameRoutes';
 
