@@ -148,6 +148,7 @@ const es = {
     colMoves: 'Jugadas',
     colResult: 'Resultado',
     resume: 'Reanudar',
+    totalFinished: '{{count}} partidas completadas',
     result: {
       win: 'Victoria',
       loss: 'Derrota',

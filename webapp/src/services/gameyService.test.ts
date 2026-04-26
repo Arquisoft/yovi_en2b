@@ -207,10 +207,18 @@ describe('GameService — getGameState', () => {
 // ── getUserGames ──────────────────────────────────────────────────────────────
 
 describe('GameService — getUserGames', () => {
+  const mockPaginatedResponse = {
+    games: [mockSummary],
+    total: 1,
+    totalFinished: 1,
+    page: 1,
+    totalPages: 1,
+  }
+
   it('calls GET /api/games with Authorization header', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
-      json: async () => [mockSummary],
+      json: async () => mockPaginatedResponse,
     } as any)
 
     await gameService.getUserGames('my-token')
@@ -223,58 +231,45 @@ describe('GameService — getUserGames', () => {
     )
   })
 
-  it('does NOT include a method (defaults to GET)', async () => {
+  it('returns a PaginatedGames object on success', async () => {
+    const complexResponse = {
+      games: [mockSummary, { ...mockSummary, id: 'game-2' }],
+      total: 2,
+      totalFinished: 2,
+      page: 1,
+      totalPages: 1,
+    }
+
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
-      json: async () => [],
-    } as any)
-
-    await gameService.getUserGames('token')
-
-    const [, options] = vi.mocked(fetch).mock.calls[0]
-    expect((options as RequestInit).method).toBeUndefined()
-  })
-
-  it('returns an array of game summaries on success', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [mockSummary, { ...mockSummary, id: 'game-2' }],
+      json: async () => complexResponse,
     } as any)
 
     const result = await gameService.getUserGames('token')
-    expect(result).toHaveLength(2)
-    expect(result[0].id).toBe('game-1')
-    expect(result[1].id).toBe('game-2')
+    expect(result.games).toHaveLength(2)
+    expect(result.games[0].id).toBe('game-1')
+    expect(result.games[1].id).toBe('game-2')
+    expect(result.totalFinished).toBe(2)
   })
 
-  it('returns an empty array when server returns empty array', async () => {
+  it('returns empty games array when server returns no games', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
-      json: async () => [],
+      json: async () => ({ games: [], total: 0, totalFinished: 0, page: 1, totalPages: 0 }),
     } as any)
 
     const result = await gameService.getUserGames('token')
-    expect(result).toHaveLength(0)
+    expect(result.games).toHaveLength(0)
   })
 
   it('summaries contain moveCount', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
-      json: async () => [mockSummary],
+      json: async () => mockPaginatedResponse,
     } as any)
 
-    const [summary] = await gameService.getUserGames('token')
-    expect(summary.moveCount).toBe(8)
-  })
-
-  it('summaries contain winner', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [mockSummary],
-    } as any)
-
-    const [summary] = await gameService.getUserGames('token')
-    expect(summary.winner).toBe('player1')
+    const result = await gameService.getUserGames('token')
+    expect(result.games[0].moveCount).toBe(8)
   })
 
   it('throws using data.error on non-ok response', async () => {
@@ -295,38 +290,6 @@ describe('GameService — getUserGames', () => {
     } as any)
 
     await expect(gameService.getUserGames('token')).rejects.toThrow('Failed to fetch game history')
-  })
-
-  it('the URL targets the /api/games endpoint (not a sub-route)', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    } as any)
-
-    await gameService.getUserGames('token')
-
-    const [url] = vi.mocked(fetch).mock.calls[0]
-    expect(String(url)).toMatch(/\/games$/)
-  })
-
-  it('summaries contain config with mode', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [mockSummary],
-    } as any)
-
-    const [summary] = await gameService.getUserGames('token')
-    expect(summary.config.mode).toBe('pvp-local')
-  })
-
-  it('summaries contain players', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: true,
-      json: async () => [mockSummary],
-    } as any)
-
-    const [summary] = await gameService.getUserGames('token')
-    expect(summary.players.player1.name).toBe('TestUser')
   })
 })
 

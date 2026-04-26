@@ -242,3 +242,11 @@ export interface RankingEntry {
   username: string
   wins: number
 }
+
+export interface PaginatedGames {
+  games: GameSummary[]
+  total: number
+  totalFinished: number
+  page: number
+  totalPages: number
+}
