@@ -178,7 +178,8 @@ describe('GameService', () => {
       await expect(gameService.getUserGames('token')).rejects.toThrow('Failed to fetch game history')
     })
  
-   
+ 
+  })
 
 
   describe('playMove', () => {
