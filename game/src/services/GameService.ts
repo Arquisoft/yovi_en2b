@@ -75,14 +75,17 @@ export class GameService {
     const skip = (page - 1) * PAGE_SIZE;
 
     const [games, total] = await this.gameRepo.findAndCount({
-      where: { player1Id: userId },
+      where: [{ player1Id: userId }, { player2Id: userId }],
       order: { updatedAt: 'DESC' },
       skip,
       take: PAGE_SIZE,
     });
 
     const totalFinished = await this.gameRepo.count({
-      where: { player1Id: userId, status: 'finished' },
+      where: [
+        { player1Id: userId, status: 'finished' },
+        { player2Id: userId, status: 'finished' },
+      ],
     });
 
     if (games.length === 0) {

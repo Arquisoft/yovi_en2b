@@ -75,6 +75,8 @@ function makeRepo(defaults: Record<string, any> = {}) {
   return {
     findOne: vi.fn().mockResolvedValue(null),
     find: vi.fn().mockResolvedValue([]),
+    findAndCount: vi.fn().mockResolvedValue([[], 0]),
+    count: vi.fn().mockResolvedValue(0),
     create: vi.fn((d: any) => ({ ...d })),
     save: vi.fn(async (e: any) => e),
     createQueryBuilder: vi.fn(),
@@ -556,6 +558,88 @@ describe('GameService – additional coverage', () => {
       // No token passed
       await service.surrender('game-1', 'player1', undefined)
       expect(fetchMock).not.toHaveBeenCalled()
+    })
+  })
+
+  // ── getUserGames ───────────────────────────────────────────────────────────
+
+  describe('getUserGames', () => {
+    function makeQbChain(rawRows: { gameId: string; cnt: string }[] = []) {
+      const qb: any = {}
+      qb.innerJoin = vi.fn(() => qb)
+      qb.select = vi.fn(() => qb)
+      qb.addSelect = vi.fn(() => qb)
+      qb.where = vi.fn(() => qb)
+      qb.groupBy = vi.fn(() => qb)
+      qb.getRawMany = vi.fn().mockResolvedValue(rawRows)
+      return qb
+    }
+
+    it('queries both player1Id and player2Id (OR condition)', async () => {
+      const { service, gameRepo, moveRepo } = getService()
+      gameRepo.findAndCount = vi.fn().mockResolvedValue([[], 0])
+      gameRepo.count = vi.fn().mockResolvedValue(0)
+      moveRepo.createQueryBuilder = vi.fn().mockReturnValue(makeQbChain())
+
+      await service.getUserGames(7, 1)
+
+      const opts = (gameRepo.findAndCount as any).mock.calls[0][0]
+      expect(opts.where).toEqual([{ player1Id: 7 }, { player2Id: 7 }])
+    })
+
+    it('includes a game where the user is player2', async () => {
+      const { service, gameRepo, moveRepo } = getService()
+      const game = makeGame({ player2Id: 42 })
+      gameRepo.findAndCount = vi.fn().mockResolvedValue([[game], 1])
+      gameRepo.count = vi.fn().mockResolvedValue(0)
+      moveRepo.createQueryBuilder = vi.fn().mockReturnValue(makeQbChain([{ gameId: 'game-1', cnt: '3' }]))
+
+      const result = await service.getUserGames(42, 1)
+
+      expect(result.games).toHaveLength(1)
+      expect(result.games[0].moveCount).toBe(3)
+    })
+
+    it('returns empty paginated result when no games', async () => {
+      const { service, gameRepo } = getService()
+      gameRepo.findAndCount = vi.fn().mockResolvedValue([[], 0])
+      gameRepo.count = vi.fn().mockResolvedValue(0)
+
+      const result = await service.getUserGames(1, 1)
+
+      expect(result.games).toHaveLength(0)
+      expect(result.total).toBe(0)
+      expect(result.totalFinished).toBe(0)
+      expect(result.totalPages).toBe(1)
+    })
+
+    it('totalFinished counts finished games for both player roles', async () => {
+      const { service, gameRepo } = getService()
+      gameRepo.findAndCount = vi.fn().mockResolvedValue([[], 0])
+      gameRepo.count = vi.fn().mockResolvedValue(5)
+
+      await service.getUserGames(9, 1)
+
+      const countOpts = (gameRepo.count as any).mock.calls[0][0]
+      expect(countOpts.where).toEqual([
+        { player1Id: 9, status: 'finished' },
+        { player2Id: 9, status: 'finished' },
+      ])
+    })
+
+    it('calculates pagination metadata correctly', async () => {
+      const { service, gameRepo, moveRepo } = getService()
+      const games = Array.from({ length: 5 }, (_, i) => makeGame({ id: `g${i}` }))
+      gameRepo.findAndCount = vi.fn().mockResolvedValue([games, 12])
+      gameRepo.count = vi.fn().mockResolvedValue(8)
+      moveRepo.createQueryBuilder = vi.fn().mockReturnValue(makeQbChain([]))
+
+      const result = await service.getUserGames(1, 1)
+
+      expect(result.total).toBe(12)
+      expect(result.totalFinished).toBe(8)
+      expect(result.totalPages).toBe(3)
+      expect(result.page).toBe(1)
     })
   })
 })
