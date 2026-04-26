@@ -21,12 +21,12 @@ export function useGameHistoryController() {
     const load = async () => {
       try {
         setIsLoading(true)
-         const response = await gameService.getUserGames(token, page) 
+        const response = await gameService.getUserGames(token, page) 
         
         setGames(response.games)
         setTotalFinished(response.totalFinished)
         setTotalPages(response.totalPages)
-       } catch (err) {
+      } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load game history')
       } finally {
         setIsLoading(false)
@@ -37,7 +37,7 @@ export function useGameHistoryController() {
   }, [token, isGuest, page]) 
 
   const goToPage = (newPage: number) => {
-     setPage(newPage)
+    setPage(newPage)
   }
 
   return { games, isLoading, error, isGuest, totalFinished, page, totalPages, goToPage }
