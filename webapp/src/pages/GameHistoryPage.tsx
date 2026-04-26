@@ -19,7 +19,7 @@ type SortDirection = 'asc' | 'desc'
 
 interface HistoryFilter {
   result: 'all' | 'win' | 'loss'
-  mode: 'all' | string
+  mode: string
   sortField: GameSortField
   sortDirection: SortDirection
 }
@@ -105,7 +105,10 @@ function applySort(
       case 'duration': return (gameDurationMs(a) - gameDurationMs(b)) * d
       case 'moves':    return (a.moveCount - b.moveCount) * d
       case 'result': {
-        const rank = (g: GameSummary) => !g.winner ? 2 : g.winner === humanColor(g, currentUserId) ? 0 : 1
+        const rank = (g: GameSummary) => {
+          if (g.winner) return g.winner === humanColor(g, currentUserId) ? 0 : 1
+          return 2
+        }
         return (rank(a) - rank(b)) * d
       }
       default: return 0
@@ -123,9 +126,8 @@ function SortButton({ field, label, current, direction, onSort }: Readonly<{
   onSort: (f: GameSortField) => void
 }>) {
   const isActive = current === field
-  const icon = isActive
-    ? (direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)
-    : <ArrowUpDown className="w-3 h-3 opacity-40" />
+  const dirIcon = direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+  const icon = isActive ? dirIcon : <ArrowUpDown className="w-3 h-3 opacity-40" />
 
   return (
     <button

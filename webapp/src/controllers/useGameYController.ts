@@ -188,7 +188,7 @@ export function useGameYController() {
   }, [game?.id])
 
   useEffect(() => {
-    if (!game || game.status !== 'playing' || !liveTimer?.activePlayer) return
+    if (game?.status !== 'playing' || !liveTimer?.activePlayer) return
     if (timedOutRef.current) return
 
     const activePlayer = liveTimer.activePlayer
