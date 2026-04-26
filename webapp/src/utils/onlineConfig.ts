@@ -17,8 +17,8 @@ export function loadOnlineConfig(): OnlineGameConfig {
       pieRule?: boolean
       playerColor?: 'player1' | 'player2'
     }
-    const boardSize = parseInt(saved.boardSizeInput ?? '', 10)
-    const timerMinutes = parseInt(saved.timerInput ?? '', 10)
+    const boardSize = Number.parseInt(saved.boardSizeInput ?? '', 10)
+    const timerMinutes = Number.parseInt(saved.timerInput ?? '', 10)
     const validBoardSize = boardSize >= 4 && boardSize <= 16 ? boardSize : 11
     const validTimerMs = timerMinutes >= 1 && timerMinutes <= 20 ? timerMinutes * 60 : 600
     const timerEnabled = saved.timerEnabled ?? true

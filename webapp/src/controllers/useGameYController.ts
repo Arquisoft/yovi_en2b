@@ -88,7 +88,7 @@ export function useGameYController() {
 
   // ── Listeners de WebSocket (pvp-online) ──────────────────────────────────
   useEffect(() => {
-    if (!game || game.config.mode !== 'pvp-online') return
+    if (game?.config.mode !== 'pvp-online') return
 
     const unsubUpdate = wsService.on('game_update', (data: any) => {
       setGame(data.game as GameState)
@@ -207,7 +207,7 @@ export function useGameYController() {
     if (game.config.mode === 'pvp-online') {
       const optimisticBoard = game.board.map((boardRow, r) =>
         boardRow.map((cell, c) =>
-          r === row && c === col ? { ...cell, owner: game.currentTurn as PlayerColor } : cell
+          r === row && c === col ? { ...cell, owner: game.currentTurn } : cell
         )
       )
       setGame({ ...game, board: optimisticBoard })
@@ -219,7 +219,7 @@ export function useGameYController() {
     const snapshot = game
     const optimisticBoard = game.board.map((boardRow, r) =>
       boardRow.map((cell, c) =>
-        r === row && c === col ? { ...cell, owner: game.currentTurn as PlayerColor } : cell
+        r === row && c === col ? { ...cell, owner: game.currentTurn } : cell
       )
     )
 
@@ -275,10 +275,9 @@ export function useGameYController() {
       return
     }
 
+    const isPlayer1 = String(game.players.player1.id) === String(user?.id)
     const surrenderingPlayer: PlayerColor =
-      game.config.mode === 'pvp-local'
-        ? game.currentTurn
-        : (String(game.players.player1.id) === String(user?.id) ? 'player1' : 'player2')
+      game.config.mode === 'pvp-local' ? game.currentTurn : (isPlayer1 ? 'player1' : 'player2')
 
     try {
       const updated = await gameService.surrender(gameId, surrenderingPlayer, effectiveToken)

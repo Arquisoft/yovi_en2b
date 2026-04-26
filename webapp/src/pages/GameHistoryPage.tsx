@@ -24,7 +24,7 @@ function humanColor(game: GameSummary, currentUserId: string): PlayerColor {
     return String(game.players.player1.id) === String(currentUserId) ? 'player1' : 'player2'
   }
   // pve / pvp-local: the human is whoever isn't the bot (or player1 for local)
-  return !game.players.player1.isBot ? 'player1' : 'player2'
+  return game.players.player1.isBot ? 'player2' : 'player1'
 }
 
 function resultForGame(game: GameSummary, currentUserId: string, t: (k: string) => string): {

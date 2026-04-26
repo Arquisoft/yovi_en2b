@@ -1,7 +1,6 @@
 import { randomInt } from 'node:crypto'
 import { WebSocketServer, WebSocket } from 'ws'
-import type { IncomingMessage } from 'http'
-import type { Server } from 'http'
+import type { IncomingMessage, Server } from 'node:http'
 import jwt from 'jsonwebtoken'
 import { MatchmakingService } from './MatchmakingService'
 import type { ClientMessage, ConnectedClient, OnlineGameConfig, ServerMessage } from './types'
@@ -231,7 +230,7 @@ export class WebSocketManager {
       const cfg = entry1.config
       const config = {
         mode: 'pvp-online' as const,
-        boardSize: (cfg?.boardSize ?? 11) as BoardSize,
+        boardSize: cfg?.boardSize ?? 11,
         timerEnabled: cfg?.timerEnabled ?? true,
         timerSeconds: (cfg?.timerEnabled ?? true) ? (cfg?.timerSeconds ?? 600) : undefined,
         pieRule: cfg?.pieRule ?? undefined,
@@ -408,7 +407,7 @@ export class WebSocketManager {
       const cfg = room.config
       const gameConfig = {
         mode: 'pvp-online' as const,
-        boardSize: (cfg?.boardSize ?? 11) as BoardSize,
+        boardSize: cfg?.boardSize ?? 11,
         timerEnabled: cfg?.timerEnabled ?? true,
         timerSeconds: (cfg?.timerEnabled ?? true) ? (cfg?.timerSeconds ?? 600) : undefined,
         pieRule: cfg?.pieRule ?? undefined,
@@ -485,7 +484,7 @@ export class WebSocketManager {
         if (c.currentGameId) {
           try {
             const playerColor = await this.getPlayerColor(userId, c.currentGameId)
-            const game = await this.gameService.surrender(c.currentGameId, playerColor, undefined)
+            const game = await this.gameService.surrender(c.currentGameId, playerColor)
             this.broadcastToOpponent(userId, { type: 'game_update', game })
           } catch { /* ignore */ }
         }
