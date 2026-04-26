@@ -199,12 +199,12 @@ describe('GameHistoryPage — table', () => {
 
   it('shows "Win" badge when the authenticated user won', () => {
     renderPage()
-    expect(screen.getByText('Win')).toBeDefined()
+    expect(screen.getByText('Win', { selector: 'span' })).toBeDefined()
   })
 
   it('shows "Loss" badge when the authenticated user lost', () => {
     renderPage({ games: [makeSummary({ winner: 'player2' })] })
-    expect(screen.getByText('Loss')).toBeDefined()
+    expect(screen.getByText('Loss', { selector: 'span' })).toBeDefined()
   })
 
   it('shows "Draw" badge when there is no winner', () => {
@@ -219,9 +219,9 @@ describe('GameHistoryPage — table', () => {
 
   it('shows mode chip for pve', () => {
     renderPage({
-      games: [makeSummary({ config: { mode: 'pve', boardSize: 9, timerEnabled: false } })],
+      games: [makeSummary({ config: { mode: 'pve', boardSize: 9, timerEnabled: false, botLevel: 'medium' } })],
     })
-    expect(screen.getByText('vs Bot')).toBeDefined()
+    expect(screen.getByText('Medium Bot')).toBeDefined()
   })
 
   it('shows mode chip for pvp-online', () => {
@@ -272,8 +272,8 @@ describe('GameHistoryPage — active game', () => {
   it('shows "In progress" badge instead of a result badge for an active game', () => {
     renderPage({ games: [makeSummary({ status: 'playing', winner: null })] })
     expect(screen.getByText('In progress')).toBeDefined()
-    expect(screen.queryByText('Win')).toBeNull()
-    expect(screen.queryByText('Loss')).toBeNull()
+    expect(screen.queryByText('Win', { selector: 'span' })).toBeNull()
+    expect(screen.queryByText('Loss', { selector: 'span' })).toBeNull()
     expect(screen.queryByText('Draw')).toBeNull()
   })
 

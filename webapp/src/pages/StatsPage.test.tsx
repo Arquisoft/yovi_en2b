@@ -80,7 +80,7 @@ describe('StatsPage — authenticated user view', () => {
 
   it('renders match history section', () => {
     renderWithRouter(<StatsPage />)
-    expect(screen.getByText('Match History')).toBeDefined()
+    expect(screen.getByText('Match Summary')).toBeDefined()
   })
 
   it('renders opponent names from history', () => {
@@ -155,7 +155,7 @@ describe('StatsPage — guest user view', () => {
       makeControllerMock({ history: [], stats: null, isGuest: true }) as any,
     )
     renderWithRouter(<StatsPage />)
-    expect(screen.queryByText('Match History')).toBeNull()
+    expect(screen.queryByText('Match Summary')).toBeNull()
   })
 
   /**
