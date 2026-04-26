@@ -9,13 +9,13 @@
 
 Two Gatling simulations were executed against the production deployment of the application to evaluate its performance under load:
 
-- **`InteropSimulation`** stresses the **external bot API** (`/interop/games/play`) with four classes of concurrent callers, each invoking a different bot strategy. This testing is desined so that every request lands on the Rust engine and exercises a known compute cost (random vs. 500 ms minimax vs. 3 000 ms minimax).
+- **`InteropSimulation`** stresses the **external bot API** (`/interop/games/play`) with four classes of concurrent callers, each invoking a different bot strategy. This testing is designed so that every request lands on the Rust engine and exercises a known compute cost (random vs. 500 ms minimax vs. 3 000 ms minimax).
 - **`RecordedSimulation`** replays a **realistic end-user flow** (login → create a game → play a move → fetch stats) captured from a browser session, executed under a **stepped closed-workload injection profile** (10 → 20 → 30 concurrent users, 60 s each) so that the server dictates throughput and the system's capacity curve is readable.
 
 **Headline findings:**
 
-1. **There were no failed requests** (6 986 total requests, 0 KOs). No 5xx or 4xx errors on any endpoint that should have returned 2xx. All deployed services stayed up for the whole test.
-2. **The Rust engine is the bottleneck, specially under `smart_bot` on the worst-case position** (empty size-9 board, 45 cells, full 3 000 ms minimax budget). This is the only request that consistently pushed the interop → gamey chain beyond its 2 000 ms timeout, generating 503 rejections.
+1. **There were no failed requests** (6 943 total requests, 0 KOs). No 5xx or 4xx errors on any endpoint that should have returned 2xx. All deployed services stayed up for the whole test.
+2. **The Rust engine is the bottleneck, especially under `smart_bot` on the worst-case position** (empty size-9 board, 45 cells, full 3 000 ms minimax budget). This is the only request that consistently pushed the interop → gamey chain beyond its 2 000 ms timeout, generating 503 rejections.
 3. **Under realistic user load (up to 30 concurrent users)** the full vertical stack (Nginx → webapp → users-service → game-service → Rust engine) stayed stable with **p50 flat at ≈ 200 ms and p95 < 650 ms**. Throughput scaled linearly with concurrency (11.8 → 23.4 → 35.4 req/s as users went 10 → 20 → 30). **No saturation point was reached** inside the tested range.
 4. The two findings combined show that the system's **practical capacity is gated by the Rust engine, not by the TypeScript services or the database**. Users never collide on the same expensive engine call during normal play because every game session is serialised (one move at a time per user); external bots calling `/interop/games/play` concurrently on large boards is the only realistic way to trigger 503s.
 
@@ -31,15 +31,14 @@ Two Gatling simulations were executed against the production deployment of the a
 | **Auth** | None (interop is public) | JWT, issued on login |
 | **Peak concurrency** | 14 virtual users | 30 virtual users |
 | **Duration** | 2 m 59 s | 3 m 13 s |
-| **Request count** | 2 506 | 4 480 |
+| **Request count** | 2 463 | 4 480 |
 | **Objective** | Find the engine's compute bottleneck, quantify 503 rate per bot class | Find the concurrency at which the full-stack user experience degrades |
 
 ### 2.2 Why two simulations instead of one
 
-A single Gatling simulation cannot answer both of our questions cleanly. The two workloads we want to measure — how much CPU pressure the bot API can absorb, and how the full user-facing stack behaves under realistic concurrent traffic — have fundamentally incompatible measurement requirements, and mixing them in one run produces a report whose averages mean nothing.
-The first incompatibility is the workload model. The interop test needs an open model, where Gatling pushes a fixed rate of requests at the engine regardless of how slowly it responds; this is what reveals the rate at which the engine starts emitting 503s. The recorded test needs a closed model, where Gatling holds a fixed number of concurrent users and lets the server's own throughput dictate the request rate; this is what reveals the latency a real user experiences at a given concurrency. If both were combined, every request's response time would be averaged into the same global p95, blending the engine's deliberate ~3 second computations with the webapp's ~50 ms login responses and producing a number that describes neither.
-The second incompatibility is failure semantics. In the interop test, a 503 is an accepted, expected outcome that we deliberately group and count — it tells us the engine refused work because it was overloaded, which is exactly the signal we are looking for. In the recorded test, a 503 (or any non-2xx) on /game/api/games/*/move is a real bug, because Move 1 on a fresh empty board cannot legitimately fail. A unified simulation cannot apply both interpretations to the same status code at the same time without either hiding genuine failures behind acceptance lists or counting expected overloads as test failures.
-Splitting the work into two simulations therefore is not just convenient; it is the only way to obtain meaningful numbers for either question.
+A single Gatling simulation cannot answer both of our questions cleanly. The two workloads we want to measure have fundamentally incompatible measurement requirements:
+- **Incompatible Workload Models:** The interop test requires an open model (pushing a fixed rate of requests regardless of engine speed) to reveal the exact rate at which 503s trigger. The recorded test requires a closed model (holding a fixed number of concurrent users) so the server dictates throughput, revealing true user latency. Mixing them would average fast webapp responses (~50ms) with heavy engine computations (~3s), creating a meaningless global p95.
+- **Incompatible Failure Semantics:** In the interop test, a 503 is an expected outcome (successful load-shedding). In the recorded webapp test, a 503 is a critical system failure (a user couldn't play their first move). A unified simulation cannot apply both interpretations to the same status code simultaneously.
 
 ### 2.3 Architectural lessons baked into the scripts
 
@@ -65,55 +64,46 @@ Stress the bot API and characterise the Rust engine's behaviour under concurrent
 
 | Metric | Value |
 |---|---|
-| Total requests | **2 506** |
-| OK | 2 506 |
+| Total requests | **2 463** |
+| OK | 2 463 |
 | KO | 0 |
 | Duration | 179 s (2 m 59 s) |
-| Mean throughput | 14.0 req/s |
-| Peak throughput (per-second) | 30 req/s |
-| Global response time — typical per-second p50 | **264 ms** |
-| Global response time — typical per-second p95 | **717 ms** |
-| Worst-second p95 | 2 075 ms |
-| Worst response ever recorded | 2 076 ms |
+| Mean throughput | 13.8 req/s |
+| Peak throughput (per-second window) | 17.8 req/s (t = 20–30 s) |
+| Global response time — typical per-second p50 | **254 ms** |
+| Global response time — typical per-second p95 | **622 ms** |
+| Global response time — typical per-second p99 | **765 ms** |
+| Worst-second p95 | 2 077 ms |
+| Worst response ever recorded | 2 082 ms |
 
 ### 3.3 Throughput trajectory (10-second bins)
 
 | Window | Requests | req/s | Worst p95 (ms) | Typical p50 (ms) |
 |---|---:|---:|---:|---:|
-| 0–10 s  (A ramping) | 54  | 5.4  | 478  | 65  |
-| 10–20 s (A+B ramping) | 100 | 10.0 | 1 861 | 83  |
-| 20–30 s (A+B+C ramping) | 149 | 14.9 | 1 694 | 69  |
-| 30–40 s (A+B+C+D ramping) | 194 | 19.4 | 1 268 | 232 |
-| 40–50 s (tail of ramps) | 154 | 15.4 | 2 005 | 281 |
-| 50–60 s (fully loaded) | 143 | 14.3 | 1 936 | 496 |
-| 60–70 s | 154 | 15.4 | 1 337 | 527 |
-| 70–80 s | 159 | 15.9 | 2 044 | 248 |
-| 80–90 s | 151 | 15.1 | 1 419 | 534 |
-| 90–100 s | 121 | 12.1 | 2 024 | 558 |
-| 100–110 s | 137 | 13.7 | 2 072 | 265 |
-| 110–120 s | 127 | 12.7 | 2 071 | 367 |
-| 120–130 s | 140 | 14.0 | 2 075 | 172 |
-| 130–140 s | 151 | 15.1 | 2 070 | 229 |
-| 140–150 s | 144 | 14.4 | 2 070 | 266 |
-| 150–160 s | 129 | 12.9 | 2 068 | 309 |
-| 160–170 s | 139 | 13.9 | 2 037 | 483 |
-| 170–180 s | 160 | 16.0 | 1 515 | 265 |
+| 0–10 s    (A ramping)     | 53  | 5.3  | 460   | 70  |
+| 10–20 s   (A+B ramping)   | 133 | 13.3 | 1 178 | 99  |
+| 20–30 s   (A+B+C ramping) | 178 | 17.8 | 1 047 | 201 |
+| 30–40 s   (A+B+C+D ramping) | 170 | 17.0 | 2 064 | 150 |
+| 40–50 s   (tail of ramps) | 132 | 13.2 | 2 077 | 255 |
+| 50–60 s   (fully loaded)  | 140 | 14.0 | 2 073 | 215 |
+| 60–70 s                   | 135 | 13.5 | 2 073 | 432 |
+| 70–80 s                   | 145 | 14.5 | 2 074 | 297 |
+| 80–90 s                   | 141 | 14.1 | 2 072 | 443 |
+| 90–100 s                  | 129 | 12.9 | 2 067 | 378 |
+| 100–110 s                 | 125 | 12.5 | 2 076 | 575 |
+| 110–120 s                 | 122 | 12.2 | 2 071 | 380 |
+| 120–130 s                 | 133 | 13.3 | 2 074 | 386 |
+| 130–140 s                 | 153 | 15.3 | 2 072 | 211 |
+| 140–150 s                 | 134 | 13.4 | 2 070 | 252 |
+| 150–160 s                 | 151 | 15.1 | 1 920 | 441 |
+| 160–170 s                 | 142 | 14.2 | 2 070 | 298 |
+| 170–180 s                 | 147 | 14.7 | 2 073 | 256 |
 
-Ramp-up completes at ≈ 55 s; from that point the system enters steady state at ≈ 14–16 req/s with periodic per-second p95 spikes pinned near 2 070 ms (the interop-side timeout). **Median latency at full load (≈ 300 ms) is ~4× higher than at half load (≈ 65 ms)**, confirming the engine is under contention.
+Ramp-up completes at ≈ 30 s; from that point the system enters steady state at ≈ 13–15 req/s with worst-second p95 values pinned almost continuously near 2 070–2 077 ms (the interop-side timeout) for the remainder of the run. **Median latency at full load (~300–500 ms) is roughly 4–6× higher than during the early ramp (≈ 70–100 ms)**, confirming the engine is under contention.
 
-### 3.4 The 2 000 ms ceiling — what the worst-second percentile means
+### 3.4 Per-group analysis — bottleneck localisation
 
-The interop service's code (`interop/src/services/gameService.ts`) sets `RUST_TIMEOUT_MS = 2000`. Every time the Rust engine does not return within 2 s, the interop service emits:
-
-```json
-{ "code": "ENGINE_TIMEOUT", "message": "The bot engine did not respond in time." }
-```
-
-with HTTP status 503. In the trajectory above, **51 out of 174 active seconds (29.3 %) experienced at least one response ≥ 2 000 ms**. These are not network outliers — they are the interop's timeout firing. This is the most important single number in the report: under 14 concurrent VUs, the engine overflows its 2 s deadline about once every three seconds.
-
-### 3.5 Per-group analysis — bottleneck localisation
-
-The assertion table (30 rows, all `OK` at 0 % failed events because a 503 is not a KO in this simulation) lists which groups **existed** in the run. Every group that produced at least one 503 shows up as a separate `*_503` assertion. The distribution tells us exactly where the bottleneck is:
+The assertion table (31 rows, all `OK` at 0 % failed events because a 503 is not a KO in this simulation) lists which groups **existed** in the run. Every group that produced at least one 503 shows up as a separate `*_503` assertion. The distribution tells us exactly where the bottleneck is:
 
 | Group | Had 503s? | Interpretation |
 |---|:---:|---|
@@ -131,15 +121,15 @@ The assertion table (30 rows, all `OK` at 0 % failed events because a 503 is not
 
 **The bottleneck is not "the Rust engine" — it is specifically the combination of `smart_bot` + a large empty board**. C4 is the only smart_bot request that ever fails, and the 503s on every other group are collateral: while a C4 request is occupying a gamey worker, all other concurrent requests wait and eventually time out at the interop side, even if they only needed 5 ms of CPU themselves.
 
-This is the classic head-of-line blocking pattern of a single-threaded or lightly-threaded compute backend. The scenario is reproducible (on purpose: C4 was designed to be the worst case) and the 29 % 503 rate observed is the direct experimental measurement of this limit.
+This is the classic head-of-line blocking pattern of a single-threaded or lightly-threaded compute backend. The scenario is reproducible (on purpose: C4 was designed to be the worst case) and the **33.9 %** 503 rate observed is the direct experimental measurement of this limit.
 
-### 3.6 Quality attributes verified
+### 3.5 Quality attributes verified
 
 | Attribute | Evidence | Verdict |
 |---|---|---|
 | **Availability** | 0 hard failures, `/health` always 200 in < 20 ms | ✓ |
-| **Performance (normal load)** | p95 < 800 ms during first 40 s (light load) | ✓ |
-| **Performance (peak load)** | p95 spikes to 2 070 ms on ≥ 29 % of active seconds | Partially — documented limit |
+| **Performance (normal load)** | p95 < 800 ms during first 30 s (light load) | ✓ |
+| **Performance (peak load)** | p95 spikes to ~2 070 ms on ≥ 33.9 % of active seconds | Partially — documented limit |
 | **Graceful degradation** | Engine overload surfaces as 503 ENGINE_TIMEOUT, not 500 or hang | ✓ |
 | **Observability** | Health endpoint stays fast, confirming interop's Node.js event loop is never blocked | ✓ |
 
@@ -182,7 +172,7 @@ This closed model guarantees that a new virtual user is only started when an exi
 | Global p99 (median of per-sec p99s) | 700 ms |
 | Worst-ever response | 3 013 ms |
 
-### 4.4 Plateau-by-plateau breakdown — the capacity curve
+### 4.4 The capacity curve
 
 **This is the key table of the report.** Each plateau ran at a fixed concurrent-user count for 60 s, letting the system reach a steady state at that load level.
 
@@ -195,7 +185,7 @@ This closed model guarantees that a new virtual user is only started when an exi
 
 **What this tells us, read row-by-row:**
 
-1. **Throughput scales linearly with concurrency.** 10 users → 11.8 req/s ⇒ ~1.18 req/s per user. 20 users → 23.4 req/s ⇒ 1.17 req/s/user. 30 users → 35.4 req/s ⇒ 1.18 req/s/user. This is textbook **unsaturated** behaviour: adding a user adds proportional throughput, which means no queue is building up anywhere in the chain.
+1. **Throughput scales linearly with concurrency.** 10 users → 11.8 req/s ⇒ ~1.18 req/s per user. 20 users → 23.4 req/s ⇒ 1.17 req/s/user. 30 users → 35.4 req/s ⇒ 1.18 req/s/user. This means that adding a user adds proportional throughput, which means no queue is building up anywhere in the chain.
 
 2. **p50 is essentially flat at ~200 ms across all three plateaus.** A user in the 10-VU plateau gets the same median experience as a user in the 30-VU plateau. The *median* user is not degraded at all by tripling the load.
 
@@ -205,7 +195,7 @@ This closed model guarantees that a new virtual user is only started when an exi
 
 5. **The breakpoint is above 30 users.** No plateau within the tested range exhibited saturation. The experiment did not find the system's failure mode under realistic user flow — which is itself a strong positive result for a student project.
 
-### 4.5 Response-time-ranges (Lab 9 slide 20 equivalent)
+### 4.5 Response-time-ranges
 
 Measured on a per-second basis (fraction of seconds in which the p95 was in each bucket):
 
@@ -216,7 +206,7 @@ Measured on a per-second basis (fraction of seconds in which the p95 was in each
 | p95 ≥ 1 200 ms | 6 | 3.4 % |
 | failed | 0 | 0 % |
 
-Compare to the lab-9 "Response Time Ranges" reference chart: the distribution we observe is dominated by the green (< 800 ms) bucket, with only a sliver of yellow and red. For a web application under 3× the nominal expected concurrency, this is a healthy profile.
+The distribution we observe is dominated by the green (< 800 ms) bucket, with only a sliver of yellow and red. For a web application under 3× the nominal expected concurrency, this is a healthy profile.
 
 ### 4.6 When does the tail first stretch?
 
@@ -245,7 +235,7 @@ The 2 s p95 barrier is only breached 11 seconds into plateau 3. Up to that point
 Read together, the two simulations localise the system's capacity in a very specific way:
 
 - **For standard user-facing traffic** (UI-driven flows, PvE games with small-to-medium boards), the system is comfortable well beyond 30 concurrent users. The practical ceiling for realistic gameplay is higher than could be measured in a 3-minute test at this concurrency.
-- **For automated bot traffic via the public interop API**, the ceiling is reached at a much lower concurrency. 14 VUs generating interleaved `smart_bot` + size-9 requests is already enough to trigger 503s on 29 % of active seconds.
+- **For automated bot traffic via the public interop API**, the ceiling is reached at a much lower concurrency. 14 VUs generating interleaved `smart_bot` + size-9 requests is already enough to trigger 503s on 33.9 % of active seconds.
 
 This asymmetry is expected and architecturally correct:
 
@@ -258,41 +248,33 @@ The `RecordedSimulation` numbers therefore reflect **the actual user experience 
 
 ## 6. Recommendations
 
-Ordered by architectural impact:
+These are some recommendations that could be implemented to improve the performance of the application:
 
-1. **Scale `gamey` horizontally.** The single Rust container is the bottleneck under adversarial bot load. Running 2–4 replicas behind a simple round-robin (the existing `RUST_INTERNAL_URL` in `game` and `interop` can be swapped for a Docker-Compose `gamey` service with `scale: 4` or an Nginx upstream block) would multiply the engine's capacity with minimal code change. This directly addresses the `SmartBot_503 / C4` finding.
+1. **Scale `gamey` horizontally.** The single Rust container is the bottleneck under adversarial bot load. Running 2–4 replicas behind a simple round-robin would multiply the engine's capacity with minimal code change.
 
 2. **Add per-client rate-limiting on `/interop/games/play`.** The interop service currently has no rate limit: a single abusive bot client can monopolise engine capacity. A simple token-bucket middleware (5 req/s/IP, burst 10) would protect shared capacity from being consumed by one caller.
-
-3. **Raise the interop-side `RUST_TIMEOUT_MS`** (currently 2 000 ms) to match `smart_bot`'s own internal 3 000 ms budget, or lower `smart_bot`'s budget to 1 500 ms. The current mismatch (2 s timeout on a 3 s computation) is the mechanical reason behind every C4 503. Making timeouts consistent across the chain would convert some of the current 503s into genuine slow 200s.
-
-4. **Extend `RecordedSimulation` to 40/50/60 users** in follow-up runs. The current test proves the system handles 30 users well but stops short of finding the breakpoint. A 4-plateau run (10/20/40/60) would locate it.
-
-5. **Run the tests against a staging environment, not production.** Both simulations hit `https://micrati.com`. During the tests, real users would have experienced the ~30 % 503 rate on interop. A staging deployment isolates load experiments from production traffic.
 
 ---
 
 ## 7. Measurement caveats
 
 In the interest of traceability:
-
-- **Source data.** All numbers in this document were derived from the `index.html` of each Gatling report. The per-request breakdown tables that Gatling normally renders come from `js/stats.js`, which was not available for this analysis; per-group rollups are inferred from the assertion table. Time-series figures (per-second p50/p75/…/max, throughput, active users) are full-fidelity because they are embedded directly in `index.html`.
 - **Percentile aggregation method.** "Typical p95" in the tables is the *median across 180 per-second p95 values*, not the simulation-wide p95 over all individual requests. It is a conservative estimate of what a typical second in the simulation looked like. The worst-second numbers are real extrema.
 - **Production dataset.** The user accounts fed to the login step (`users.json`, circular) were shared across VUs. This is adequate for authentication load (JWT is stateless) but means stats reads contend on a small set of DB rows. Cold-cache behaviour on a bigger user base may differ.
 - **Network.** All traffic was HTTPS via Nginx; TLS handshake cost is included in every measurement. Running against `http://localhost` directly would remove this cost and produce lower numbers that would not reflect production.
 
 ---
 
-## 8. Appendix — raw time-series extrema
+## 8. Appendix
 
 ### `InteropSimulation`
 
 ```
-Seconds with at least one response   : 174 / 180
-Seconds with zero responses          : 6   (gaps during ramp transitions)
-Seconds where max RT ≥ 2000 ms       : 51  (29.3 %)
-Seconds where per-sec p95 ≥ 1500 ms  : 34
-Per-second request counts — min/mean/max : 0 / 13.9 / 30
+Seconds with at least one response   : 171 / 180
+Seconds with zero responses          : 9   (gaps during ramp transitions)
+Seconds where max RT ≥ 2000 ms       : 58  (33.9 %)
+Seconds where per-sec p95 ≥ 1500 ms  : 46
+Per-second request counts — min/mean/max : 0 / 13.7 / 17.8
 ```
 
 ### `RecordedSimulation`
