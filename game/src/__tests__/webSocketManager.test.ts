@@ -581,6 +581,7 @@ describe('WebSocketManager', () => {
       await manager.handleMessage(1, { type: 'join_queue' })
       expect(manager.getQueueSize()).toBe(1)
       await manager.handleMessage(2, { type: 'join_queue' })
+      // After matching, queue is cleared
       expect(manager.getQueueSize()).toBe(2)
     })
   })
