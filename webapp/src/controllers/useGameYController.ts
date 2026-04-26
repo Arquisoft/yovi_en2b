@@ -31,6 +31,7 @@ export function useGameYController() {
 
   // --- Estado de Conexión ---
   const [opponentDisconnected, setOpponentDisconnected] = useState(false)
+  const [wsConnectionFailed, setWsConnectionFailed] = useState(false)
 
   // --- Gestión de Tiempo (Timer) ---
   const [liveTimer, setLiveTimer] = useState<TimerState | null>(null)
@@ -57,7 +58,15 @@ export function useGameYController() {
 
         if (state.config.mode === 'pvp-online') {
           isOnlineRef.current = true
-          // Tell the server we're viewing this game so it can relay moves to us
+          // Ensure WS is connected (may not be if the user navigated directly
+          // to the game URL, e.g. after a page refresh, bypassing the lobby)
+          if (effectiveToken && !wsService.isConnected()) {
+            try {
+              await wsService.connect(effectiveToken)
+            } catch {
+              setWsConnectionFailed(true)
+            }
+          }
           wsService.send({ type: 'join_game', gameId })
         }
       } catch (err) {
@@ -172,10 +181,15 @@ export function useGameYController() {
   // ── Estado derivado ───────────────────────────────────────────────────────
   const lastMove: Move | null = game?.moves.length ? game.moves[game.moves.length - 1] : null
   const isPieDecisionPending = game?.phase === 'pie-decision'
+  // True when the current user should see a spinner instead of the Keep/Swap buttons:
+  // – PvE: bot is the one deciding
+  // – pvp-online: current user is player1 (placed the first stone); player2 decides
   const isBotDecidingPie =
     isPieDecisionPending === true &&
-    game?.config.mode === 'pve' &&
-    game?.players.player2.isBot === true
+    (
+      (game?.config.mode === 'pve' && game?.players.player2.isBot === true) ||
+      (game?.config.mode === 'pvp-online' && String(game?.players.player1.id) === String(user?.id))
+    )
 
   const canPlay = useCallback((): boolean => {
     if (!game || game.status !== 'playing' || isBotThinking) return false
@@ -286,6 +300,17 @@ export function useGameYController() {
 
   const handlePieDecision = useCallback(async (decision: PieDecision) => {
     if (!game || !gameId) return
+
+    if (game.config.mode === 'pvp-online') {
+      // Route through WebSocket so the server broadcasts game_update to both players
+      if (decision === 'swap') {
+        setIsSwapAnimating(true)
+        setTimeout(() => setIsSwapAnimating(false), SWAP_ANIM_MS)
+      }
+      wsService.send({ type: 'pie_decision', gameId, decision })
+      return
+    }
+
     setIsPieDecisionLoading(true)
 
     if (decision === 'swap') {
@@ -347,6 +372,7 @@ export function useGameYController() {
     swapAnimationStone,
     swapCommitted,
     opponentDisconnected,
+    wsConnectionFailed,
     canPlay: canPlay(),
     handleCellClick,
     handlePieDecision,

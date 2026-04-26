@@ -88,7 +88,9 @@ describe('useOnlineLobbyController — connection', () => {
 
     await waitFor(() => {
       expect(wsService.connect).toHaveBeenCalledWith('jwt-token')
-      expect(wsService.send).toHaveBeenCalledWith({ type: 'join_queue' })
+      expect(wsService.send).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'join_queue' })
+      )
     })
   })
 
@@ -345,7 +347,9 @@ describe('useOnlineLobbyController — retry', () => {
     })
 
     await waitFor(() => {
-      expect(wsService.send).toHaveBeenCalledWith({ type: 'join_queue' })
+      expect(wsService.send).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'join_queue' })
+      )
     })
   })
 })

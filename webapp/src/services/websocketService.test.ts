@@ -407,7 +407,7 @@ describe('WebSocketService — disconnect', () => {
 
   it('clears reconnect timer on disconnect', async () => {
     vi.useFakeTimers()
-    const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout')
+    vi.spyOn(global, 'clearTimeout')
 
     const svc = new WebSocketService('ws://test')
     await connectService(svc)

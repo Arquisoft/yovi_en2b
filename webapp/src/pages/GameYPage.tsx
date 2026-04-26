@@ -13,7 +13,7 @@ export function GameYPage() {
   const {
     game, liveTimer, chatMessages, isLoading, error, moveError, lastMove,
     isBotThinking, isPieDecisionPending, isBotDecidingPie, isPieDecisionLoading, isSwapAnimating,
-    isBotResolvingPie, swapAnimationStone, swapCommitted, opponentDisconnected,
+    isBotResolvingPie, swapAnimationStone, swapCommitted, opponentDisconnected, wsConnectionFailed,
     canPlay, handleCellClick, handlePieDecision, handleSurrender,
     handleSendMessage, handlePlayAgain, handleGoHome, currentUserId,
   } = useGameYController()
@@ -82,9 +82,17 @@ export function GameYPage() {
     </div>
   ) : null
 
+  const ConnectionLostBanner = wsConnectionFailed ? (
+    <div className="flex items-center gap-2 px-3 py-2 bg-destructive/10 text-destructive text-sm border-b border-destructive/20">
+      <WifiOff className="w-4 h-4 shrink-0" />
+      <span>{t('game.connectionLost')}</span>
+    </div>
+  ) : null
+
   if (isMobile) {
     return (
       <div className="h-full min-h-0 flex flex-col relative">
+        {ConnectionLostBanner}
         {OpponentDisconnectedBanner}
         {moveError && (
           <div className="flex items-center gap-2 px-3 py-2 bg-destructive/10 text-destructive text-sm border-b border-destructive/20">
@@ -120,6 +128,7 @@ export function GameYPage() {
 
   return (
     <div className="h-full min-h-0 flex flex-col relative">
+      {ConnectionLostBanner}
       {OpponentDisconnectedBanner}
       {moveError && (
         <div className="flex items-center gap-2 px-3 py-2 bg-destructive/10 text-destructive text-sm border-b border-destructive/20">

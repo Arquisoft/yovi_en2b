@@ -19,25 +19,32 @@ function modeLabel(mode: GameMode, t: (k: string) => string): string {
   return t(`history.mode.${mode}`)
 }
 
-function resultForGame(game: GameSummary, t: (k: string) => string): {
+function humanColor(game: GameSummary, currentUserId: string): PlayerColor {
+  if (game.config.mode === 'pvp-online') {
+    return String(game.players.player1.id) === String(currentUserId) ? 'player1' : 'player2'
+  }
+  // pve / pvp-local: the human is whoever isn't the bot (or player1 for local)
+  return !game.players.player1.isBot ? 'player1' : 'player2'
+}
+
+function resultForGame(game: GameSummary, currentUserId: string, t: (k: string) => string): {
   label: string
   className: string
 } {
   if (!game.winner) return { label: t('history.result.draw'), className: 'text-muted-foreground bg-muted' }
-  // player1Id is always the authenticated user in this list
-  const humanIsPlayer1 = !game.players.player1.isBot
-  const humanColor: PlayerColor = humanIsPlayer1 ? 'player1' : 'player2'
-  const isWin = game.winner === humanColor
+  const isWin = game.winner === humanColor(game, currentUserId)
   return isWin
     ? { label: t('history.result.win'), className: 'text-player1 bg-player1/10' }
     : { label: t('history.result.loss'), className: 'text-player2 bg-player2/10' }
 }
 
-function opponentName(game: GameSummary): string {
-  // The opponent is whoever is not the human
-  return game.players.player1.isBot
-    ? game.players.player1.name
-    : game.players.player2.name
+function opponentName(game: GameSummary, currentUserId: string): string {
+  if (game.config.mode === 'pvp-online') {
+    return String(game.players.player1.id) === String(currentUserId)
+      ? game.players.player2.name
+      : game.players.player1.name
+  }
+  return game.players.player1.isBot ? game.players.player1.name : game.players.player2.name
 }
 
 function formatDate(iso: string): string {
@@ -50,14 +57,15 @@ function formatDate(iso: string): string {
 
 // ─── Row component ────────────────────────────────────────────────────────────
 
-function GameRow({ game, onReplay, onResume }: Readonly<{ 
+function GameRow({ game, currentUserId, onReplay, onResume }: Readonly<{
   game: GameSummary
+  currentUserId: string
   onReplay: () => void
-  onResume: () => void 
+  onResume: () => void
 }>) {
   const { t } = useTranslation()
-  const result = resultForGame(game, t)
-  const isActive = game.status === 'playing' 
+  const result = resultForGame(game, currentUserId, t)
+  const isActive = game.status === 'playing'
 
   return (
     <tr className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
@@ -76,7 +84,7 @@ function GameRow({ game, onReplay, onResume }: Readonly<{
 
       {/* Opponent */}
       <td className="py-3 pr-4 font-medium text-sm truncate max-w-[120px]">
-        {opponentName(game)}
+        {opponentName(game, currentUserId)}
       </td>
 
       {/* Board size */}
@@ -135,7 +143,7 @@ function GameRow({ game, onReplay, onResume }: Readonly<{
 export function GameHistoryPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { games, isLoading, error, isGuest } = useGameHistoryController()
+  const { games, isLoading, error, isGuest, currentUserId } = useGameHistoryController()
 
   let content
 
@@ -175,6 +183,7 @@ export function GameHistoryPage() {
               <GameRow
                 key={game.id}
                 game={game}
+                currentUserId={currentUserId}
                 onReplay={() => navigate(`/games/y/replay/${game.id}`)}
                 onResume={() => navigate(`/games/y/play/${game.id}`)}
               />

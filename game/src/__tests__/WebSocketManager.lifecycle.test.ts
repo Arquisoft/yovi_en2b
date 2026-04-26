@@ -63,7 +63,7 @@ function getManager() {
  */
 function getConnectionHandler(manager: WebSocketManager) {
   const wss = (manager as any).wss
-  const [, handler] = wss.on.mock.calls.find(([event]: [string]) => event === 'connection') ?? []
+  const [, handler] = wss.on.mock.calls.find(([event]: any[]) => event === 'connection') ?? []
   return handler as ((ws: any, req: any) => void) | undefined
 }
 
@@ -85,7 +85,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const ws = createMockWs()
       handler!(ws, {} as any)
 
-      const events = ws.on.mock.calls.map(([e]: [string]) => e)
+      const events = ws.on.mock.calls.map(([e]) => e)
       expect(events).toContain('message')
       expect(events).toContain('close')
       expect(events).toContain('error')
@@ -98,7 +98,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       handler(ws, {} as any)
 
       // grab the 'message' listener
-      const [[, onMessage]] = ws.on.mock.calls.filter(([e]: [string]) => e === 'message')
+      const [[, onMessage]] = ws.on.mock.calls.filter(([e]) => e === 'message')
       await onMessage(Buffer.from(JSON.stringify({ type: 'ping' })))
 
       const sent = ws.send.mock.calls[0][0]
@@ -113,7 +113,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const ws = createMockWs()
       handler(ws, {} as any)
 
-      const [[, onMessage]] = ws.on.mock.calls.filter(([e]: [string]) => e === 'message')
+      const [[, onMessage]] = ws.on.mock.calls.filter(([e]) => e === 'message')
       await onMessage(Buffer.from('not-json'))
 
       const sent = ws.send.mock.calls[0][0]
@@ -128,7 +128,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const ws = createMockWs()
       handler(ws, {} as any)
 
-      const [[, onMessage]] = ws.on.mock.calls.filter(([e]: [string]) => e === 'message')
+      const [[, onMessage]] = ws.on.mock.calls.filter(([e]) => e === 'message')
 
       // authenticate first
       await onMessage(Buffer.from(JSON.stringify({ type: 'auth', token: 'valid-token' })))
@@ -149,7 +149,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const ws = createMockWs()
       handler(ws, {} as any)
 
-      const [[, onMessage]] = ws.on.mock.calls.filter(([e]: [string]) => e === 'message')
+      const [[, onMessage]] = ws.on.mock.calls.filter(([e]) => e === 'message')
       await onMessage(Buffer.from(JSON.stringify({ type: 'auth', token: 'tok' })))
 
       const msg = JSON.parse(ws.send.mock.calls[0][0])
@@ -164,7 +164,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const ws = createMockWs()
       handler(ws, {} as any)
 
-      const [[, onMessage]] = ws.on.mock.calls.filter(([e]: [string]) => e === 'message')
+      const [[, onMessage]] = ws.on.mock.calls.filter(([e]) => e === 'message')
       await onMessage(Buffer.from(JSON.stringify({ type: 'auth', token: 'tok' })))
 
       expect(manager.getConnectedCount()).toBe(1)
@@ -179,7 +179,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const ws = createMockWs()
       handler(ws, {} as any)
 
-      const [[, onMessage]] = ws.on.mock.calls.filter(([e]: [string]) => e === 'message')
+      const [[, onMessage]] = ws.on.mock.calls.filter(([e]) => e === 'message')
       await onMessage(Buffer.from(JSON.stringify({ type: 'auth', token: 'invalid' })))
 
       const msg = JSON.parse(ws.send.mock.calls[0][0])
@@ -195,7 +195,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const ws = createMockWs()
       handler(ws, {} as any)
 
-      const [[, onMessage]] = ws.on.mock.calls.filter(([e]: [string]) => e === 'message')
+      const [[, onMessage]] = ws.on.mock.calls.filter(([e]) => e === 'message')
       await onMessage(Buffer.from(JSON.stringify({ type: 'auth', token: 'invalid' })))
 
       expect(manager.getConnectedCount()).toBe(0)
@@ -221,7 +221,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const newWs = createMockWs()
       handler(newWs, {} as any)
 
-      const [[, onMessage]] = newWs.on.mock.calls.filter(([e]: [string]) => e === 'message')
+      const [[, onMessage]] = newWs.on.mock.calls.filter(([e]) => e === 'message')
       await onMessage(Buffer.from(JSON.stringify({ type: 'auth', token: 'new-tok' })))
 
       // Should still be 1 client, not 2
@@ -255,7 +255,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const newWs = createMockWs()
       handler(newWs, {} as any)
 
-      const [[, onMessage]] = newWs.on.mock.calls.filter(([e]: [string]) => e === 'message')
+      const [[, onMessage]] = newWs.on.mock.calls.filter(([e]) => e === 'message')
       await onMessage(Buffer.from(JSON.stringify({ type: 'auth', token: 'new-tok' })))
 
       const opponentMsgs = (opponent.ws.send as any).mock.calls.map((c: any) => JSON.parse(c[0]))
@@ -272,11 +272,11 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const ws = createMockWs()
       handler(ws, {} as any)
 
-      const [[, onMessage]] = ws.on.mock.calls.filter(([e]: [string]) => e === 'message')
+      const [[, onMessage]] = ws.on.mock.calls.filter(([e]) => e === 'message')
       await onMessage(Buffer.from(JSON.stringify({ type: 'auth', token: 'tok' })))
       expect(manager.getConnectedCount()).toBe(1)
 
-      const [[, onClose]] = ws.on.mock.calls.filter(([e]: [string]) => e === 'close')
+      const [[, onClose]] = ws.on.mock.calls.filter(([e]) => e === 'close')
       onClose()
 
       expect(manager.getConnectedCount()).toBe(0)
@@ -348,11 +348,11 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const ws = createMockWs()
       handler(ws, {} as any)
 
-      const [[, onMessage]] = ws.on.mock.calls.filter(([e]: [string]) => e === 'message')
+      const [[, onMessage]] = ws.on.mock.calls.filter(([e]) => e === 'message')
       await onMessage(Buffer.from(JSON.stringify({ type: 'auth', token: 'tok' })))
       expect(manager.getConnectedCount()).toBe(1)
 
-      const [[, onError]] = ws.on.mock.calls.filter(([e]: [string]) => e === 'error')
+      const [[, onError]] = ws.on.mock.calls.filter(([e]) => e === 'error')
       onError()
 
       // client had no active game → should be removed
@@ -377,7 +377,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const freshWs = createMockWs()
       handler(freshWs, {} as any)
 
-      const [[, onMessage]] = freshWs.on.mock.calls.filter(([e]: [string]) => e === 'message')
+      const [[, onMessage]] = freshWs.on.mock.calls.filter(([e]) => e === 'message')
       await onMessage(Buffer.from(JSON.stringify({ type: 'auth', token: 'new-tok' })))
 
       const restored = manager.getClient(1)!

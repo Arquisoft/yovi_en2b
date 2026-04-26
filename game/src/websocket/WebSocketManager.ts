@@ -3,8 +3,9 @@ import type { IncomingMessage } from 'http'
 import type { Server } from 'http'
 import jwt from 'jsonwebtoken'
 import { MatchmakingService } from './MatchmakingService'
-import type { ClientMessage, ConnectedClient, ServerMessage } from './types'
+import type { ClientMessage, ConnectedClient, OnlineGameConfig, ServerMessage } from './types'
 import { GameService } from '../services/GameService'
+import type { BoardSize } from '../types/game'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'please_dont_tell_anyone'
 const USERS_PUBLIC_URL = process.env.USERS_PUBLIC_URL || 'http://localhost:3000'
@@ -20,10 +21,18 @@ const DISCONNECT_GRACE_MS = 30_000
  *  - Broadcasts game-state updates to the opponent after each move/surrender
  *  - Implements a 30-second reconnect grace period on disconnect
  */
+interface RoomEntry {
+  hostId: number
+  hostUsername: string
+  hostToken: string
+  config?: OnlineGameConfig
+}
+
 export class WebSocketManager {
   private readonly wss: WebSocketServer
   private readonly clients = new Map<number, ConnectedClient>()
   private readonly matchmaking = new MatchmakingService()
+  private readonly rooms = new Map<string, RoomEntry>()
   private readonly gameService: GameService
 
   constructor(server: Server, gameService?: GameService) {
@@ -136,15 +145,27 @@ export class WebSocketManager {
         break
 
       case 'join_queue':
-        await this.handleJoinQueue(client)
+        await this.handleJoinQueue(client, message.config)
         break
 
       case 'leave_queue':
         this.handleLeaveQueue(client)
         break
 
+      case 'create_room':
+        this.handleCreateRoom(client, message.config)
+        break
+
+      case 'join_room':
+        await this.handleJoinRoom(client, message.code)
+        break
+
       case 'move':
         await this.handleMove(client, message.gameId, message.row, message.col)
+        break
+
+      case 'pie_decision':
+        await this.handlePieDecision(client, message.gameId, message.decision)
         break
 
       case 'surrender':
@@ -158,7 +179,7 @@ export class WebSocketManager {
 
   // ── Queue ──────────────────────────────────────────────────────────────────
 
-  private async handleJoinQueue(client: ConnectedClient): Promise<void> {
+  private async handleJoinQueue(client: ConnectedClient, config?: OnlineGameConfig): Promise<void> {
     if (client.inQueue) return
     if (client.currentGameId) {
       this.sendTo(client.ws, { type: 'error', code: 'IN_GAME', message: 'Finish your current game first' })
@@ -170,6 +191,7 @@ export class WebSocketManager {
       username: client.username,
       token: client.token,
       joinedAt: Date.now(),
+      config,
     })
     client.inQueue = true
 
@@ -205,11 +227,13 @@ export class WebSocketManager {
     client2.inQueue = false
 
     try {
+      const cfg = entry1.config
       const config = {
         mode: 'pvp-online' as const,
-        boardSize: 11 as const,
-        timerEnabled: true,
-        timerSeconds: 600,
+        boardSize: (cfg?.boardSize ?? 11) as BoardSize,
+        timerEnabled: cfg?.timerEnabled ?? true,
+        timerSeconds: (cfg?.timerEnabled ?? true) ? (cfg?.timerSeconds ?? 600) : undefined,
+        pieRule: cfg?.pieRule ?? undefined,
       }
       const game = await this.gameService.createGame(
         config,
@@ -294,6 +318,141 @@ export class WebSocketManager {
     }
   }
 
+  private async handlePieDecision(
+    client: ConnectedClient,
+    gameId: string,
+    decision: 'keep' | 'swap',
+  ): Promise<void> {
+    if (client.currentGameId !== gameId) {
+      this.sendTo(client.ws, { type: 'error', code: 'WRONG_GAME', message: 'Not your current game' })
+      return
+    }
+
+    try {
+      const game = await this.gameService.decidePie(gameId, decision, client.token)
+      this.sendToUser(client.userId, { type: 'game_update', game })
+      this.broadcastToOpponent(client.userId, { type: 'game_update', game })
+    } catch (err: any) {
+      this.sendTo(client.ws, { type: 'error', code: 'PIE_FAILED', message: err.message ?? 'Pie decision failed' })
+    }
+  }
+
+  // ── Private rooms ─────────────────────────────────────────────────────────
+
+  private generateRoomCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    let code = ''
+    for (let i = 0; i < 6; i++) {
+      code += chars[Math.floor(Math.random() * chars.length)]
+    }
+    return code
+  }
+
+  private handleCreateRoom(client: ConnectedClient, config?: OnlineGameConfig): void {
+    if (client.currentGameId) {
+      this.sendTo(client.ws, { type: 'error', code: 'IN_GAME', message: 'Finish your current game first' })
+      return
+    }
+
+    // Remove any existing room hosted by this user
+    for (const [code, room] of this.rooms) {
+      if (room.hostId === client.userId) {
+        this.rooms.delete(code)
+        break
+      }
+    }
+
+    let code = this.generateRoomCode()
+    while (this.rooms.has(code)) {
+      code = this.generateRoomCode()
+    }
+
+    this.rooms.set(code, {
+      hostId: client.userId,
+      hostUsername: client.username,
+      hostToken: client.token,
+      config,
+    })
+
+    this.sendTo(client.ws, { type: 'room_created', code })
+  }
+
+  private async handleJoinRoom(client: ConnectedClient, code: string): Promise<void> {
+    if (client.currentGameId) {
+      this.sendTo(client.ws, { type: 'error', code: 'IN_GAME', message: 'Finish your current game first' })
+      return
+    }
+
+    const room = this.rooms.get(code)
+    if (!room) {
+      this.sendTo(client.ws, { type: 'error', code: 'ROOM_NOT_FOUND', message: 'Room not found or expired' })
+      return
+    }
+
+    if (room.hostId === client.userId) {
+      this.sendTo(client.ws, { type: 'error', code: 'CANNOT_JOIN_OWN_ROOM', message: 'Cannot join your own room' })
+      return
+    }
+
+    const host = this.clients.get(room.hostId)
+    if (!host) {
+      this.rooms.delete(code)
+      this.sendTo(client.ws, { type: 'error', code: 'ROOM_NOT_FOUND', message: 'Room host disconnected' })
+      return
+    }
+
+    this.rooms.delete(code)
+
+    try {
+      const cfg = room.config
+      const gameConfig = {
+        mode: 'pvp-online' as const,
+        boardSize: (cfg?.boardSize ?? 11) as BoardSize,
+        timerEnabled: cfg?.timerEnabled ?? true,
+        timerSeconds: (cfg?.timerEnabled ?? true) ? (cfg?.timerSeconds ?? 600) : undefined,
+        pieRule: cfg?.pieRule ?? undefined,
+      }
+
+      const hostWantsPlayer2 = cfg?.playerColor === 'player2'
+
+      // If the host wants to play as player2, the joiner becomes player1
+      const p1Id       = hostWantsPlayer2 ? client.userId   : room.hostId
+      const p1Username = hostWantsPlayer2 ? client.username : room.hostUsername
+      const p1Token    = hostWantsPlayer2 ? client.token    : room.hostToken
+      const p2Id       = hostWantsPlayer2 ? room.hostId     : client.userId
+      const p2Username = hostWantsPlayer2 ? room.hostUsername : client.username
+
+      const game = await this.gameService.createGame(gameConfig, p1Id, p1Username, p1Token)
+      await this.gameService.setPlayer2Id(game.id, p2Id, p2Username)
+
+      host.currentGameId = game.id
+      client.currentGameId = game.id
+
+      const hostColor:   'player1' | 'player2' = hostWantsPlayer2 ? 'player2' : 'player1'
+      const joinerColor: 'player1' | 'player2' = hostWantsPlayer2 ? 'player1' : 'player2'
+
+      this.sendTo(host.ws, {
+        type: 'matched',
+        gameId: game.id,
+        opponentName: client.username,
+        playerColor: hostColor,
+        opponentId: client.userId,
+      })
+      this.sendTo(client.ws, {
+        type: 'matched',
+        gameId: game.id,
+        opponentName: room.hostUsername,
+        playerColor: joinerColor,
+        opponentId: room.hostId,
+      })
+    } catch (err: any) {
+      this.sendTo(client.ws, { type: 'error', code: 'ROOM_FAILED', message: err.message ?? 'Failed to create game' })
+      if (host) {
+        this.sendTo(host.ws, { type: 'error', code: 'ROOM_FAILED', message: 'Guest failed to join, please create a new room' })
+      }
+    }
+  }
+
   // ── Disconnect / reconnect ─────────────────────────────────────────────────
 
   private handleDisconnect(userId: number): void {
@@ -303,6 +462,14 @@ export class WebSocketManager {
     if (client.inQueue) {
       this.matchmaking.leave(userId)
       client.inQueue = false
+    }
+
+    // Remove any room this user was hosting
+    for (const [code, room] of this.rooms) {
+      if (room.hostId === userId) {
+        this.rooms.delete(code)
+        break
+      }
     }
 
     if (client.currentGameId) {

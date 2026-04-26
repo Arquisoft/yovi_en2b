@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { wsService } from '@/services/websocketService'
+import { loadOnlineConfig } from '@/utils/onlineConfig'
 
 export type LobbyStatus = 'connecting' | 'queuing' | 'matched' | 'error'
 
@@ -44,7 +45,7 @@ export function useOnlineLobbyController(): OnlineLobbyController {
       await wsService.connect(token)
       if (!mounted.current) return
 
-      wsService.send({ type: 'join_queue' })
+      wsService.send({ type: 'join_queue', config: loadOnlineConfig() })
     } catch (err) {
       if (!mounted.current) return
       setStatus('error')

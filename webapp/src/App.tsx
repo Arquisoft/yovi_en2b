@@ -9,6 +9,8 @@ import { GameModePage } from './pages/GameModePage'
 import { GameConfigPage } from './pages/GameConfigPage'
 import { GameYPage } from './pages/GameYPage'
 import { OnlineLobbyPage } from './pages/OnlineLobbyPage'
+import { OnlineRoomPage } from './pages/OnlineRoomPage'
+import { OnlineHostLobbyPage } from './pages/OnlineHostLobbyPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { StatsPage } from './pages/StatsPage'
 import { RankingPage } from './pages/RankingPage'
@@ -44,7 +46,9 @@ function App() {
           <Route path="/games" element={<GameSelectionPage />} />
           <Route path="/games/y" element={<GameModePage />} />
           <Route path="/games/y/config/:mode" element={<GameConfigPage />} />
-          <Route path="/games/y/online" element={<OnlineLobbyPage />} />
+          <Route path="/games/y/online" element={<OnlineRoomPage />} />
+          <Route path="/games/y/online/host" element={<OnlineHostLobbyPage />} />
+          <Route path="/games/y/online/queue" element={<OnlineLobbyPage />} />
           <Route path="/games/y/play/:gameId" element={<GameYPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/ranking" element={<RankingPage />} />

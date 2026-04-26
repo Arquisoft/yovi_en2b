@@ -33,13 +33,13 @@ describe('useGameModeController', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/games/y/config/pvp-local')
   })
 
-  it('navigates to online lobby for pvp-online', () => {
+  it('navigates to online room page for pvp-online', () => {
     const { result } = renderHook(() => useGameModeController())
-    
+
     act(() => {
       result.current.handleSelectMode('pvp-online')
     })
-    
+
     expect(mockNavigate).toHaveBeenCalledWith('/games/y/online')
   })
 })
