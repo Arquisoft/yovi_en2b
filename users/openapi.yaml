@@ -9,10 +9,22 @@ servers:
   - url: http://api.localhost/users
     description: Local server
 
+tags:
+  - name: Authentication
+    description: User registration, login and account management
+  - name: Statistics
+    description: Match history, win rate and record storage
+  - name: Ranking
+    description: Leaderboards by game mode
+  - name: Monitoring
+    description: Service health and Prometheus metrics
+
 paths:
   /health:
     get:
       summary: Health check
+      tags:
+        - Monitoring
       responses:
         "200":
           description: Server running
@@ -23,12 +35,33 @@ paths:
                 properties:
                   status:
                     type: string
+                    example: ok
                   timestamp:
                     type: string
+                    format: date-time
+                    example: "2026-04-05T20:00:00.000Z"
+                  uptime:
+                    type: number
+                    example: 3600.5
+
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      tags:
+        - Monitoring
+      responses:
+        "200":
+          description: Prometheus text exposition format
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  # ── AUTHENTICATION ──────────────────────────────────────────────────────────
 
   /api/auth/register:
     post:
-      summary: Register new user
+      summary: Register a new user
       tags:
         - Authentication
       requestBody:
@@ -68,11 +101,21 @@ paths:
                   user:
                     $ref: "#/components/schemas/UserProfile"
         "400":
-          description: Validation error or username/email already exists
+          description: Validation error or username / email already exists
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+              examples:
+                missingFields:
+                  value:
+                    error: All fields are required
+                passwordTooShort:
+                  value:
+                    error: Password must be at least 6 characters long
+                duplicate:
+                  value:
+                    error: Username or email already exists
 
   /api/auth/login:
     post:
@@ -99,7 +142,7 @@ paths:
                   example: password123
       responses:
         "200":
-          description: Successful login
+          description: Successful login — returns a 24-hour JWT token
           content:
             application/json:
               schema:
@@ -110,19 +153,35 @@ paths:
                     example: Login successful
                   token:
                     type: string
+                    description: JWT token valid for 24 hours. Pass as `Authorization: Bearer <token>`.
                     example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
                   user:
-                    $ref: "#/components/schemas/UserProfile"
-        "401":
-          description: Invalid credentials
+                    $ref: "#/components/schemas/UserProfileBasic"
+        "400":
+          description: Missing required fields
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthError"
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Email and password are required
+        "401":
+          description: Invalid credentials or account deactivated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                invalidCredentials:
+                  value:
+                    error: Invalid credentials
+                deactivated:
+                  value:
+                    error: User deactivated
 
   /api/auth/profile:
     get:
-      summary: Get authenticated user profile
+      summary: Get the authenticated user's profile
       tags:
         - Authentication
       security:
@@ -136,8 +195,17 @@ paths:
                 $ref: "#/components/schemas/UserProfile"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: User not found
+
     put:
-      summary: Update user profile
+      summary: Update username or email
       tags:
         - Authentication
       security:
@@ -151,18 +219,43 @@ paths:
               properties:
                 username:
                   type: string
+                  example: newUsername
                 email:
                   type: string
                   format: email
+                  example: new@example.com
       responses:
         "200":
-          description: Profile updated
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Profile updated successfully
+                  user:
+                    $ref: "#/components/schemas/UserProfileBasic"
+        "400":
+          description: Username or email already taken
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                usernameTaken:
+                  value:
+                    error: Username already exists
+                emailTaken:
+                  value:
+                    error: Email already exists
         "401":
           $ref: "#/components/responses/UnauthorizedError"
 
   /api/auth/change-password:
     put:
-      summary: Change user password
+      summary: Change the authenticated user's password
       tags:
         - Authentication
       security:
@@ -173,41 +266,94 @@ paths:
           application/json:
             schema:
               type: object
-              required: [currentPassword, newPassword]
+              required:
+                - currentPassword
+                - newPassword
               properties:
                 currentPassword:
                   type: string
+                  format: password
+                  example: oldPassword123
                 newPassword:
                   type: string
+                  format: password
                   minLength: 6
+                  example: newPassword456
       responses:
         "200":
-          description: Password updated
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password updated successfully
         "400":
-          $ref: "#/components/schemas/Error"
+          description: Missing fields, password too short, or current password incorrect
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                missingFields:
+                  value:
+                    error: Current and new password are required
+                tooShort:
+                  value:
+                    error: New password must be at least 6 characters long
+                wrongCurrent:
+                  value:
+                    error: Current password is incorrect
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
 
   /api/auth/account:
     delete:
-      summary: Deactivate user account
+      summary: Deactivate the authenticated user's account
+      description: |
+        Soft-deletes the account by setting `isActive` to `false`.
+        The user will no longer be able to log in. The record is retained in the database.
       tags:
         - Authentication
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Account deactivated
+          description: Account deactivated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Account deactivated successfully
+        "400":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: User not found
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
 
-  # --- STATS ENDPOINTS ---
+  # ── STATISTICS ───────────────────────────────────────────────────────────────
+
   /api/stats/history:
     get:
-      summary: Get match history
+      summary: Get the authenticated user's match history
+      description: Returns all match records for the authenticated user, ordered by date descending.
       tags:
         - Statistics
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: List of matches
+          description: List of match records (may be empty)
           content:
             application/json:
               schema:
@@ -219,7 +365,11 @@ paths:
 
   /api/stats/winrate:
     get:
-      summary: Get win rate
+      summary: Get overall and recent win rate
+      description: |
+        Returns win/loss counts for two windows:
+        - `overall` — all recorded matches.
+        - `recent` — the last 20 matches only.
       tags:
         - Statistics
       security:
@@ -230,17 +380,25 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  winrate:
-                    type: number
-                    example: 65.5
+                $ref: "#/components/schemas/WinrateResponse"
+              example:
+                overall:
+                  wins: 42
+                  losses: 18
+                  total: 60
+                recent:
+                  wins: 14
+                  losses: 6
+                  total: 20
         "401":
           $ref: "#/components/responses/UnauthorizedError"
 
   /api/stats/record:
     post:
-      summary: Record a new match
+      summary: Record a match result
+      description: |
+        Called internally by the game service at the end of each ranked session.
+        The `gameMode` field is required for the result to appear in difficulty-based rankings.
       tags:
         - Statistics
       security:
@@ -251,58 +409,93 @@ paths:
           application/json:
             schema:
               type: object
-              required: [opponentName, result, durationSeconds]
+              required:
+                - opponentName
+                - result
+                - durationSeconds
               properties:
                 opponentName:
                   type: string
+                  example: Bot (medium)
                 result:
                   type: string
-                  enum: [win, loss, draw]
+                  enum: [win, loss]
+                  example: win
                 durationSeconds:
                   type: integer
+                  minimum: 0
+                  example: 180
+                gameMode:
+                  type: string
+                  enum: [pve-easy, pve-medium, pve-hard]
+                  nullable: true
+                  description: |
+                    Game mode for difficulty-based ranking. Pass `null` (or omit) for
+                    pvp-local and pvp-online games, which are not ranked.
+                  example: pve-medium
       responses:
         "201":
-          description: Record saved
+          description: Match record saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchRecord"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
         "500":
-          $ref: "#/components/schemas/Error"
+          description: Server error while saving the record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
-  # --- RANKING ENDPOINTS ---
+  # ── RANKING ──────────────────────────────────────────────────────────────────
+
   /api/ranking/{mode}:
     get:
-      summary: Get ranking by mode
+      summary: Get the leaderboard for a game mode
+      description: |
+        Returns the top 10 players for the given difficulty ranked by total wins,
+        descending. Only active accounts are included.
       tags:
         - Ranking
+      security:
+        - bearerAuth: []
       parameters:
         - name: mode
           in: path
           required: true
+          description: Game mode / difficulty to rank
           schema:
             type: string
             enum: [pve-easy, pve-medium, pve-hard]
+            example: pve-medium
       responses:
         "200":
-          description: Ranking list
+          description: Ranking list (at most 10 entries)
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/RankingEntry"
+              example:
+                - rank: 1
+                  username: topPlayer
+                  wins: 38
+                - rank: 2
+                  username: challenger
+                  wins: 27
         "400":
-          description: Invalid mode
-
-  /metrics:
-    get:
-      summary: Prometheus metrics
-      tags:
-        - Monitoring
-      responses:
-        "200":
-          description: Metrics
+          description: Invalid game mode
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Invalid game mode
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
 
 components:
   securitySchemes:
@@ -310,75 +503,174 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: JWT token obtained from `POST /api/auth/login`. Valid for 24 hours.
 
   responses:
     UnauthorizedError:
-      description: Unauthorized
+      description: Missing, invalid or expired JWT token
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/AuthError"
+          examples:
+            noToken:
+              value:
+                error: No authentication token provided
+            invalidToken:
+              value:
+                error: Invalid token
+                message: Authentication token is invalid.
+            expiredToken:
+              value:
+                error: Token expired
+                message: Your session has expired. Please login again.
+            deactivated:
+              value:
+                error: Account deactivated
+                message: Your account has been deactivated. Please contact support.
 
   schemas:
+    # ── User ────────────────────────────────────────────────────────────────────
+
     UserProfile:
       type: object
+      description: Full user profile as returned by GET /api/auth/profile.
       properties:
         id:
           type: integer
+          example: 42
         username:
           type: string
+          example: player1
         email:
           type: string
+          format: email
+          example: player1@example.com
         role:
           type: string
           enum: [player, admin]
+          example: player
         createdAt:
           type: string
           format: date-time
+          example: "2026-01-15T10:00:00.000Z"
         lastLogin:
           type: string
           format: date-time
           nullable: true
+          example: "2026-04-05T19:55:00.000Z"
 
-    MatchRecord:
+    UserProfileBasic:
       type: object
+      description: Subset of user fields returned on login and profile update (no lastLogin / createdAt).
       properties:
         id:
           type: integer
+          example: 42
+        username:
+          type: string
+          example: player1
+        email:
+          type: string
+          format: email
+          example: player1@example.com
+        role:
+          type: string
+          enum: [player, admin]
+          example: player
+
+    # ── Stats ───────────────────────────────────────────────────────────────────
+
+    MatchRecord:
+      type: object
+      description: A single recorded match result.
+      properties:
+        id:
+          type: integer
+          example: 1
         opponentName:
           type: string
+          example: Bot (medium)
         result:
           type: string
+          enum: [win, loss]
+          example: win
         durationSeconds:
           type: integer
-        timestamp:
+          example: 180
+        gameMode:
+          type: string
+          enum: [pve-easy, pve-medium, pve-hard]
+          nullable: true
+          description: Null for pvp-local and pvp-online matches.
+          example: pve-medium
+        playedAt:
           type: string
           format: date-time
+          example: "2026-04-05T20:01:30.000Z"
+
+    WinrateStat:
+      type: object
+      description: Win/loss counts for one time window.
+      properties:
+        wins:
+          type: integer
+          example: 42
+        losses:
+          type: integer
+          example: 18
+        total:
+          type: integer
+          example: 60
+
+    WinrateResponse:
+      type: object
+      description: Win rate statistics for two windows — all matches and the last 20.
+      properties:
+        overall:
+          $ref: "#/components/schemas/WinrateStat"
+        recent:
+          $ref: "#/components/schemas/WinrateStat"
+
+    # ── Ranking ─────────────────────────────────────────────────────────────────
 
     RankingEntry:
       type: object
+      description: A single leaderboard entry.
       properties:
-        username:
-          type: string
-        score:
-          type: integer
         rank:
           type: integer
+          description: Position in the leaderboard (1-based).
+          example: 1
+        username:
+          type: string
+          example: topPlayer
+        wins:
+          type: integer
+          description: Total wins in the given game mode.
+          example: 38
+
+    # ── Errors ──────────────────────────────────────────────────────────────────
 
     Error:
       type: object
       properties:
         error:
           type: string
+          example: Error message
         message:
           type: string
+          example: Additional error details
         details:
           type: string
+          example: Optional technical details
 
     AuthError:
       type: object
       properties:
         error:
           type: string
+          example: Invalid token
         message:
           type: string
+          example: Authentication token is invalid.

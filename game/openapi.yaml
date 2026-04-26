@@ -41,6 +41,56 @@ paths:
                     example: 3600.5
 
   /api/games:
+    get:
+      summary: List games for the authenticated user
+      description: |
+        Returns a summary list of all game sessions belonging to the authenticated user,
+        ordered newest first (by `updatedAt` descending). At most 50 games are returned.
+
+        The response omits heavy fields (`board`, `moves`, `timer`) — use
+        `GET /api/games/{id}` when the full state is needed.
+
+        **Authentication is required.** A **401** is returned both when the
+        `Authorization` header is missing and when the token is invalid or expired.
+      tags:
+        - Games
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Array of game summaries (may be empty)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GameSummary"
+              example:
+                - id: 550e8400-e29b-41d4-a716-446655440000
+                  config:
+                    mode: pvp-local
+                    boardSize: 9
+                    timerEnabled: false
+                  status: finished
+                  phase: playing
+                  players:
+                    player1:
+                      id: local-p1
+                      name: Player 1
+                      color: player1
+                      isLocal: true
+                    player2:
+                      id: local-p2
+                      name: Player 2
+                      color: player2
+                      isLocal: true
+                  winner: player1
+                  moveCount: 14
+                  createdAt: "2026-04-05T20:00:00.000Z"
+                  updatedAt: "2026-04-05T20:08:00.000Z"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
     post:
       summary: Create a new game session
       description: |
@@ -108,6 +158,14 @@ paths:
                     mode: pvp-local
                     boardSize: 9
                     timerEnabled: false
+              pvp_local_pie:
+                summary: PvP local — with Pie Rule enabled
+                value:
+                  config:
+                    mode: pvp-local
+                    boardSize: 9
+                    timerEnabled: false
+                    pieRule: true
               pve_guest:
                 summary: PvE — guest user (no JWT) with client-generated ID
                 value:
@@ -134,6 +192,7 @@ paths:
                   botLevel: medium
                   playerColor: player1
                 status: playing
+                phase: playing
                 board: []
                 players:
                   player1:
@@ -195,6 +254,10 @@ paths:
         the client receives the post-bot state in a single round-trip.
         Timer is decremented server-side on each move.
 
+        When **Pie Rule** is enabled, the first move transitions the game to the
+        `pie-decision` phase instead of switching turns. In that phase this endpoint
+        returns a **409** until the deciding player calls `POST /{id}/pie-decision`.
+
         **Authentication is optional for guest players.** A **401** is returned only when
         an `Authorization` header is present but the token is invalid or expired.
       tags:
@@ -255,7 +318,7 @@ paths:
               example:
                 error: Game not found
         "409":
-          description: Move rejected — not your turn, cell occupied, or game already finished
+          description: Move rejected — not your turn, cell occupied, game already finished, or Pie Rule decision pending
           content:
             application/json:
               schema:
@@ -270,6 +333,88 @@ paths:
                 gameNotActive:
                   value:
                     error: Game is not active
+                pieDecisionPending:
+                  value:
+                    error: Waiting for Pie Rule decision
+
+  /api/games/{id}/pie-decision:
+    post:
+      summary: Respond to the Pie Rule offer
+      description: |
+        After the very first stone is placed in a game with `pieRule: true`, the game
+        enters the `pie-decision` phase and the second player must decide whether to
+        **keep** the colors as-is or **swap** them.
+
+        - `keep` — colors remain unchanged; player2 continues as player2.
+        - `swap` — the first stone's ownership is flipped to player2 and turns
+          revert to player1, effectively swapping identities.
+
+        After the decision the game returns to the `playing` phase. In PvE mode,
+        if the bot is the deciding player the server resolves the decision
+        automatically and this endpoint is never called by the client.
+
+        **Authentication is optional for guest players.** A **401** is returned only when
+        an `Authorization` header is present but the token is invalid or expired.
+      tags:
+        - Games
+      security:
+        - {}
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/GameId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - decision
+              properties:
+                decision:
+                  $ref: "#/components/schemas/PieDecision"
+            examples:
+              keep:
+                summary: Player2 keeps the colours
+                value:
+                  decision: keep
+              swap:
+                summary: Player2 swaps colours with player1
+                value:
+                  decision: swap
+      responses:
+        "200":
+          description: Game state after the Pie Rule decision (may include a bot move in PvE)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameState"
+        "400":
+          description: Invalid decision value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: decision must be "keep" or "swap"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Game not found
+        "409":
+          description: Game is not in the Pie Rule decision phase
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: Game is not in Pie Rule decision phase
 
   /api/games/{id}/surrender:
     post:
@@ -310,6 +455,7 @@ paths:
               example:
                 id: 550e8400-e29b-41d4-a716-446655440000
                 status: finished
+                phase: playing
                 winner: player2
                 currentTurn: player1
                 moves: []
@@ -403,6 +549,25 @@ components:
       enum: [waiting, playing, finished, abandoned]
       example: playing
 
+    GamePhase:
+      type: string
+      enum: [playing, pie-decision]
+      description: |
+        Sub-phase within a `playing` game.
+        - `playing` — normal turn flow.
+        - `pie-decision` — entered after the first move when `pieRule` is `true`;
+          the second player must call `POST /{id}/pie-decision` before play resumes.
+      example: playing
+
+    PieDecision:
+      type: string
+      enum: [keep, swap]
+      description: |
+        Response to the Pie Rule offer:
+        - `keep` — colours stay as assigned; player2 continues as player2.
+        - `swap` — the first stone's ownership is flipped to player2 and turns revert to player1.
+      example: keep
+
     GameConfig:
       type: object
       required:
@@ -432,6 +597,14 @@ components:
         playerColor:
           $ref: "#/components/schemas/PlayerColor"
           description: Which side the human plays. Required when mode is pve.
+        pieRule:
+          type: boolean
+          default: false
+          description: |
+            When `true`, the Pie Rule is active. After the first stone is placed
+            the game enters `pie-decision` phase and the second player may swap
+            colours with the first player before play continues.
+          example: false
 
     Player:
       type: object
@@ -510,6 +683,8 @@ components:
           $ref: "#/components/schemas/GameConfig"
         status:
           $ref: "#/components/schemas/GameStatus"
+        phase:
+          $ref: "#/components/schemas/GamePhase"
         board:
           type: array
           description: Triangular board — row i has i+1 cells
@@ -545,6 +720,47 @@ components:
           type: string
           format: date-time
           example: "2026-04-05T20:01:30.000Z"
+
+    GameSummary:
+      type: object
+      description: |
+        Lightweight snapshot of a game session returned by `GET /api/games`.
+        Omits `board`, `moves` and `timer` to keep the list response compact.
+        Use `GET /api/games/{id}` to retrieve the full state.
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        config:
+          $ref: "#/components/schemas/GameConfig"
+        status:
+          $ref: "#/components/schemas/GameStatus"
+        phase:
+          $ref: "#/components/schemas/GamePhase"
+        players:
+          type: object
+          properties:
+            player1:
+              $ref: "#/components/schemas/Player"
+            player2:
+              $ref: "#/components/schemas/Player"
+        winner:
+          $ref: "#/components/schemas/PlayerColor"
+          nullable: true
+          example: null
+        moveCount:
+          type: integer
+          description: Total number of moves played in this game.
+          example: 14
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-04-05T20:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-04-05T20:08:00.000Z"
 
     Error:
       type: object

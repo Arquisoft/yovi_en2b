@@ -14,16 +14,50 @@ info:
   version: 1.0.0
 
 servers:
+  - url: https://api.micrati.com/interop
+    description: Production server
   - url: http://localhost:3001
     description: Local development server
+
+tags:
+  - name: Play
+    description: Stateless bot move endpoint
+  - name: Monitoring
+    description: Service health
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
 paths:
 
+  /health:
+    get:
+      summary: Health check
+      tags:
+        - Monitoring
+      responses:
+        "200":
+          description: Service is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2026-04-05T20:00:00.000Z"
+                  uptime:
+                    type: number
+                    example: 3600.5
+
   /games/play:
     post:
       summary: Request the next bot move
+      tags:
+        - Play
       description: |
         Exposes the `play` method as defined in the project specification.
 
@@ -44,8 +78,8 @@ paths:
         | `strategy` value | Resolved bot   |
         |------------------|----------------|
         | `EASY`           | `random_bot`   |
-        | `MEDIUM`         | `fast_bot`   |
-        | `HARD`           | `smart_bot`  |
+        | `MEDIUM`         | `fast_bot`     |
+        | `HARD`           | `smart_bot`    |
 
         Strategy matching is case-insensitive. Both fields may be provided
         simultaneously; `bot_id` always takes precedence over `strategy`.
@@ -210,6 +244,18 @@ paths:
               example:
                 code: NO_MOVES_AVAILABLE
                 message: No legal moves are available for the given position.
+        '500':
+          description: |
+            **INTERNAL_ERROR** — an unexpected server-side error occurred that
+            is not covered by the more specific error codes. Returned when the
+            thrown error carries no recognised `code` or `httpStatus`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+              example:
+                code: INTERNAL_ERROR
+                message: An unexpected error occurred.
         '502':
           description: |
             **ENGINE_ERROR** — the Rust bot engine returned an unexpected error
@@ -307,6 +353,7 @@ components:
             mandatory parameter as specified by the project requirements.
         bot_id:
           type: string
+          enum: [random_bot, fast_bot, smart_bot]
           description: |
             Identifier of a specific bot registered in the Rust engine.
             When provided, this takes priority over `strategy`.
@@ -316,8 +363,10 @@ components:
             - `fast_bot` — uses Minimax with alpha-beta pruning and
               iterative deepening within a time limit.
             - `smart_bot` — uses Minimax with alpha-beta pruning and
-              iterative deepening with more freadom to get deeper.
-          example: minimax_bot
+              iterative deepening with more freedom to search deeper.
+
+            Any value not in this list results in a **404 BOT_NOT_FOUND** error.
+          example: fast_bot
         strategy:
           type: string
           description: |
@@ -327,8 +376,8 @@ components:
             | Value    | Resolved bot   |
             |----------|----------------|
             | `EASY`   | `random_bot`   |
-            | `MEDIUM` | `fast_bot`   |
-            | `HARD`   | `smart_bot`  |
+            | `MEDIUM` | `fast_bot`     |
+            | `HARD`   | `smart_bot`    |
 
             Matching is **case-insensitive** (`"hard"` and `"HARD"` are
             equivalent).
