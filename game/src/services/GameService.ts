@@ -8,11 +8,13 @@ import {
 import { getBotMove, getBotPieOpening, getBotPieDecision } from './BotService';
 import type {
   GameConfig, GameState, PieDecision, Player, PlayerColor, TimerState, Move, BotLevel,
-  GameSummary,
+  GameSummary, PaginatedGames,
 } from '../types/game';
 
 const USERS_INTERNAL_URL = process.env.USERS_INTERNAL_URL || 'https://users:3000';
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET || 'internal_secret';
+
+const PAGE_SIZE = 5;
 
 function toRankingMode(config: GameConfig): string | null {
   if (config.mode === 'pve') return `pve-${config.botLevel ?? 'medium'}`;
@@ -69,42 +71,26 @@ export class GameService {
     return this.toGameState(game, moves);
   }
 
-  async getUserGames(userId: number): Promise<GameSummary[]> {
-    // Fetch games where the user is either player1 or player2
-    const [gamesAsP1, gamesAsP2] = await Promise.all([
-      this.gameRepo.find({
-        where: { player1Id: userId },
-        order: { updatedAt: 'DESC' },
-        take: 50,
-      }),
-      this.gameRepo.find({
-        where: { player2Id: userId },
-        order: { updatedAt: 'DESC' },
-        take: 50,
-      }),
-    ]);
+  async getUserGames(userId: number, page: number): Promise<PaginatedGames> {
+    const skip = (page - 1) * PAGE_SIZE;
 
-    // Merge, deduplicate (a user could theoretically appear as both), and sort
-    const seen = new Set<string>();
-    const games: Game[] = [];
+    const [games, total] = await this.gameRepo.findAndCount({
+      where: { player1Id: userId },
+      order: { updatedAt: 'DESC' },
+      skip,
+      take: PAGE_SIZE,
+    });
 
-    for (const game of [...gamesAsP1, ...gamesAsP2]) {
-      if (!seen.has(game.id)) {
-        seen.add(game.id);
-        games.push(game);
-      }
+    const totalFinished = await this.gameRepo.count({
+      where: { player1Id: userId, status: 'finished' },
+    });
+
+    if (games.length === 0) {
+      return { games: [], total, totalFinished, page, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
     }
 
-    games.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    const gameIds = games.map(g => g.id);
 
-    // Trim to 50 after merge
-    const trimmed = games.slice(0, 50);
-
-    if (trimmed.length === 0) return [];
-
-    const gameIds = trimmed.map(g => g.id);
-
-    // Count moves per game in a single efficient query
     const moveCounts = await this.moveRepo
       .createQueryBuilder('move')
       .innerJoin('move.game', 'game')
@@ -118,7 +104,7 @@ export class GameService {
       moveCounts.map(r => [r.gameId, Number.parseInt(r.cnt, 10)])
     );
 
-    return trimmed.map(game => ({
+    const summaries: GameSummary[] = games.map(game => ({
       id: game.id,
       config: game.config,
       status: game.status,
@@ -129,6 +115,14 @@ export class GameService {
       createdAt: game.createdAt.toISOString(),
       updatedAt: game.updatedAt.toISOString(),
     }));
+
+    return {
+      games: summaries,
+      total,
+      totalFinished,
+      page,
+      totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+    };
   }
 
   async playMove(gameId: string, row: number, col: number, player: PlayerColor, token?: string): Promise<GameState> {
