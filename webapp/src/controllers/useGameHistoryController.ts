@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { gameService } from '@/services/gameyService'
  
 export function useGameHistoryController() {
-  const { token, isGuest } = useAuth()
+  const { token, isGuest, user } = useAuth()
   const [games, setGames] = useState<GameSummary[]>([])
   const [totalFinished, setTotalFinished] = useState(0)
   const [page, setPage] = useState(1)  
@@ -40,5 +40,5 @@ export function useGameHistoryController() {
     setPage(newPage)
   }
 
-  return { games, isLoading, error, isGuest, totalFinished, page, totalPages, goToPage }
+  return { games, isLoading, error, isGuest, totalFinished, page, totalPages, goToPage, currentUserId: user?.id ?? '' }
 }

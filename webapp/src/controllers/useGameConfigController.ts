@@ -59,7 +59,7 @@ export function useGameConfigController() {
 
   const [boardSizeInput, setBoardSizeInput] = useState(saved?.boardSizeInput ?? '9')
   const [timerInput, setTimerInput] = useState(saved?.timerInput ?? '10')
-  const [timerEnabled, setTimerEnabled] = useState(saved?.timerEnabled ?? false)
+  const [timerEnabled, setTimerEnabled] = useState(saved?.timerEnabled ?? (mode === 'pvp-online'))
   const [botLevel, setBotLevel] = useState<BotLevel>(saved?.botLevel ?? 'medium')
   const [playerColor, setPlayerColor] = useState<PlayerColor>(saved?.playerColor ?? 'player1')
   const [pieRule, setPieRule] = useState(saved?.pieRule ?? false)
@@ -73,7 +73,7 @@ export function useGameConfigController() {
     if (!s) return
     setBoardSizeInput(s.boardSizeInput)
     setTimerInput(s.timerInput)
-    setTimerEnabled(s.timerEnabled)
+    setTimerEnabled(s.timerEnabled ?? (mode === 'pvp-online'))
     setBotLevel(s.botLevel)
     setPlayerColor(s.playerColor)
     setPieRule(s.pieRule ?? false)
@@ -109,6 +109,13 @@ export function useGameConfigController() {
       }
     }
 
+    saveConfig(mode, { boardSizeInput, timerInput, timerEnabled, botLevel, playerColor, pieRule })
+
+    if (mode === 'pvp-online') {
+      navigate('/games/y/online/host')
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
@@ -123,8 +130,6 @@ export function useGameConfigController() {
         playerColor: mode === 'pve' ? playerColor : undefined,
         pieRule: pieRule || undefined,
       }
-
-      saveConfig(mode, { boardSizeInput, timerInput, timerEnabled, botLevel, playerColor, pieRule })
 
       const guestId = isGuest ? user?.id : undefined
       const game = await gameService.createGame(config, effectiveToken, guestId)

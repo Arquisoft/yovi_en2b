@@ -3,84 +3,71 @@ import { AppDataSource } from '../config/database';
 import { Game } from '../entities/Game';
 import { GameMove } from '../entities/GameMove';
 import {
-  createEmptyBoard,
-  applyMove,
-  checkWinner,
-  isValidMove,
-  getOppositePlayer,
+  createEmptyBoard, applyMove, checkWinner, isValidMove, getOppositePlayer,
 } from '../utils/gameY';
 import { getBotMove, getBotPieOpening, getBotPieDecision } from './BotService';
 import type {
-  GameConfig,
-  GameState,
-  GameSummary,
-  PaginatedGames,
-  PieDecision,
-  Player,
-  PlayerColor,
-  TimerState,
-  Move,
-  BotLevel,
+  GameConfig, GameState, PieDecision, Player, PlayerColor, TimerState, Move, BotLevel,
+  GameSummary, PaginatedGames,
 } from '../types/game';
 
-const USERS_INTERNAL_URL = process.env.USERS_INTERNAL_URL || 'http://localhost:3000';
+const USERS_INTERNAL_URL = process.env.USERS_INTERNAL_URL || 'https://users:3000';
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET || 'internal_secret';
 
 const PAGE_SIZE = 5;
 
-/**
- * Maps game config to a ranking mode string understood by the users service.
- * Returns null for non-rankable modes (pvp-local, pvp-online).
- */
 function toRankingMode(config: GameConfig): string | null {
-  if (config.mode !== 'pve') return null;
-  const level = config.botLevel ?? 'medium';
-  return `pve-${level}`;
+  if (config.mode === 'pve') return `pve-${config.botLevel ?? 'medium'}`;
+  if (config.mode === 'pvp-online') return 'pvp-online';
+  return null;
 }
 
 export class GameService {
-  private gameRepo: Repository<Game>;
-  private moveRepo: Repository<GameMove>;
+  private readonly gameRepo: Repository<Game>;
+  private readonly moveRepo: Repository<GameMove>;
 
   constructor() {
     this.gameRepo = AppDataSource.getRepository(Game);
     this.moveRepo = AppDataSource.getRepository(GameMove);
   }
 
+  async setPlayer2Id(gameId: string, player2Id: number, player2Username: string): Promise<void> {
+    const game = await this.gameRepo.findOne({ where: { id: gameId } });
+    if (!game) return;
+
+    game.player2Id = player2Id;
+    game.players = {
+      ...game.players,
+      player2: {
+        ...game.players.player2,
+        id: String(player2Id),
+        name: player2Username,
+      }
+    };
+    await this.gameRepo.save(game);
+  }
+
   async createGame(config: GameConfig, userId: number | null, username: string, token?: string, guestId?: string): Promise<GameState> {
     const [player1, player2] = this.buildPlayers(config, userId, username, guestId);
     const board = createEmptyBoard(config.boardSize);
-    const timerState = config.timerEnabled && config.timerSeconds
-      ? this.buildTimerState(config.timerSeconds)
-      : null;
+    const timerState = config.timerEnabled && config.timerSeconds ? this.buildTimerState(config.timerSeconds) : null;
 
     const game = this.gameRepo.create({
-      player1Id: userId,
-      config,
-      status: 'playing',
-      phase: 'playing',
-      boardState: board,
-      players: { player1, player2 },
-      currentTurn: 'player1',
-      winner: null,
-      timerState,
+      player1Id: userId, player2Id: null, config, status: 'playing', phase: 'playing',
+      boardState: board, players: { player1, player2 }, currentTurn: 'player1', winner: null, timerState,
     });
     await this.gameRepo.save(game);
 
-    // If bot goes first (PvE with bot as player1)
     if (config.mode === 'pve' && player1.isBot) {
       return this.applyBotMove(game, [], config.botLevel ?? 'medium', token);
     }
-
     return this.toGameState(game, []);
   }
 
   async getGame(gameId: string): Promise<GameState | null> {
     const game = await this.gameRepo.findOne({ where: { id: gameId } });
     if (!game) return null;
-    const moves = await this.moveRepo.find({
-      where: { game: { id: gameId } },
-      order: { playedAt: 'ASC' },
-    });
+    const moves = await this.moveRepo.find({ where: { game: { id: gameId } }, order: { playedAt: 'ASC' } });
     return this.toGameState(game, moves);
   }
 
@@ -94,7 +81,6 @@ export class GameService {
       take: PAGE_SIZE,
     });
 
-    // Count of all finished games (unpaginated) for the stat banner
     const totalFinished = await this.gameRepo.count({
       where: { player1Id: userId, status: 'finished' },
     });
@@ -139,32 +125,16 @@ export class GameService {
     };
   }
 
-  async playMove(
-    gameId: string,
-    row: number,
-    col: number,
-    player: PlayerColor,
-    token?: string
-  ): Promise<GameState> {
+  async playMove(gameId: string, row: number, col: number, player: PlayerColor, token?: string): Promise<GameState> {
     const game = await this.gameRepo.findOne({ where: { id: gameId } });
     this.assertPlayMoveValid(game, row, col, player);
 
-    const moves = await this.moveRepo.find({
-      where: { game: { id: gameId } },
-      order: { playedAt: 'ASC' },
-    });
-
+    const moves = await this.moveRepo.find({ where: { game: { id: gameId } }, order: { playedAt: 'ASC' } });
     const now = Date.now();
     const updatedTimer = this.computeUpdatedTimer(game.timerState, player, now);
     const timedOutWinner = this.timedOutWinner(updatedTimer);
 
-    const moveRecord = this.moveRepo.create({
-      game,
-      playerColor: player,
-      rowIndex: row,
-      colIndex: col,
-      moveTimestamp: now,
-    });
+    const moveRecord = this.moveRepo.create({ game, playerColor: player, rowIndex: row, colIndex: col, moveTimestamp: now });
     await this.moveRepo.save(moveRecord);
 
     const moveObj: Move = { row, col, player, timestamp: now };
@@ -180,45 +150,30 @@ export class GameService {
     game.timerState = this.computePostMoveTimer(updatedTimer, winner, nextTurn, now);
 
     const allMoves = [...moves, moveRecord];
-    const isPieDecisionTrigger =
-      !winner &&
-      game.config.pieRule === true &&
-      allMoves.length === 1;
+    const isPieDecisionTrigger = !winner && game.config.pieRule === true && allMoves.length === 1;
 
     if (isPieDecisionTrigger) {
       game.phase = 'pie-decision';
-      if (game.timerState) {
-        game.timerState = { ...game.timerState, activePlayer: null };
-      }
+      if (game.timerState) game.timerState = { ...game.timerState, activePlayer: null };
       await this.gameRepo.save(game);
-
       const botPlayer = this.getPveBot(game);
       if (botPlayer?.color === nextTurn) {
-        const decision = await getBotPieDecision(
-          game.boardState,
-          game.config.boardSize,
-          nextTurn,
-          game.config.botLevel ?? 'medium',
-        );
+        const decision = await getBotPieDecision(game.boardState, game.config.boardSize, nextTurn, game.config.botLevel ?? 'medium');
         return this.decidePie(gameId, decision, token);
       }
-
       return this.toGameState(game, allMoves);
     }
 
     await this.gameRepo.save(game);
 
-    if (game.status === 'finished' && token) {
-      await this.recordMatch(game, token).catch((e) =>
-        console.error('Failed to record match:', e)
-      );
+    if (game.status === 'finished') {
+      await this.recordMatchForAllPlayers(game, token).catch((e) => console.error('Failed to record match:', e));
     }
 
     const botPlayer = this.getPveBot(game);
     if (!winner && botPlayer?.color === nextTurn) {
       return this.applyBotMove(game, allMoves, game.config.botLevel ?? 'medium', token);
     }
-
     return this.toGameState(game, allMoves);
   }
 
@@ -230,26 +185,48 @@ export class GameService {
     const winner = getOppositePlayer(player);
     game.status = 'finished';
     game.winner = winner;
-    game.timerState = game.timerState
-      ? { ...game.timerState, activePlayer: null }
-      : null;
+    game.timerState = game.timerState ? { ...game.timerState, activePlayer: null } : null;
     await this.gameRepo.save(game);
 
-    const moves = await this.moveRepo.find({
-      where: { game: { id: gameId } },
-      order: { playedAt: 'ASC' },
-    });
+    const moves = await this.moveRepo.find({ where: { game: { id: gameId } }, order: { playedAt: 'ASC' } });
 
-    if (token) {
-      await this.recordMatch(game, token).catch((e) =>
-        console.error('Failed to record match:', e)
-      );
-    }
-
+    await this.recordMatchForAllPlayers(game, token).catch((e) => console.error('Failed to record match:', e));
     return this.toGameState(game, moves);
   }
 
-  // --- Private helpers ---
+  async decidePie(gameId: string, decision: PieDecision, token?: string): Promise<GameState> {
+    const game = await this.gameRepo.findOne({ where: { id: gameId } });
+    if (!game) throw Object.assign(new Error('Game not found'), { status: 404 });
+    if ((game.phase ?? 'playing') !== 'pie-decision') {
+      throw Object.assign(new Error('Game is not in Pie Rule decision phase'), { status: 409 });
+    }
+
+    const moves = await this.moveRepo.find({ where: { game: { id: gameId } }, order: { playedAt: 'ASC' } });
+
+    if (decision === 'swap') {
+      const firstMove = moves[0];
+      game.boardState = game.boardState.map((row) =>
+        row.map((cell) =>
+          cell.row === firstMove.rowIndex && cell.col === firstMove.colIndex ? { ...cell, owner: 'player2' } : cell,
+        ),
+      );
+      game.currentTurn = 'player1';
+    }
+
+    game.phase = 'playing';
+    if (game.timerState) {
+      game.timerState = { ...game.timerState, activePlayer: game.currentTurn, lastSyncTimestamp: Date.now() };
+    }
+    await this.gameRepo.save(game);
+
+    const botPlayer = this.getPveBot(game);
+    if (botPlayer?.color === game.currentTurn) {
+      return this.applyBotMove(game, moves, game.config.botLevel ?? 'medium', token);
+    }
+    return this.toGameState(game, moves);
+  }
+
+  // ── Private helpers ────────────────────────────────────────────────────────────────────
 
   private assertPlayMoveValid(game: Game | null, row: number, col: number, player: PlayerColor): asserts game is Game {
     if (!game) throw Object.assign(new Error('Game not found'), { status: 404 });
@@ -269,28 +246,12 @@ export class GameService {
     return game.players.player1.isBot ? game.players.player1 : game.players.player2;
   }
 
-  private async applyBotMove(
-    game: Game,
-    existingMoves: GameMove[],
-    botLevel: BotLevel,
-    token?: string
-  ): Promise<GameState> {
+  private async applyBotMove(game: Game, existingMoves: GameMove[], botLevel: BotLevel, token?: string): Promise<GameState> {
     try {
-      const usePieOpening =
-        game.config.pieRule === true && existingMoves.length === 0;
+      const usePieOpening = game.config.pieRule === true && existingMoves.length === 0;
       const { row, col } = usePieOpening
-        ? await getBotPieOpening(
-          game.boardState,
-          game.config.boardSize,
-          game.currentTurn,
-          botLevel
-        )
-        : await getBotMove(
-          game.boardState,
-          game.config.boardSize,
-          game.currentTurn,
-          botLevel
-        );
+        ? await getBotPieOpening(game.boardState, game.config.boardSize, game.currentTurn, botLevel)
+        : await getBotMove(game.boardState, game.config.boardSize, game.currentTurn, botLevel);
 
       if (!isValidMove(game.boardState, row, col)) {
         console.error('Bot returned invalid move, skipping');
@@ -301,13 +262,7 @@ export class GameService {
       const updatedTimer = this.computeUpdatedTimer(game.timerState, game.currentTurn, now);
       const timedOutWinner = this.timedOutWinner(updatedTimer);
 
-      const moveRecord = this.moveRepo.create({
-        game,
-        playerColor: game.currentTurn,
-        rowIndex: row,
-        colIndex: col,
-        moveTimestamp: now,
-      });
+      const moveRecord = this.moveRepo.create({ game, playerColor: game.currentTurn, rowIndex: row, colIndex: col, moveTimestamp: now });
       await this.moveRepo.save(moveRecord);
 
       const moveObj: Move = { row, col, player: game.currentTurn, timestamp: now };
@@ -320,34 +275,21 @@ export class GameService {
       game.currentTurn = nextTurn;
       game.winner = winner;
       game.status = winner ? 'finished' : 'playing';
-      game.timerState = updatedTimer
-        ? { ...updatedTimer, activePlayer: winner ? null : nextTurn, lastSyncTimestamp: now }
-        : null;
+      game.timerState = updatedTimer ? { ...updatedTimer, activePlayer: winner ? null : nextTurn, lastSyncTimestamp: now } : null;
 
       const allMoves = [...existingMoves, moveRecord];
-
-      const isPieDecisionTrigger =
-        !winner &&
-        game.config.pieRule === true &&
-        allMoves.length === 1;
-
+      const isPieDecisionTrigger = !winner && game.config.pieRule === true && allMoves.length === 1;
       if (isPieDecisionTrigger) {
         game.phase = 'pie-decision';
-        if (game.timerState) {
-          game.timerState = { ...game.timerState, activePlayer: null };
-        }
+        if (game.timerState) game.timerState = { ...game.timerState, activePlayer: null };
         await this.gameRepo.save(game);
         return this.toGameState(game, allMoves);
       }
 
       await this.gameRepo.save(game);
-
-      if (game.status === 'finished' && token) {
-        await this.recordMatch(game, token).catch((e) =>
-          console.error('Failed to record match:', e)
-        );
+      if (game.status === 'finished') {
+        await this.recordMatchForAllPlayers(game, token).catch((e) => console.error('Failed to record match:', e));
       }
-
       return this.toGameState(game, allMoves);
     } catch (e) {
       console.error('Bot move failed:', e);
@@ -362,15 +304,9 @@ export class GameService {
     if (config.mode === 'pve') {
       const bot: Player = { id: 'bot', name: botName, color: 'player1', isBot: true };
       if (config.playerColor === 'player2') {
-        return [
-          { ...bot, color: 'player1' },
-          { id: humanId, name: username, color: 'player2' },
-        ];
+        return [{ ...bot, color: 'player1' }, { id: humanId, name: username, color: 'player2' }];
       }
-      return [
-        { id: humanId, name: username, color: 'player1' },
-        { ...bot, color: 'player2' },
-      ];
+      return [{ id: humanId, name: username, color: 'player1' }, { ...bot, color: 'player2' }];
     }
 
     if (config.mode === 'pvp-local') {
@@ -380,36 +316,25 @@ export class GameService {
       ];
     }
 
+    // pvp-online: player2 slot filled after matchmaking via setPlayer2Id
     return [
       { id: humanId, name: username, color: 'player1' },
-      { id: 'waiting', name: 'Waiting...', color: 'player2' },
+      { id: 'waiting', name: 'Opponent', color: 'player2' },
     ];
   }
 
   private buildTimerState(timerSeconds: number): TimerState {
     const ms = timerSeconds * 1000;
-    return {
-      player1RemainingMs: ms,
-      player2RemainingMs: ms,
-      activePlayer: 'player1',
-      lastSyncTimestamp: Date.now(),
-    };
+    return { player1RemainingMs: ms, player2RemainingMs: ms, activePlayer: 'player1', lastSyncTimestamp: Date.now() };
   }
 
-  private computeUpdatedTimer(
-    timer: TimerState | null,
-    player: PlayerColor,
-    now: number
-  ): TimerState | null {
+  private computeUpdatedTimer(timer: TimerState | null, player: PlayerColor, now: number): TimerState | null {
     if (!timer) return null;
     const updated = { ...timer };
     if (updated.activePlayer !== player) return updated;
     const elapsed = now - updated.lastSyncTimestamp;
-    if (player === 'player1') {
-      updated.player1RemainingMs = Math.max(0, updated.player1RemainingMs - elapsed);
-    } else {
-      updated.player2RemainingMs = Math.max(0, updated.player2RemainingMs - elapsed);
-    }
+    if (player === 'player1') updated.player1RemainingMs = Math.max(0, updated.player1RemainingMs - elapsed);
+    else updated.player2RemainingMs = Math.max(0, updated.player2RemainingMs - elapsed);
     return updated;
   }
 
@@ -420,81 +345,43 @@ export class GameService {
     return null;
   }
 
-  private async recordMatch(game: Game, token: string): Promise<void> {
+  private async recordMatchForAllPlayers(game: Game, callerToken?: string): Promise<void> {
     if (!game.winner) return;
+    const rankingMode = toRankingMode(game.config);
+    if (!rankingMode) return;
+    const durationSeconds = Math.floor((game.updatedAt.getTime() - game.createdAt.getTime()) / 1000);
 
-    const humanPlayer =
-      game.players.player1.isBot ? game.players.player2 : game.players.player1;
+    if (game.config.mode === 'pve') {
+      await this.recordMatchForPvePlayer(game, rankingMode, durationSeconds, callerToken);
+    } else {
+      await this.recordMatchForOnlinePlayers(game, rankingMode, durationSeconds);
+    }
+  }
 
-    if (humanPlayer.isLocal) return;
-
-    const opponentPlayer =
-      game.players.player1.id === humanPlayer.id
-        ? game.players.player2
-        : game.players.player1;
-
+  private async recordMatchForPvePlayer(game: Game, rankingMode: string, durationSeconds: number, callerToken?: string): Promise<void> {
+    const humanPlayer = game.players.player1.isBot ? game.players.player2 : game.players.player1;
+    if (humanPlayer.isLocal || !callerToken) return;
+    const opponent = game.players.player1.id === humanPlayer.id ? game.players.player2 : game.players.player1;
     const result = game.winner === humanPlayer.color ? 'win' : 'loss';
-    const durationSeconds = Math.floor(
-      (game.updatedAt.getTime() - game.createdAt.getTime()) / 1000
-    );
-
-    const gameMode = toRankingMode(game.config);
-
     await fetch(`${USERS_INTERNAL_URL}/api/stats/record`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        opponentName: opponentPlayer.name,
-        result,
-        durationSeconds,
-        gameMode,
-      }),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${callerToken}` },
+      body: JSON.stringify({ opponentName: opponent.name, result, durationSeconds, gameMode: rankingMode }),
     });
   }
 
-  async decidePie(gameId: string, decision: PieDecision, token?: string): Promise<GameState> {
-    const game = await this.gameRepo.findOne({ where: { id: gameId } });
-    if (!game) throw Object.assign(new Error('Game not found'), { status: 404 });
-    if ((game.phase ?? 'playing') !== 'pie-decision') {
-      throw Object.assign(new Error('Game is not in Pie Rule decision phase'), { status: 409 });
-    }
+  private async recordMatchForOnlinePlayers(game: Game, rankingMode: string, durationSeconds: number): Promise<void> {
+    const post = (userId: number | null, opponentName: string, result: 'win' | 'loss') =>
+      fetch(`${USERS_INTERNAL_URL}/api/stats/record/internal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': INTERNAL_SECRET },
+        body: JSON.stringify({ userId, opponentName, result, durationSeconds, gameMode: rankingMode }),
+      });
 
-    const moves = await this.moveRepo.find({
-      where: { game: { id: gameId } },
-      order: { playedAt: 'ASC' },
-    });
-
-    if (decision === 'swap') {
-      const firstMove = moves[0];
-      game.boardState = game.boardState.map(row =>
-        row.map(cell =>
-          cell.row === firstMove.rowIndex && cell.col === firstMove.colIndex
-            ? { ...cell, owner: 'player2' }
-            : cell
-        )
-      );
-      game.currentTurn = 'player1';
-    }
-
-    game.phase = 'playing';
-    if (game.timerState) {
-      game.timerState = {
-        ...game.timerState,
-        activePlayer: game.currentTurn,
-        lastSyncTimestamp: Date.now(),
-      };
-    }
-    await this.gameRepo.save(game);
-
-    const botPlayer = this.getPveBot(game);
-    if (botPlayer?.color === game.currentTurn) {
-      return this.applyBotMove(game, moves, game.config.botLevel ?? 'medium', token);
-    }
-
-    return this.toGameState(game, moves);
+    const tasks: Promise<Response>[] = [];
+    if (game.player1Id) tasks.push(post(game.player1Id, game.players.player2.name, game.winner === 'player1' ? 'win' : 'loss'));
+    if (game.player2Id) tasks.push(post(game.player2Id, game.players.player1.name, game.winner === 'player2' ? 'win' : 'loss'));
+    await Promise.allSettled(tasks);
   }
 
   private toGameState(game: Game, moves: GameMove[]): GameState {
@@ -506,12 +393,7 @@ export class GameService {
       board: game.boardState,
       players: game.players,
       currentTurn: game.currentTurn,
-      moves: moves.map((m) => ({
-        row: m.rowIndex,
-        col: m.colIndex,
-        player: m.playerColor,
-        timestamp: Number(m.moveTimestamp),
-      })),
+      moves: moves.map((m) => ({ row: m.rowIndex, col: m.colIndex, player: m.playerColor, timestamp: Number(m.moveTimestamp) })),
       winner: game.winner,
       timer: game.timerState,
       createdAt: game.createdAt.toISOString(),

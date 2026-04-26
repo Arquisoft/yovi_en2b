@@ -46,6 +46,7 @@ interface ControllerShape {
   page: number
   totalPages: number
   goToPage: (p: number) => void
+  currentUserId: string
 }
 
 function makeController(overrides: Partial<ControllerShape> = {}): ControllerShape {
@@ -58,6 +59,7 @@ function makeController(overrides: Partial<ControllerShape> = {}): ControllerSha
     page: 1,
     totalPages: 1,
     goToPage: mockGoToPage,
+    currentUserId: '1',
     ...overrides,
   }
 }

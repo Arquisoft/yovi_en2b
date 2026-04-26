@@ -47,6 +47,15 @@ export interface GameConfig {
   pieRule?: boolean
 }
 
+/** Subset of GameConfig sent to the server when joining the online queue */
+export interface OnlineGameConfig {
+  boardSize: BoardSize
+  timerEnabled: boolean
+  timerSeconds?: number
+  pieRule?: boolean
+  playerColor?: PlayerColor
+}
+
 // ==================== Game State ====================
 
 export type GameStatus = 'waiting' | 'playing' | 'finished' | 'abandoned'
@@ -226,7 +235,7 @@ export interface MatchHistoryFilter {
 
 // ==================== Ranking ====================
 
-export type RankingMode = 'pve-easy' | 'pve-medium' | 'pve-hard'
+export type RankingMode = 'pve-easy' | 'pve-medium' | 'pve-hard' | 'pvp-online'
 
 export interface RankingEntry {
   rank: number
