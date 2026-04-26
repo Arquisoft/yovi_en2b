@@ -11,7 +11,7 @@ import type {
   GameSummary, PaginatedGames,
 } from '../types/game';
 
-const USERS_INTERNAL_URL = process.env.USERS_INTERNAL_URL || 'http://users:3000';
+const USERS_INTERNAL_URL = process.env.USERS_INTERNAL_URL;
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET || 'internal_secret';
 
 const PAGE_SIZE = 5;
