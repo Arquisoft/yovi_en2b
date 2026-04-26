@@ -15,7 +15,8 @@ const mockEntries: RankingEntry[] = [
 describe('RankingTable', () => {
   it('shows empty state when no entries', () => {
     render(<RankingTable entries={[]} currentUsername={null} />)
-    expect(screen.getByText('No hay datos disponibles')).toBeDefined()
+    // i18n is initialised with 'en' in tests → t('ranking.noData') = 'No data available'
+    expect(screen.getByText('No data available')).toBeDefined()
   })
 
   it('renders all player usernames', () => {
@@ -36,19 +37,21 @@ describe('RankingTable', () => {
 
   it('renders table headers', () => {
     render(<RankingTable entries={mockEntries} currentUsername={null} />)
+    // t('ranking.rankHash') = '#', t('ranking.player') = 'Player', t('ranking.victories') = 'Victories'
     expect(screen.getByText('#')).toBeDefined()
-    expect(screen.getByText('Jugador')).toBeDefined()
-    expect(screen.getByText('Victorias')).toBeDefined()
+    expect(screen.getByText('Player')).toBeDefined()
+    expect(screen.getByText('Victories')).toBeDefined()
   })
 
-  it('shows (tú) label for current user', () => {
+  it('shows (you) label for current user', () => {
     render(<RankingTable entries={mockEntries} currentUsername="PlayerOne" />)
-    expect(screen.getByText('(tú)')).toBeDefined()
+    // t('ranking.you') = '(you)' in English
+    expect(screen.getByText('(you)')).toBeDefined()
   })
 
-  it('does not show (tú) label when currentUsername is null', () => {
+  it('does not show (you) label when currentUsername is null', () => {
     render(<RankingTable entries={mockEntries} currentUsername={null} />)
-    expect(screen.queryByText('(tú)')).toBeNull()
+    expect(screen.queryByText('(you)')).toBeNull()
   })
 
   it('shows numeric rank for positions 4 and 5', () => {

@@ -8,13 +8,13 @@ import { GameSelectionPage } from './pages/GameSelectionPage'
 import { GameModePage } from './pages/GameModePage'
 import { GameConfigPage } from './pages/GameConfigPage'
 import { GameYPage } from './pages/GameYPage'
+import { OnlineLobbyPage } from './pages/OnlineLobbyPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { StatsPage } from './pages/StatsPage'
 import { RankingPage } from './pages/RankingPage'
 import { useTranslation } from 'react-i18next'
 import { GameReplayPage } from './pages/GameReplayPage'
 import { GameHistoryPage } from './pages/GameHistoryPage'
-
 
 function App() {
   const { isLoading } = useAuth()
@@ -44,12 +44,13 @@ function App() {
           <Route path="/games" element={<GameSelectionPage />} />
           <Route path="/games/y" element={<GameModePage />} />
           <Route path="/games/y/config/:mode" element={<GameConfigPage />} />
+          <Route path="/games/y/online" element={<OnlineLobbyPage />} />
           <Route path="/games/y/play/:gameId" element={<GameYPage />} />
+          <Route path="/stats" element={<StatsPage />} />
+          <Route path="/ranking" element={<RankingPage />} />
           {/* Game history & step-through replay */}
           <Route path="/history" element={<GameHistoryPage />} />
           <Route path="/games/y/replay/:gameId" element={<GameReplayPage />} />
-          <Route path="/stats" element={<StatsPage />} />
-          <Route path="/ranking" element={<RankingPage />} />
         </Route>
       </Route>
 

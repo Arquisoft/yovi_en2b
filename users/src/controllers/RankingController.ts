@@ -10,7 +10,7 @@ export class RankingController {
   static async getRankingByMode(req: Request, res: Response) {
     try {
       const mode = req.params.mode as GameMode
-      const validModes: GameMode[] = ['pve-easy', 'pve-medium', 'pve-hard']
+      const validModes: GameMode[] = ['pve-easy', 'pve-medium', 'pve-hard', 'pvp-online']
 
       if (!validModes.includes(mode)) {
         return res.status(400).json({ error: 'Invalid game mode' })

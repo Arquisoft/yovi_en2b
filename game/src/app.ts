@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import express from 'express';
-import cors from 'cors';
+import http from 'node:http';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
@@ -10,6 +10,7 @@ import path from 'node:path';
 import { AppDataSource } from './config/database';
 import gameRoutes from './routes/gameRoutes';
 import { jsonErrorHandler, globalErrorHandler } from './middleware/errorHandler';
+import { WebSocketManager } from './websocket/WebSocketManager';
 
 dotenv.config();
 
@@ -64,8 +65,15 @@ const startServer = async () => {
     await AppDataSource.initialize();
     console.log('MariaDB database connected');
 
-    app.listen(PORT, () => {
-      const base = process.env.PUBLIC_URL
+    // Crear el servidor HTTP manualmente para poder pasárselo al WebSocketManager
+    const server = http.createServer(app);
+
+    // Instanciar el WebSocketManager — adjunta ws.Server en path '/ws'
+    new WebSocketManager(server);
+    console.log('WebSocket server attached at /ws');
+
+    server.listen(PORT, () => {
+      const base = process.env.PUBLIC_URL;
       console.log(`Game service API at ${base}/api`);
       console.log(`Swagger documentation: ${base}/api-docs`);
       console.log(`Health check: ${base}/health`);
