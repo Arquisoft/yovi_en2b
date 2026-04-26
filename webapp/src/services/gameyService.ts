@@ -1,7 +1,6 @@
 import type {
   GameInfo,
   GameState,
-  GameSummary,
   PaginatedGames,
   GameConfig,
   ChatMessage,

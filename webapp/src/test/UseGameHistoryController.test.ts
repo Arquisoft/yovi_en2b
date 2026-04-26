@@ -86,7 +86,8 @@ describe('useGameHistoryController — authenticated user', () => {
   })
 
   it('handles empty game list', async () => {
-    vi.mocked(gameService.getUserGames).mockResolvedValueOnce([])
+  const mockEmptyResponse = { games: [], total: 0, totalFinished: 0, page: 1, totalPages: 0 };  
+    vi.mocked(gameService.getUserGames).mockResolvedValueOnce(mockEmptyResponse)
     const { result } = renderHook(() => useGameHistoryController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.games).toHaveLength(0)
