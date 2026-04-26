@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto'
 import { WebSocketServer, WebSocket } from 'ws'
 import type { IncomingMessage } from 'http'
 import type { Server } from 'http'
@@ -343,7 +344,7 @@ export class WebSocketManager {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
     let code = ''
     for (let i = 0; i < 6; i++) {
-      code += chars[Math.floor(Math.random() * chars.length)]
+      code += chars[randomInt(chars.length)]
     }
     return code
   }
