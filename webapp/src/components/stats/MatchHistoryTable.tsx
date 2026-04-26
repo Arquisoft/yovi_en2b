@@ -105,7 +105,7 @@ export function FilterBar({ filter, availableModes, onChange }: Readonly<FilterB
 
   const modeOptions = [
     { value: 'all', label: t('stats.filterAllModes') },
-    ...availableModes.map((m) => ({ value: m, label: m })),
+    ...availableModes.map((m) => ({ value: m, label: t(`ranking.modes.${m}`, { defaultValue: m }) })),
   ]
 
   return (
@@ -290,7 +290,7 @@ export function MatchHistoryTable({ history }: Readonly<MatchHistoryTableProps>)
                     </td>
                     {availableModes.length > 0 && (
                       <td className="py-2 pr-3 text-muted-foreground hidden sm:table-cell text-xs">
-                        {match.gameMode ?? '—'}
+                        {match.gameMode ? t(`ranking.modes.${match.gameMode}`, { defaultValue: match.gameMode }) : '—'}
                       </td>
                     )}
                     <td className="py-2 text-muted-foreground hidden sm:table-cell">

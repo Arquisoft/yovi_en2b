@@ -5,7 +5,7 @@ import { WinrateChart } from '@/components/stats/WinrateChart'
 import { MatchHistoryTable } from '@/components/stats/MatchHistoryTable'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { ArrowLeft, BarChart2 } from 'lucide-react'
+import { ArrowLeft, BarChart2, History } from 'lucide-react'
  
 export function StatsPage() {
   const { t } = useTranslation()
@@ -64,7 +64,13 @@ export function StatsPage() {
  
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">{t('stats.matchHistory')}</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">{t('stats.matchHistory')}</CardTitle>
+                <Button variant="outline" size="sm" onClick={() => navigate('/history')} className="gap-1.5">
+                  <History className="w-3.5 h-3.5" />
+                  {t('stats.viewFullHistory')}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <MatchHistoryTable history={history} />
