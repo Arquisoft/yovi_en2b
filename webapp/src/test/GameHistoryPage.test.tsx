@@ -435,3 +435,127 @@ describe('GameHistoryPage — guest view', () => {
     expect(screen.getByText('Back')).toBeDefined()
   })
 })
+
+// ─── Filter bar ───────────────────────────────────────────────────────────────
+
+describe('GameHistoryPage — result filter', () => {
+  it('shows only the winning game when Win filter is selected', () => {
+    renderPage({
+      games: [
+        makeSummary({ id: 'g1', winner: 'player1' }),
+        makeSummary({ id: 'g2', winner: 'player2' }),
+      ],
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Win' }))
+    expect(screen.getByText('Win', { selector: 'span' })).toBeDefined()
+    expect(screen.queryByText('Loss', { selector: 'span' })).toBeNull()
+  })
+
+  it('shows only the losing game when Loss filter is selected', () => {
+    renderPage({
+      games: [
+        makeSummary({ id: 'g1', winner: 'player1' }),
+        makeSummary({ id: 'g2', winner: 'player2' }),
+      ],
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Loss' }))
+    expect(screen.getByText('Loss', { selector: 'span' })).toBeDefined()
+    expect(screen.queryByText('Win', { selector: 'span' })).toBeNull()
+  })
+
+  it('shows no-match message when filter yields empty results', () => {
+    renderPage({ games: [makeSummary({ winner: null })] })
+    fireEvent.click(screen.getByRole('button', { name: 'Win' }))
+    expect(screen.getByText('No matches match the selected filters')).toBeDefined()
+  })
+
+  it('excludes active games from result filter', () => {
+    renderPage({ games: [makeSummary({ status: 'playing', winner: null })] })
+    fireEvent.click(screen.getByRole('button', { name: 'Loss' }))
+    expect(screen.getByText('No matches match the selected filters')).toBeDefined()
+  })
+
+  it('restores all games when All filter is selected after filtering', () => {
+    renderPage({
+      games: [
+        makeSummary({ id: 'g1', winner: 'player1' }),
+        makeSummary({ id: 'g2', winner: 'player2' }),
+      ],
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Win' }))
+    fireEvent.click(screen.getByRole('button', { name: 'All' }))
+    expect(screen.getAllByText('Replay')).toHaveLength(2)
+  })
+})
+
+describe('GameHistoryPage — mode filter', () => {
+  it('shows mode dropdown when multiple modes are present', () => {
+    renderPage({
+      games: [
+        makeSummary({ id: 'g1', config: { mode: 'pvp-local', boardSize: 5, timerEnabled: false } }),
+        makeSummary({ id: 'g2', config: { mode: 'pvp-online', boardSize: 5, timerEnabled: false } }),
+      ],
+    })
+    expect(screen.getByRole('combobox')).toBeDefined()
+  })
+
+  it('hides mode dropdown when only one mode is present', () => {
+    renderPage()
+    expect(screen.queryByRole('combobox')).toBeNull()
+  })
+
+  it('filters by mode when a mode is selected', () => {
+    renderPage({
+      games: [
+        makeSummary({ id: 'g1', config: { mode: 'pvp-local', boardSize: 5, timerEnabled: false } }),
+        makeSummary({ id: 'g2', config: { mode: 'pvp-online', boardSize: 5, timerEnabled: false } }),
+      ],
+    })
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'pvp-local' } })
+    expect(screen.getAllByText('Replay')).toHaveLength(1)
+  })
+})
+
+// ─── Sorting ──────────────────────────────────────────────────────────────────
+
+describe('GameHistoryPage — sorting', () => {
+  it('sorts by opponent when Opponent header is clicked', () => {
+    renderPage({
+      games: [
+        makeSummary({ id: 'g1' }),
+        makeSummary({ id: 'g2', winner: 'player2' }),
+      ],
+    })
+    fireEvent.click(screen.getByText('Opponent'))
+    expect(screen.getAllByText('Replay')).toHaveLength(2)
+  })
+
+  it('reverses sort direction on second click of same header', () => {
+    renderPage()
+    fireEvent.click(screen.getByText('Opponent'))
+    fireEvent.click(screen.getByText('Opponent'))
+    expect(screen.getByText('Replay')).toBeDefined()
+  })
+
+  it('sorts by result when Result header is clicked', () => {
+    renderPage({
+      games: [
+        makeSummary({ id: 'g1', winner: 'player1' }),
+        makeSummary({ id: 'g2', winner: 'player2' }),
+      ],
+    })
+    fireEvent.click(screen.getByText('Result'))
+    expect(screen.getAllByText('Replay')).toHaveLength(2)
+  })
+
+  it('sorts by mode when Mode header is clicked', () => {
+    renderPage({
+      games: [
+        makeSummary({ id: 'g1', config: { mode: 'pvp-local', boardSize: 5, timerEnabled: false } }),
+        makeSummary({ id: 'g2', config: { mode: 'pvp-online', boardSize: 5, timerEnabled: false } }),
+      ],
+    })
+    fireEvent.click(screen.getAllByText('Mode')[0])
+    expect(screen.getAllByText('Replay')).toHaveLength(2)
+  })
+})

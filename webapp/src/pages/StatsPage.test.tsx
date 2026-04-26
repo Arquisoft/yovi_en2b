@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { StatsPage } from './StatsPage'
 import { useStatsController } from '@/controllers/useStatsController'
@@ -7,6 +7,12 @@ import { useStatsController } from '@/controllers/useStatsController'
 vi.mock('@/controllers/useStatsController', () => ({
   useStatsController: vi.fn(),
 }))
+
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>()
+  return { ...actual, useNavigate: () => mockNavigate }
+})
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -57,6 +63,7 @@ function makeControllerMock(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   vi.mocked(useStatsController).mockReturnValue(makeControllerMock() as any)
+  mockNavigate.mockReset()
 })
 
 // ── Original tests (unchanged logic, mocks now include isGuest) ───────────────
@@ -191,5 +198,39 @@ describe('StatsPage — guest user view', () => {
     renderWithRouter(<StatsPage />)
     expect(screen.getByText('Statistics')).toBeDefined()
     expect(screen.getByText('Back')).toBeDefined()
+  })
+
+  it('navigates to /register when Create Account is clicked', () => {
+    vi.mocked(useStatsController).mockReturnValue(
+      makeControllerMock({ history: [], stats: null, isGuest: true }) as any,
+    )
+    renderWithRouter(<StatsPage />)
+    fireEvent.click(screen.getByText('Create Account'))
+    expect(mockNavigate).toHaveBeenCalledWith('/register')
+  })
+
+  it('navigates to /login when Sign In is clicked', () => {
+    vi.mocked(useStatsController).mockReturnValue(
+      makeControllerMock({ history: [], stats: null, isGuest: true }) as any,
+    )
+    renderWithRouter(<StatsPage />)
+    fireEvent.click(screen.getByText('Sign In'))
+    expect(mockNavigate).toHaveBeenCalledWith('/login')
+  })
+})
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+
+describe('StatsPage — navigation', () => {
+  it('navigates back when Back button is clicked', () => {
+    renderWithRouter(<StatsPage />)
+    fireEvent.click(screen.getByText('Back'))
+    expect(mockNavigate).toHaveBeenCalledWith(-1)
+  })
+
+  it('navigates to /history when View full history is clicked', () => {
+    renderWithRouter(<StatsPage />)
+    fireEvent.click(screen.getByText('View full history'))
+    expect(mockNavigate).toHaveBeenCalledWith('/history')
   })
 })

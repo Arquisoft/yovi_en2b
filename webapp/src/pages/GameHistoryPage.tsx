@@ -316,7 +316,7 @@ export function GameHistoryPage() {
   })
 
   const availableModes = useMemo(
-    () => [...new Set(games.map(gameModeKey))].sort(),
+    () => [...new Set(games.map(gameModeKey))].sort((a, b) => a.localeCompare(b)),
     [games],
   )
 
