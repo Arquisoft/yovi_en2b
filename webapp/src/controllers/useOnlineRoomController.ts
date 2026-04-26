@@ -14,6 +14,7 @@ export function useOnlineRoomController() {
   const [error, setError] = useState<string | null>(null)
 
   const mounted = useRef(true)
+  const hasJoined = useRef(false)
 
   useEffect(() => {
     mounted.current = true
@@ -28,7 +29,7 @@ export function useOnlineRoomController() {
 
     const unsubError = wsService.on('error', (data: any) => {
       if (!mounted.current) return
-      if (joinStatus === 'idle') return
+      if (!hasJoined.current) return
       setJoinStatus('error')
       setError((data.message as string) ?? 'An error occurred')
     })
@@ -47,6 +48,7 @@ export function useOnlineRoomController() {
 
     setError(null)
     setJoinStatus('connecting')
+    hasJoined.current = true
 
     try {
       if (!wsService.isConnected()) {
