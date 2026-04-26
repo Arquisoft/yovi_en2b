@@ -143,12 +143,12 @@ describe('Game API', () => {
         .set('Authorization', `Bearer ${freshToken}`);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body).toHaveLength(0);
+      // CORRECCIÓN: Se espera res.body.games ya que la respuesta es paginada
+      expect(Array.isArray(res.body.games)).toBe(true);
+      expect(res.body.games).toHaveLength(0);
     });
 
     it('returns a summary for each game the user has created', async () => {
-      // Create two games as user 1
       await request(app)
         .post('/api/games')
         .set('Authorization', `Bearer ${token}`)
@@ -163,8 +163,9 @@ describe('Game API', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
-      expect(Array.isArray(res.body)).toBe(true);
-      expect(res.body.length).toBeGreaterThanOrEqual(2);
+      // CORRECCIÓN: Acceso a .games
+      expect(Array.isArray(res.body.games)).toBe(true);
+      expect(res.body.games.length).toBeGreaterThanOrEqual(2);
     });
 
     it('returned summaries have the expected shape', async () => {
@@ -178,7 +179,8 @@ describe('Game API', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
-      const summary = res.body[0];
+      // CORRECCIÓN: Acceso al primer elemento de .games
+      const summary = res.body.games[0];
       expect(summary).toHaveProperty('id');
       expect(summary).toHaveProperty('config');
       expect(summary).toHaveProperty('status');
@@ -189,7 +191,6 @@ describe('Game API', () => {
       expect(summary).toHaveProperty('createdAt');
       expect(summary).toHaveProperty('updatedAt');
       expect(typeof summary.moveCount).toBe('number');
-      // Summaries must NOT expose the full board state or moves array
       expect(summary).not.toHaveProperty('board');
       expect(summary).not.toHaveProperty('moves');
       expect(summary).not.toHaveProperty('timer');
@@ -205,8 +206,8 @@ describe('Game API', () => {
         .get('/api/games')
         .set('Authorization', `Bearer ${token}`);
 
-      // Find the most recent game (first in list, ordered desc)
-      const newest = res.body[0];
+      // CORRECCIÓN: Acceso a .games[0]
+      const newest = res.body.games[0];
       expect(newest.moveCount).toBe(0);
     });
 
@@ -217,7 +218,6 @@ describe('Game API', () => {
         .send(pvpLocalConfig);
       const gameId = createRes.body.id;
 
-      // Play two moves
       await request(app)
         .post(`/api/games/${gameId}/move`)
         .set('Authorization', `Bearer ${token}`)
@@ -231,13 +231,13 @@ describe('Game API', () => {
         .get('/api/games')
         .set('Authorization', `Bearer ${token}`);
 
-      const summary = res.body.find((g: any) => g.id === gameId);
+      // CORRECCIÓN: Buscar dentro de .games
+      const summary = res.body.games.find((g: any) => g.id === gameId);
       expect(summary).toBeDefined();
       expect(summary.moveCount).toBe(2);
     });
 
     it('games are returned newest first', async () => {
-      // Create two games sequentially so updatedAt differs
       await request(app)
         .post('/api/games')
         .set('Authorization', `Bearer ${token}`)
@@ -253,7 +253,8 @@ describe('Game API', () => {
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
-      const dates = res.body.map((g: any) => new Date(g.updatedAt).getTime());
+      // CORRECCIÓN: Mapear .games
+      const dates = res.body.games.map((g: any) => new Date(g.updatedAt).getTime());
       for (let i = 1; i < dates.length; i++) {
         expect(dates[i - 1]).toBeGreaterThanOrEqual(dates[i]);
       }
@@ -266,14 +267,14 @@ describe('Game API', () => {
         .set('Authorization', `Bearer ${otherToken}`)
         .send(pvpLocalConfig);
 
-      // Fresh user 999 should see no games
       const freshToken = makeToken(999, 'noGamesUser');
       const res = await request(app)
         .get('/api/games')
         .set('Authorization', `Bearer ${freshToken}`);
 
       expect(res.status).toBe(200);
-      expect(res.body).toHaveLength(0);
+      // CORRECCIÓN: Verificación en .games
+      expect(res.body.games).toHaveLength(0);
     });
 
     it('includes pve games with the correct config', async () => {
@@ -286,7 +287,8 @@ describe('Game API', () => {
         .get('/api/games')
         .set('Authorization', `Bearer ${token}`);
 
-      const pveGame = res.body.find((g: any) => g.config.mode === 'pve');
+      // CORRECCIÓN: Buscar dentro de .games
+      const pveGame = res.body.games.find((g: any) => g.config.mode === 'pve');
       expect(pveGame).toBeDefined();
       expect(pveGame.config.boardSize).toBe(5);
     });
@@ -526,7 +528,8 @@ describe('Game API', () => {
         .get('/api/games')
         .set('Authorization', `Bearer ${token}`);
 
-      const summary = listRes.body.find((g: any) => g.id === gameId);
+      // CORRECCIÓN: Buscar en .games
+      const summary = listRes.body.games.find((g: any) => g.id === gameId);
       expect(summary).toBeDefined();
       expect(summary.status).toBe('finished');
       expect(summary.winner).toBe('player2');
@@ -541,7 +544,6 @@ describe('Game API', () => {
         .send(pvpLocalConfig);
       const gameId = createRes.body.id;
 
-      // Play a move first, then surrender
       await request(app)
         .post(`/api/games/${gameId}/move`)
         .set('Authorization', `Bearer ${token}`)
@@ -556,7 +558,8 @@ describe('Game API', () => {
         .get('/api/games')
         .set('Authorization', `Bearer ${token}`);
 
-      const summary = listRes.body.find((g: any) => g.id === gameId);
+      // CORRECCIÓN: Buscar en .games
+      const summary = listRes.body.games.find((g: any) => g.id === gameId);
       expect(summary.winner).toBe('player1');
       expect(summary.moveCount).toBe(1);
     });
@@ -573,7 +576,8 @@ describe('Game API', () => {
         request(app).get(`/api/games/${gameId}`),
       ]);
 
-      const summary = listRes.body.find((g: any) => g.id === gameId);
+      // CORRECCIÓN: Buscar en .games
+      const summary = listRes.body.games.find((g: any) => g.id === gameId);
       expect(summary.status).toBe(detailRes.body.status);
       expect(summary.config.mode).toBe(detailRes.body.config.mode);
     });
