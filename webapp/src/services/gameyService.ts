@@ -2,6 +2,7 @@ import type {
   GameInfo,
   GameState,
   GameSummary,
+  PaginatedGames,
   GameConfig,
   ChatMessage,
   PieDecision,
@@ -46,8 +47,8 @@ class GameService {
     return response.json()
   }
 
-  async getUserGames(token: string): Promise<GameSummary[]> {
-    const response = await fetch(`${this.baseUrl}/games`, {
+  async getUserGames(token: string, page = 1): Promise<PaginatedGames> {
+    const response = await fetch(`${this.baseUrl}/games?page=${page}`, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
