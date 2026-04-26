@@ -15,7 +15,7 @@ const es = {
   auth: {
     welcomeTitle: 'Bienvenido a YOVI', welcomeSubtitle: 'Inicia sesión para continuar',
     email: 'Correo electrónico', emailPlaceholder: 'tú@ejemplo.com',
-    password: 'Contraseña', passwordPlaceholder: 'Introduce tu contraseña',
+    password: 'Clave', passwordPlaceholder: 'Introduce tu contraseña',
     showPassword: 'Mostrar contraseña', hidePassword: 'Ocultar contraseña',
     signIn: 'Iniciar sesión', playAsGuest: 'Jugar como invitado',
     noAccount: '¿No tienes cuenta?', createOne: 'Crear una',
