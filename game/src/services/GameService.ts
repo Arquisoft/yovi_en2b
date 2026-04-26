@@ -240,6 +240,10 @@ export class GameService {
     if ((game.phase ?? 'playing') === 'pie-decision') throw Object.assign(new Error('Waiting for Pie Rule decision'), { status: 409 });
     if (game.currentTurn !== player) throw Object.assign(new Error('Not your turn'), { status: 409 });
     if (!isValidMove(game.boardState, row, col)) throw Object.assign(new Error('Invalid move'), { status: 409 });
+    if (game.timerState) {
+      const updated = this.computeUpdatedTimer(game.timerState, player, Date.now());
+      if (this.timedOutWinner(updated)) throw Object.assign(new Error('Time expired'), { status: 409 });
+    }
   }
 
   private computePostMoveTimer(timer: TimerState | null, winner: PlayerColor | null, nextTurn: PlayerColor, now: number): TimerState | null {

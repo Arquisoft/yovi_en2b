@@ -43,6 +43,9 @@ export function useGameYController() {
   const gameIdRef = useRef(gameId)
   gameIdRef.current = gameId
 
+  // Prevent the timeout handler from firing more than once per game
+  const timedOutRef = useRef(false)
+
   // ── Carga inicial del juego ──────────────────────────────────────────────
   useEffect(() => {
     if (!gameId) return
@@ -178,6 +181,37 @@ export function useGameYController() {
     return () => clearInterval(interval)
   }, [game?.timer?.activePlayer, game?.status, isBotThinking])
 
+  // ── Expiración del temporizador ────────────────────────────────────────────
+  // Reset the guard whenever a new game is loaded so the handler can fire once.
+  useEffect(() => {
+    timedOutRef.current = false
+  }, [game?.id])
+
+  useEffect(() => {
+    if (!game || game.status !== 'playing' || !liveTimer?.activePlayer) return
+    if (timedOutRef.current) return
+
+    const activePlayer = liveTimer.activePlayer
+    const activeMs = activePlayer === 'player1' ? liveTimer.player1RemainingMs : liveTimer.player2RemainingMs
+    if (activeMs > 0) return
+
+    // Mark as handled immediately to prevent re-entry on subsequent ticks.
+    timedOutRef.current = true
+
+    if (game.config.mode === 'pvp-online') {
+      // Only the player whose clock ran out sends the signal; the server
+      // validates the timer server-side just like any surrender.
+      const myColor: PlayerColor = String(game.players.player1.id) === String(user?.id) ? 'player1' : 'player2'
+      if (myColor === activePlayer) {
+        wsService.send({ type: 'surrender', gameId: gameId! })
+      }
+    } else {
+      gameService.surrender(gameId!, activePlayer, effectiveToken)
+        .then(updated => setGame(updated))
+        .catch(err => console.error('Timer expiry surrender failed:', err))
+    }
+  }, [liveTimer])
+
   // ── Estado derivado ───────────────────────────────────────────────────────
   const lastMove: Move | null = game?.moves.length ? game.moves[game.moves.length - 1] : null
   const isPieDecisionPending = game?.phase === 'pie-decision'
@@ -194,11 +228,17 @@ export function useGameYController() {
   const canPlay = useCallback((): boolean => {
     if (!game || game.status !== 'playing' || isBotThinking) return false
     if (game.phase === 'pie-decision') return false
+    if (liveTimer?.activePlayer) {
+      const activeMs = liveTimer.activePlayer === 'player1'
+        ? liveTimer.player1RemainingMs
+        : liveTimer.player2RemainingMs
+      if (activeMs <= 0) return false
+    }
     if (game.config.mode === 'pvp-local') return true
 
     const currentPlayer = game.currentTurn === 'player1' ? game.players.player1 : game.players.player2
     return String(currentPlayer.id) === String(user?.id)
-  }, [game, user, isBotThinking])
+  }, [game, user, isBotThinking, liveTimer])
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleCellClick = useCallback(async (row: number, col: number) => {

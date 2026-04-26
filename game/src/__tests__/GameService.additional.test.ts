@@ -195,8 +195,8 @@ describe('GameService – additional coverage', () => {
       expect(state.timer!.player1RemainingMs).toBeGreaterThan(56_000)
     })
 
-    it('clamps remaining time to 0, never goes negative', async () => {
-      const { service, gameRepo, moveRepo } = getService()
+    it('rejects the move with 409 when the active player timer has already expired', async () => {
+      const { service, gameRepo } = getService()
 
       const now = Date.now()
       const timer = makeTimerState({
@@ -205,14 +205,10 @@ describe('GameService – additional coverage', () => {
         player1RemainingMs: 1_000,
       })
       const game = makeGame({ timerState: timer })
-
       gameRepo.findOne.mockResolvedValue(game)
-      moveRepo.find.mockResolvedValue([])
-      moveRepo.create.mockImplementation((d: any) => d)
-      moveRepo.save.mockResolvedValue({})
 
-      const state = await service.playMove('game-1', 0, 0, 'player1')
-      expect(state.timer!.player1RemainingMs).toBe(0)
+      await expect(service.playMove('game-1', 0, 0, 'player1'))
+        .rejects.toMatchObject({ message: 'Time expired', status: 409 })
     })
 
     it('returns null timer unchanged when no timer on game', async () => {
@@ -229,36 +225,25 @@ describe('GameService – additional coverage', () => {
     })
   })
 
-  // ── timedOutWinner ─────────────────────────────────────────────────────────
+  // ── timedOutWinner / timer guard ──────────────────────────────────────────
 
-  describe('timedOutWinner', () => {
-    it('returns player2 as winner when player1 runs out of time', async () => {
-      const { service, gameRepo, moveRepo } = getService()
+  describe('timer expiry guard', () => {
+    it('rejects a move with 409 when player1 clock has run to zero before the move', async () => {
+      const { service, gameRepo } = getService()
 
-      const now = Date.now()
       const timer = makeTimerState({
         activePlayer: 'player1',
-        lastSyncTimestamp: now - 999_999,
-        player1RemainingMs: 1, // will be consumed → 0
+        lastSyncTimestamp: Date.now() - 999_999,
+        player1RemainingMs: 1,
       })
       const game = makeGame({ timerState: timer })
-
       gameRepo.findOne.mockResolvedValue(game)
-      moveRepo.find.mockResolvedValue([])
-      moveRepo.create.mockImplementation((d: any) => d)
-      moveRepo.save.mockResolvedValue({})
-      fetchMock.mockResolvedValue({ ok: true })
 
-      vi.mocked(checkWinner).mockReturnValue(null)
-      vi.mocked(getOppositePlayer).mockReturnValue('player2')
-
-      const state = await service.playMove('game-1', 0, 0, 'player1')
-      expect(state.winner).toBe('player2')
-      expect(state.status).toBe('finished')
+      await expect(service.playMove('game-1', 0, 0, 'player1'))
+        .rejects.toMatchObject({ message: 'Time expired', status: 409 })
     })
 
-    it('returns null when neither player has timed out', async () => {
-      // computeUpdatedTimer with healthy times → timedOutWinner returns null
+    it('allows a move when neither player has timed out', async () => {
       const { service, gameRepo, moveRepo } = getService()
 
       const timer = makeTimerState({ player1RemainingMs: 30_000, player2RemainingMs: 30_000, lastSyncTimestamp: Date.now() })
@@ -272,6 +257,20 @@ describe('GameService – additional coverage', () => {
 
       const state = await service.playMove('game-1', 0, 0, 'player1')
       expect(state.winner).toBeNull()
+    })
+
+    it('does not block moves when there is no timer', async () => {
+      const { service, gameRepo, moveRepo } = getService()
+
+      const game = makeGame({ timerState: null })
+      gameRepo.findOne.mockResolvedValue(game)
+      moveRepo.find.mockResolvedValue([])
+      moveRepo.create.mockImplementation((d: any) => d)
+      moveRepo.save.mockResolvedValue({})
+      vi.mocked(checkWinner).mockReturnValue(null)
+
+      const state = await service.playMove('game-1', 0, 0, 'player1')
+      expect(state.timer).toBeNull()
     })
   })
 
