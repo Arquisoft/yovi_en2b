@@ -1,3 +1,4 @@
+// webapp/src/test/GameModePage.test.tsx
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { GameModePage } from '@/pages/GameModePage'
@@ -37,9 +38,16 @@ describe('GameModePage', () => {
     expect(mockHandleSelectMode).toHaveBeenCalledWith('pvp-local')
   })
 
-  it('does not call handleSelectMode for pvp-online', () => {
+  it('calls handleSelectMode for pve', () => {
+    render(<GameModePage />)
+    fireEvent.click(screen.getByText('vs Computer'))
+    expect(mockHandleSelectMode).toHaveBeenCalledWith('pve')
+  })
+
+  it('calls handleSelectMode for pvp-online', () => {
     render(<GameModePage />)
     fireEvent.click(screen.getByText('Online Match'))
-    expect(mockHandleSelectMode).not.toHaveBeenCalled()
+    // pvp-online is now enabled — handleSelectMode should be called
+    expect(mockHandleSelectMode).toHaveBeenCalledWith('pvp-online')
   })
 })

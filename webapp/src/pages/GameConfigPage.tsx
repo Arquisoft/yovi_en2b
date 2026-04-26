@@ -27,9 +27,10 @@ export function GameConfigPage() {
 
   const getModeTitle = () => {
     switch (mode) {
-      case 'pvp-local': return t('gameConfig.localMatch')
-      case 'pve':       return t('gameConfig.vsComputer')
-      default:          return t('gameConfig.gameSetup')
+      case 'pvp-local':  return t('gameConfig.localMatch')
+      case 'pve':        return t('gameConfig.vsComputer')
+      case 'pvp-online': return t('gameConfig.onlineMatch')
+      default:           return t('gameConfig.gameSetup')
     }
   }
 
@@ -102,25 +103,26 @@ export function GameConfigPage() {
 
             {/* PvE options */}
             {mode === 'pve' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="botLevel">{t('gameConfig.botDifficulty')}</Label>
-                  <Select id="botLevel" value={botLevel} onChange={(e) => setBotLevel(e.target.value as BotLevel)}>
-                    {botLevels.map((level) => (
-                      <option key={level.value} value={level.value}>{level.label}</option>
-                    ))}
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="botLevel">{t('gameConfig.botDifficulty')}</Label>
+                <Select id="botLevel" value={botLevel} onChange={(e) => setBotLevel(e.target.value as BotLevel)}>
+                  {botLevels.map((level) => (
+                    <option key={level.value} value={level.value}>{level.label}</option>
+                  ))}
+                </Select>
+              </div>
+            )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="playerColor">{t('gameConfig.yourColor')}</Label>
-                  <Select id="playerColor" value={playerColor} onChange={(e) => setPlayerColor(e.target.value as PlayerColor)}>
-                    {playerColors.map((color) => (
-                      <option key={color.value} value={color.value}>{color.label}</option>
-                    ))}
-                  </Select>
-                </div>
-              </>
+            {/* Your color (PvE and pvp-online) */}
+            {(mode === 'pve' || mode === 'pvp-online') && (
+              <div className="space-y-2">
+                <Label htmlFor="playerColor">{t('gameConfig.yourColor')}</Label>
+                <Select id="playerColor" value={playerColor} onChange={(e) => setPlayerColor(e.target.value as PlayerColor)}>
+                  {playerColors.map((color) => (
+                    <option key={color.value} value={color.value}>{color.label}</option>
+                  ))}
+                </Select>
+              </div>
             )}
 
             {/* Timer */}
@@ -166,15 +168,13 @@ export function GameConfigPage() {
             </div>
 
             {/* Pie Rule */}
-            {mode !== 'pvp-online' && (
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="pieRule">{t('gameConfig.pieRule')}</Label>
-                  <p className="text-xs text-muted-foreground">{t('gameConfig.pieRuleDescription')}</p>
-                </div>
-                <Switch id="pieRule" checked={pieRule} onCheckedChange={setPieRule} />
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="pieRule">{t('gameConfig.pieRule')}</Label>
+                <p className="text-xs text-muted-foreground">{t('gameConfig.pieRuleDescription')}</p>
               </div>
-            )}
+              <Switch id="pieRule" checked={pieRule} onCheckedChange={setPieRule} />
+            </div>
 
             <Button
               className="w-full"
@@ -182,7 +182,7 @@ export function GameConfigPage() {
               isLoading={isLoading}
               disabled={!!boardSizeError || !!timerError || boardSizeInput === '' || (timerEnabled && timerInput === '')}
             >
-              {t('gameConfig.startGame')}
+              {mode === 'pvp-online' ? t('gameConfig.createRoom') : t('gameConfig.startGame')}
             </Button>
           </CardContent>
         </Card>

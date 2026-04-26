@@ -1,15 +1,14 @@
+// webapp/src/test/GameYPage.test.tsx
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { GameYPage } from '@/pages/GameYPage'
 
 // ─── Mocks ────────────────────────────────────────────────────────────────
 
-// Mock controller
 vi.mock('@/controllers/useGameYController', () => ({
   useGameYController: vi.fn(),
 }))
 
-// Mock components
 vi.mock('@/components/game-y/GameYBoard', () => ({
   GameYBoard: (props: any) => (
     <div data-testid="board" onClick={() => props.onCellClick?.(0, 0)}>
@@ -38,35 +37,45 @@ vi.mock('@/components/game-y/GameOverlay', () => ({
   ),
 }))
 
-// Mock media query
 vi.mock('@/hooks/useMediaQuery', () => ({
   useMediaQuery: vi.fn(),
 }))
 
-// Mock navigate
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }))
 
-// Imports AFTER mocks
 import { useGameYController } from '@/controllers/useGameYController'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
 const baseController = {
-  game: { id: '1' },
+  game: { id: '1', config: { mode: 'pve' } },
   liveTimer: null,
   chatMessages: [],
   isLoading: false,
   error: null,
   lastMove: null,
+  moveError: null,
   canPlay: true,
+  isBotThinking: false,
+  isPieDecisionPending: false,
+  isBotDecidingPie: false,
+  isPieDecisionLoading: false,
+  isSwapAnimating: false,
+  isBotResolvingPie: false,
+  swapAnimationStone: null,
+  swapCommitted: false,
+  opponentDisconnected: false,
   handleCellClick: vi.fn(),
+  handlePieDecision: vi.fn(),
   handleSurrender: vi.fn(),
   handleSendMessage: vi.fn(),
   handlePlayAgain: vi.fn(),
+  // handleGoHome is now part of the controller
+  handleGoHome: vi.fn(),
   currentUserId: 'user-1',
 }
 
@@ -81,7 +90,6 @@ function setup({
     ...baseController,
     ...controller,
   })
-
   ;(useMediaQuery as any).mockReturnValue(mobile)
 
   return render(<GameYPage />)
@@ -109,16 +117,13 @@ describe('GameYPage — states', () => {
 describe('GameYPage — desktop', () => {
   it('renders board and sidebar', () => {
     setup()
-
     expect(screen.getByTestId('board')).toBeDefined()
     expect(screen.getByTestId('sidebar')).toBeDefined()
   })
 
- 
   it('calls handleCellClick when board clicked', () => {
     const handleCellClick = vi.fn()
     setup({ controller: { handleCellClick } })
-
     fireEvent.click(screen.getByTestId('board'))
     expect(handleCellClick).toHaveBeenCalled()
   })
@@ -127,28 +132,25 @@ describe('GameYPage — desktop', () => {
 describe('GameYPage — mobile', () => {
   it('renders mobile layout', () => {
     setup({ mobile: true })
-
     expect(screen.getByTestId('board')).toBeDefined()
     expect(screen.getByTestId('sidebar')).toBeDefined()
   })
-
-  
 })
 
 describe('GameYPage — overlay actions', () => {
   it('calls play again from overlay', () => {
     const handlePlayAgain = vi.fn()
     setup({ controller: { handlePlayAgain } })
-
     fireEvent.click(screen.getByText('OverlayPlayAgain'))
     expect(handlePlayAgain).toHaveBeenCalled()
   })
 
-  it('navigates home from overlay', () => {
-    setup()
-
+  it('calls handleGoHome when GoHome is clicked in overlay', () => {
+    const handleGoHome = vi.fn()
+    setup({ controller: { handleGoHome } })
     fireEvent.click(screen.getByText('GoHome'))
-    expect(mockNavigate).toHaveBeenCalledWith('/games')
+    // handleGoHome on the controller handles leave_game + navigation internally
+    expect(handleGoHome).toHaveBeenCalled()
   })
 })
 
@@ -156,7 +158,6 @@ describe('GameYPage — sidebar actions', () => {
   it('calls surrender', () => {
     const handleSurrender = vi.fn()
     setup({ controller: { handleSurrender } })
-
     fireEvent.click(screen.getByText('Surrender'))
     expect(handleSurrender).toHaveBeenCalled()
   })
@@ -164,7 +165,6 @@ describe('GameYPage — sidebar actions', () => {
   it('calls play again from sidebar', () => {
     const handlePlayAgain = vi.fn()
     setup({ controller: { handlePlayAgain } })
-
     fireEvent.click(screen.getByText('PlayAgain'))
     expect(handlePlayAgain).toHaveBeenCalled()
   })
@@ -204,17 +204,13 @@ describe('GameYPage — desktop sidebar toggle', () => {
 describe('GameYPage — mobile sidebar drag handle', () => {
   it('renders drag handle on mobile', () => {
     setup({ mobile: true })
-    // The drag handle div sits above the sidebar
     expect(screen.getByTestId('sidebar')).toBeInTheDocument()
   })
 
   it('toggles sidebar open/closed when drag handle is clicked', () => {
     setup({ mobile: true })
-    // Find the clickable handle (the only div with touch handlers, wraps the sidebar)
-    // It collapses on first click (was open by default)
     const handles = document.querySelectorAll('.cursor-ns-resize')
     expect(handles.length).toBeGreaterThan(0)
     fireEvent.click(handles[0])
-    // After click the sidebar should be in a collapsed state – no crash is the key assertion
   })
 })
