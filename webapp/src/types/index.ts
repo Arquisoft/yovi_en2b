@@ -1,3 +1,4 @@
+// webapp/src/types/index.ts
 // ==================== User & Auth ====================
 
 export interface User {
@@ -44,6 +45,15 @@ export interface GameConfig {
   botLevel?: BotLevel
   playerColor?: PlayerColor
   pieRule?: boolean
+}
+
+/** Subset of GameConfig sent to the server when joining the online queue */
+export interface OnlineGameConfig {
+  boardSize: BoardSize
+  timerEnabled: boolean
+  timerSeconds?: number
+  pieRule?: boolean
+  playerColor?: PlayerColor
 }
 
 // ==================== Game State ====================
@@ -94,6 +104,21 @@ export interface GameState {
   moves: Move[]
   winner: PlayerColor | null
   timer: TimerState | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface GameSummary {
+  id: string
+  config: GameConfig
+  status: GameStatus
+  phase: GamePhase
+  players: {
+    player1: Player
+    player2: Player
+  }
+  winner: PlayerColor | null
+  moveCount: number
   createdAt: string
   updatedAt: string
 }
@@ -182,6 +207,8 @@ export interface MatchRecord {
   result: 'win' | 'loss'
   durationSeconds: number
   playedAt: string
+  /** Optional: game mode slug, e.g. 'pve-easy', 'pve-medium', 'pve-hard', 'pvp-local' */
+  gameMode?: string | null
 }
 
 export interface WinrateStat {
@@ -194,10 +221,32 @@ export interface StatsData {
   recent: WinrateStat
 }
 
-export type RankingMode = 'pve-easy' | 'pve-medium' | 'pve-hard'
+// ==================== Stats Filtering ====================
+
+export type MatchSortField = 'date' | 'duration' | 'result' | 'opponent' | 'gameMode'
+export type SortDirection = 'asc' | 'desc'
+
+export interface MatchHistoryFilter {
+  result?: 'win' | 'loss' | 'all'
+  gameMode?: string
+  sortField: MatchSortField
+  sortDirection: SortDirection
+}
+
+// ==================== Ranking ====================
+
+export type RankingMode = 'pve-easy' | 'pve-medium' | 'pve-hard' | 'pvp-online'
 
 export interface RankingEntry {
   rank: number
   username: string
   wins: number
+}
+
+export interface PaginatedGames {
+  games: GameSummary[]
+  total: number
+  totalFinished: number
+  page: number
+  totalPages: number
 }

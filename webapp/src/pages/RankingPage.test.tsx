@@ -10,7 +10,6 @@ vi.mock('@/controllers/useRankingController', () => ({
   useRankingController: vi.fn(),
 }))
 
-
 vi.mock('react-router-dom', () => ({
   useNavigate: vi.fn(),
 }))
@@ -31,6 +30,7 @@ describe('RankingPage', () => {
       entries: mockEntries,
       isLoading: false,
       currentUsername: null,
+      error: null
     })
   })
 
@@ -44,16 +44,19 @@ describe('RankingPage', () => {
     expect(screen.getByText('Back')).toBeDefined()
   })
 
-  it('renders all three mode buttons', () => {
+  it('renders all four mode buttons', () => {
     render(<RankingPage />)
-    expect(screen.getByText('Bot fácil')).toBeDefined()
-    expect(screen.getByText('Bot intermedio')).toBeDefined()
-    expect(screen.getByText('Bot difícil')).toBeDefined()
+    // t('ranking.modes.pve-easy') = 'Easy Bot' in English
+    expect(screen.getByText('Easy Bot')).toBeDefined()
+    expect(screen.getByText('Medium Bot')).toBeDefined()
+    expect(screen.getByText('Hard Bot')).toBeDefined()
+    expect(screen.getByText('Online')).toBeDefined()
   })
 
   it('renders the top 5 label', () => {
     render(<RankingPage />)
-    expect(screen.getByText('Bot fácil — Top 5')).toBeDefined()
+    // t('ranking.top5', { mode: 'Easy Bot' }) = 'Easy Bot — Top 5'
+    expect(screen.getByText('Easy Bot — Top 5')).toBeDefined()
   })
 
   it('renders player entries', () => {
@@ -69,6 +72,7 @@ describe('RankingPage', () => {
       entries: [],
       isLoading: true,
       currentUsername: null,
+      error: null
     })
     const { container } = render(<RankingPage />)
     expect(container.querySelector('.animate-spin')).not.toBeNull()
@@ -82,9 +86,11 @@ describe('RankingPage', () => {
       entries: mockEntries,
       isLoading: false,
       currentUsername: null,
+      error: null
     })
     render(<RankingPage />)
-    await userEvent.click(screen.getByText('Bot difícil'))
+    // Use English label: t('ranking.modes.pve-hard') = 'Hard Bot'
+    await userEvent.click(screen.getByText('Hard Bot'))
     expect(setSelectedMode).toHaveBeenCalledWith('pve-hard')
   })
 

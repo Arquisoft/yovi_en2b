@@ -1,45 +1,40 @@
 // users/src/services/StatsService.ts
-import { MatchRecord, StatsData } from '../types/stats';
-import { AppDataSource } from '../config/database';
-import { MatchRecord as MatchRecordEntity } from '../entities/MatchRecord';
+import { AppDataSource } from '../config/database'
+import { MatchRecord as MatchRecordEntity } from '../entities/MatchRecord'
 
-const repo = () => AppDataSource.getRepository(MatchRecordEntity);
+const repo = () => AppDataSource.getRepository(MatchRecordEntity)
 
 export class StatsService {
-
   /**
-   * Returns the full match history for a user.
+   * Returns the full match history for a user, ordered by date descending.
    */
   static async getMatchHistory(userId: number) {
     return repo().find({
       where: { userId },
       order: { playedAt: 'DESC' },
-    });
-
+    })
   }
 
   /**
    * Returns overall and recent (last 20) winrate for a user.
    */
-  static async getWinrate(userId: number): Promise<StatsData> {
+  static async getWinrate(userId: number) {
+    const toWinrate = async (qb: any) => {
+      const rows = await qb.getRawMany()
+      const wins = Number(rows.find((r: any) => r.result === 'win')?.count ?? 0)
+      const losses = Number(rows.find((r: any) => r.result === 'loss')?.count ?? 0)
+      return { wins, losses, total: wins + losses }
+    }
 
-    const toWinrate = async (qb: any) => { //esta funcion acepta un "query builder" como parametro
-      const rows = await qb.getRawMany();
-      const wins = Number(rows.find((r: any) => r.result === 'win')?.count ?? 0); //Aqui separo victorias de derrotas
-      const losses = Number(rows.find((r: any) => r.result === 'loss')?.count ?? 0);
-
-      return { wins, losses, total: wins + losses };
-    };
-
-    const base = () => //query base
+    const base = () =>
       repo()
         .createQueryBuilder('m')
         .select('m.result', 'result')
         .addSelect('COUNT(*)', 'count')
         .where('m.user_id = :userId', { userId })
-        .groupBy('m.result');
+        .groupBy('m.result')
 
-    const recentSubquery = repo() //query recientes
+    const recentSubquery = repo()
       .createQueryBuilder('m')
       .select('m.result', 'result')
       .addSelect('COUNT(*)', 'count')
@@ -54,21 +49,22 @@ export class StatsService {
         'recent',
         'recent.id = m.id'
       )
-      .groupBy('m.result');
+      .groupBy('m.result')
 
     return {
       overall: await toWinrate(base()),
       recent: await toWinrate(recentSubquery),
-    };
+    }
   }
 
   static async saveMatchRecord(data: {
-  userId: number;
-  opponentName: string;
-  result: 'win' | 'loss';
-  durationSeconds: number;
-}) {
-  const record = repo().create(data);
-  return repo().save(record);
-}
+    userId: number
+    opponentName: string
+    result: 'win' | 'loss'
+    durationSeconds: number
+    gameMode?: string | null
+  }) {
+    const record = repo().create(data)
+    return repo().save(record)
+  }
 }

@@ -44,6 +44,20 @@ export const getGame = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const getGames = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    const page = Math.max(1, Number.parseInt(req.query.page as string) || 1);
+    const result = await gameService.getUserGames(userId, page);
+    return res.json(result);
+  } catch (err: any) {
+    return res.status(err.status || 500).json({ error: err.message });
+  }
+};
+
 export const playMove = async (req: AuthRequest, res: Response) => {
   try {
     const id = req.params.id as string;

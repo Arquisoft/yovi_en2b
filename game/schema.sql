@@ -3,6 +3,7 @@ USE users_db;
 CREATE TABLE IF NOT EXISTS games (
   id VARCHAR(36) PRIMARY KEY,
   player1_id INT NULL,
+  player2_id INT NULL,
   config JSON NOT NULL,
   status ENUM('waiting', 'playing', 'finished', 'abandoned') NOT NULL DEFAULT 'playing',
   phase VARCHAR(20) NOT NULL DEFAULT 'playing',

@@ -4,9 +4,11 @@ import { MemoryRouter } from 'react-router-dom'
 import { AppNavbar } from './AppNavbar'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useLanguage } from '@/i18n/LanguageContext'
 
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: vi.fn() }))
 vi.mock('@/contexts/ThemeContext', () => ({ useTheme: vi.fn() }))
+vi.mock('@/i18n/LanguageContext', () => ({ useLanguage: vi.fn() }))
 
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -38,6 +40,11 @@ function renderNavbar(
     setTheme: vi.fn(),
     ...themeOverrides,
   } as any)
+  vi.mocked(useLanguage).mockReturnValue({
+     locale: 'en',
+     toggleLanguage: vi.fn(),
+     setLanguage: vi.fn(),
+   } as any)
   return render(
     <MemoryRouter>
       <AppNavbar />
@@ -55,6 +62,47 @@ describe('AppNavbar — branding', () => {
     expect(screen.getByText('YOVI')).toBeDefined()
   })
 })
+
+describe('AppNavbar — language selector', () => {
+  it('renders the language select', () => {
+    renderNavbar()
+    expect(screen.getByRole('combobox')).toBeDefined()
+  })
+
+  it('language selector is always visible (not gated behind user auth)', () => {
+    renderNavbar({ user: null })
+    expect(screen.getByRole('combobox')).toBeDefined()
+  })
+
+  it('shows available language options', () => {
+    renderNavbar()
+    expect(screen.getByRole('option', { name: 'ES' })).toBeDefined()
+    expect(screen.getByRole('option', { name: 'EN' })).toBeDefined()
+  })
+
+  it('calls setLanguage when selecting a new language', () => {
+    const setLanguage = vi.fn()
+
+    vi.mocked(useLanguage).mockReturnValue({
+      locale: 'en',
+      toggleLanguage: vi.fn(),
+      setLanguage,
+    } as any)
+
+    render(
+      <MemoryRouter>
+        <AppNavbar />
+      </MemoryRouter>
+    )
+
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: 'es' },
+    })
+
+    expect(setLanguage).toHaveBeenCalledWith('es')
+  })
+})
+
 
 describe('AppNavbar — user section', () => {
   it('shows username when a user is logged in', () => {
@@ -105,7 +153,11 @@ describe('AppNavbar — navigation buttons', () => {
     fireEvent.click(screen.getByLabelText('Statistics'))
     expect(mockNavigate).toHaveBeenCalledWith('/stats')
   })
-
+ it('navigates to /history when Game History button is clicked', () => {
+    renderNavbar()
+    fireEvent.click(screen.getByLabelText('Game History'))
+    expect(mockNavigate).toHaveBeenCalledWith('/history')
+  })
   it('navigates to /ranking when Ranking button is clicked', () => {
     renderNavbar()
     fireEvent.click(screen.getByLabelText('Ranking'))
@@ -136,5 +188,55 @@ describe('AppNavbar — logout flow', () => {
     fireEvent.click(screen.getByLabelText('Logout'))
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(logout).not.toHaveBeenCalled()
+  })
+})
+
+describe('AppNavbar — i18n string rendering', () => {
+  it('renders the brand name from t("app.name")', () => {
+    renderNavbar()
+    expect(screen.getByText('YOVI')).toBeDefined()
+  })
+ 
+  it('theme toggle button uses t("nav.toggleTheme") as aria-label', () => {
+    renderNavbar()
+    expect(screen.getByLabelText('Toggle theme')).toBeDefined()
+  })
+ 
+  it('statistics button uses t("nav.statistics") as aria-label', () => {
+    renderNavbar()
+    expect(screen.getByLabelText('Statistics')).toBeDefined()
+  })
+ 
+  it('ranking button uses t("nav.ranking") as aria-label', () => {
+    renderNavbar()
+    expect(screen.getByLabelText('Ranking')).toBeDefined()
+  })
+ 
+  it('logout button uses t("nav.logout") as aria-label', () => {
+    renderNavbar()
+    expect(screen.getByLabelText('Logout')).toBeDefined()
+  })
+ 
+  it('shows t("nav.guestBadge") for guest users', () => {
+    renderNavbar({ isGuest: true })
+    expect(screen.getByText('Guest')).toBeDefined()
+  })
+ 
+  it('logout dialog uses t("nav.signOutConfirmDescription")', () => {
+    renderNavbar()
+    fireEvent.click(screen.getByLabelText('Logout'))
+    expect(screen.getByText('Are you sure you want to sign out of your account?')).toBeDefined()
+  })
+ 
+  it('logout dialog cancel button uses t("common.cancel")', () => {
+    renderNavbar()
+    fireEvent.click(screen.getByLabelText('Logout'))
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDefined()
+  })
+ 
+  it('logout dialog confirm button uses t("nav.signOut")', () => {
+    renderNavbar()
+    fireEvent.click(screen.getByLabelText('Logout'))
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeDefined()
   })
 })

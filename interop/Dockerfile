@@ -25,6 +25,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --omit=optional --ignore-scripts
 
 COPY --from=builder /app/dist ./dist
+COPY openapi.yaml ./
 
 # Non-root user for security
 RUN addgroup -g 1001 -S nodejs && \

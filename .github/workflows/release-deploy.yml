@@ -116,7 +116,7 @@ jobs:
         DB_PASSWORD: users_password
         JWT_SECRET: e2e_test_jwt_secret
         RUST_ENGINE_URL: http://localhost:4000
-        USERS_SERVICE_URL: http://localhost:3001
+        USERS_SERVICE_URL: http://localhost:3000
 
   docker-push-users:
     name: Publish users image
@@ -202,7 +202,7 @@ jobs:
         registry: ghcr.io
         workdir: game
 
-docker-push-interop:
+  docker-push-interop:
     name: Publish interop image
     runs-on: ubuntu-latest
     needs: [ test-node, test-rust, e2e ]

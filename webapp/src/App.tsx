@@ -8,22 +8,26 @@ import { GameSelectionPage } from './pages/GameSelectionPage'
 import { GameModePage } from './pages/GameModePage'
 import { GameConfigPage } from './pages/GameConfigPage'
 import { GameYPage } from './pages/GameYPage'
+import { OnlineLobbyPage } from './pages/OnlineLobbyPage'
+import { OnlineRoomPage } from './pages/OnlineRoomPage'
+import { OnlineHostLobbyPage } from './pages/OnlineHostLobbyPage'
 import { NotFoundPage } from './pages/NotFoundPage'
-
 import { StatsPage } from './pages/StatsPage'
-
 import { RankingPage } from './pages/RankingPage'
-
+import { useTranslation } from 'react-i18next'
+import { GameReplayPage } from './pages/GameReplayPage'
+import { GameHistoryPage } from './pages/GameHistoryPage'
 
 function App() {
   const { isLoading } = useAuth()
+  const { t } = useTranslation()
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-muted-foreground">Loading YOVI...</p>
+          <p className="text-muted-foreground">{t('app.loading')}</p>
         </div>
       </div>
     )
@@ -42,9 +46,15 @@ function App() {
           <Route path="/games" element={<GameSelectionPage />} />
           <Route path="/games/y" element={<GameModePage />} />
           <Route path="/games/y/config/:mode" element={<GameConfigPage />} />
+          <Route path="/games/y/online" element={<OnlineRoomPage />} />
+          <Route path="/games/y/online/host" element={<OnlineHostLobbyPage />} />
+          <Route path="/games/y/online/queue" element={<OnlineLobbyPage />} />
           <Route path="/games/y/play/:gameId" element={<GameYPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/ranking" element={<RankingPage />} />
+          {/* Game history & step-through replay */}
+          <Route path="/history" element={<GameHistoryPage />} />
+          <Route path="/games/y/replay/:gameId" element={<GameReplayPage />} />
         </Route>
       </Route>
 

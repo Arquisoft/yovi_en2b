@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { GameState, GameMode, PlayerColor } from '@/types'
 import { RotateCcw, Home, Skull, X } from 'lucide-react'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-export const PRIMARY_COLOR    = '#4A9EFF'
+export const PRIMARY_COLOR     = '#4A9EFF'
 export const DESTRUCTIVE_COLOR = '#e05252'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -18,14 +19,9 @@ interface GameOverlayProps {
 
 interface Particle {
   id: number
-  x: number
-  y: number
-  vx: number
-  vy: number
-  color: string
-  size: number
-  rotation: number
-  rotationSpeed: number
+  x: number; y: number; vx: number; vy: number
+  color: string; size: number
+  rotation: number; rotationSpeed: number
   opacity: number
   shape: 'rect' | 'circle' | 'triangle'
 }
@@ -86,26 +82,15 @@ export function getAccentColor(isVictory: boolean, hasWinner: boolean): string {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-interface ResultIconProps {
-  isVictory: boolean
-  hasWinner: boolean
-}
+interface ResultIconProps { isVictory: boolean; hasWinner: boolean }
 
 export function ResultIcon({ isVictory, hasWinner }: ResultIconProps) {
   if (isVictory) {
-    return (
-      <div className="go-crown" style={{ fontSize: 52, filter: 'drop-shadow(0 0 12px #FFD700)' }}>
-        🏆
-      </div>
-    )
+    return <div className="go-crown" style={{ fontSize: 52, filter: 'drop-shadow(0 0 12px #FFD700)' }}>🏆</div>
   }
   if (hasWinner) {
     return (
-      <div style={{
-        width: 60, height: 60, borderRadius: '50%', margin: '0 auto',
-        background: `${DESTRUCTIVE_COLOR}22`, border: `2px solid ${DESTRUCTIVE_COLOR}55`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
+      <div style={{ width: 60, height: 60, borderRadius: '50%', margin: '0 auto', background: `${DESTRUCTIVE_COLOR}22`, border: `2px solid ${DESTRUCTIVE_COLOR}55`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Skull style={{ width: 28, height: 28, color: DESTRUCTIVE_COLOR }} />
       </div>
     )
@@ -122,12 +107,13 @@ interface ResultSubtitleProps {
 }
 
 export function ResultSubtitle({ isLocalGame, isVictory, winnerName, opponentName, accentColor }: ResultSubtitleProps) {
+  const { t } = useTranslation()
   if (isLocalGame) {
-    return <span style={{ color: accentColor, fontWeight: 700 }}>{winnerName} wins!</span>
+    return <span style={{ color: accentColor, fontWeight: 700 }}>{t('overlay.winsLocal', { name: winnerName })}</span>
   }
   return (
     <>
-      {isVictory ? 'You beat ' : 'Beaten by '}
+      {isVictory ? t('overlay.youBeat') : t('overlay.beatenBy')}
       <span style={{ color: accentColor, fontWeight: 700 }}>{opponentName}</span>
     </>
   )
@@ -136,8 +122,8 @@ export function ResultSubtitle({ isLocalGame, isVictory, winnerName, opponentNam
 // ─── ConfettiCanvas ───────────────────────────────────────────────────────────
 
 function ConfettiCanvas({ active }: { active: boolean }) {
-  const canvasRef   = useRef<HTMLCanvasElement>(null)
-  const animRef     = useRef<number>()
+  const canvasRef    = useRef<HTMLCanvasElement>(null)
+  const animRef      = useRef<number>()
   const particlesRef = useRef<Particle[]>([])
 
   useEffect(() => {
@@ -149,15 +135,13 @@ function ConfettiCanvas({ active }: { active: boolean }) {
 
     const W = canvas.width  = canvas.offsetWidth
     const H = canvas.height = canvas.offsetHeight
-  
-    // Safe: Math.random is used only for visual particle effects (non-cryptographic)
 
     const colors = ['#FFD700', '#4A9EFF', '#FF6B6B', '#4ECDC4', '#96CEB4', '#FFEAA7', '#DDA0DD']
     const shapes: Particle['shape'][] = ['rect', 'circle', 'triangle']
 
     particlesRef.current = Array.from({ length: 90 }, (_, i) => ({
       id: i,
-      x: W * (0.3 + Math.random() * 0.4), 
+      x: W * (0.3 + Math.random() * 0.4),
       y: H * (0.3 + Math.random() * 0.3),
       vx: (Math.random() - 0.5) * 8,
       vy: -Math.random() * 12 - 3,
@@ -165,8 +149,8 @@ function ConfettiCanvas({ active }: { active: boolean }) {
       size:          6 + Math.random() * 10,
       rotation:      Math.random() * 360,
       rotationSpeed: (Math.random() - 0.5) * 10,
-      opacity: 1,
-      shape: shapes[Math.floor(Math.random() * shapes.length)],
+      opacity:       1,
+      shape:         shapes[Math.floor(Math.random() * shapes.length)],
     }))
 
     const draw = () => {
@@ -185,9 +169,7 @@ function ConfettiCanvas({ active }: { active: boolean }) {
         ctx.restore()
       }
 
-      if (particlesRef.current.length > 0) {
-        animRef.current = requestAnimationFrame(draw)
-      }
+      if (particlesRef.current.length > 0) animRef.current = requestAnimationFrame(draw)
     }
 
     animRef.current = requestAnimationFrame(draw)
@@ -196,38 +178,47 @@ function ConfettiCanvas({ active }: { active: boolean }) {
 
   if (!active) return null
 
-  return (
-    <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
-  )
+  return <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
 }
 
 function drawParticleShape(ctx: CanvasRenderingContext2D, p: Particle) {
   if (p.shape === 'circle') {
-    ctx.beginPath()
-    ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2)
-    ctx.fill()
+    ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2); ctx.fill()
   } else if (p.shape === 'triangle') {
-    ctx.beginPath()
-    ctx.moveTo(0, -p.size / 2)
-    ctx.lineTo(p.size / 2, p.size / 2)
-    ctx.lineTo(-p.size / 2, p.size / 2)
-    ctx.closePath()
-    ctx.fill()
+    ctx.beginPath(); ctx.moveTo(0, -p.size / 2); ctx.lineTo(p.size / 2, p.size / 2); ctx.lineTo(-p.size / 2, p.size / 2); ctx.closePath(); ctx.fill()
   } else {
     ctx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.6)
   }
+}
+function getResultI18nKey(resultLabel: string): string {
+  if (resultLabel === 'VICTORY') return 'overlay.victory'
+  if (resultLabel === 'DEFEAT')  return 'overlay.defeat'
+  return 'overlay.draw'
+}
+
+function getModeI18nKey(mode: GameMode): string {
+  if (mode === 'pve')       return 'overlay.modeVsBot'
+  if (mode === 'pvp-local') return 'overlay.modeLocal'
+  return 'overlay.modeOnline'
+}
+// Fuera del componente, junto a getResultI18nKey y getModeI18nKey:
+function getTitleClassName(isVictory: boolean, hasWinner: boolean): string {
+  if (isVictory)  return 'go-title-victory'
+  if (hasWinner)  return 'go-title-defeat'
+  return 'go-title-draw'
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function GameOverlay({ game, currentUserId, onPlayAgain, onGoHome }: GameOverlayProps) {
+  const { t } = useTranslation()
   const [show,   setShow]   = useState(false)
   const [closed, setClosed] = useState(false)
 
   useEffect(() => {
     if (game.status !== 'finished') return
-    const t = setTimeout(() => setShow(true), 400)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => setShow(true), 400)
+    return () => clearTimeout(timer)
   }, [game.status])
 
   if (game.status !== 'finished' || !show || closed) return null
@@ -235,13 +226,16 @@ export function GameOverlay({ game, currentUserId, onPlayAgain, onGoHome }: Game
   const { isVictory, resultLabel, winnerName, opponentName } = resolveResult(game, currentUserId)
   const accentColor = getAccentColor(isVictory, !!game.winner)
   const isLocalGame = game.config.mode === 'pvp-local'
+  const resultI18nKey = getResultI18nKey(resultLabel)
+  const modeI18nKey   = getModeI18nKey(game.config.mode)
 
   const stats = [
-    { label: 'Moves', value: game.moves.length },
-    { label: 'Board', value: `${game.config.boardSize}×${game.config.boardSize}` },
-    { label: 'Mode',  value: getModeLabel(game.config.mode) },
+    { label: t('overlay.movesStat'), value: game.moves.length },
+    { label: t('overlay.boardStat'), value: `${game.config.boardSize}×${game.config.boardSize}` },
+    { label: t('overlay.modeStat'),  value: t(modeI18nKey) },
   ]
 
+  const titleClassName = getTitleClassName(isVictory, !!game.winner)
   return (
     <>
       <style>{`
@@ -274,40 +268,32 @@ export function GameOverlay({ game, currentUserId, onPlayAgain, onGoHome }: Game
 
       <div
         className="go-overlay"
-        style={{
-          position: 'absolute', inset: 0, zIndex: 50,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: isVictory
-            ? 'radial-gradient(ellipse at 50% 45%,rgba(74,158,255,.12) 0%,rgba(8,12,22,.94) 65%)'
-            : 'radial-gradient(ellipse at 50% 45%,rgba(200,50,50,.08) 0%,rgba(8,12,22,.96) 65%)',
-        }}
+        style={{ position: 'absolute', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isVictory ? 'radial-gradient(ellipse at 50% 45%,rgba(74,158,255,.12) 0%,rgba(8,12,22,.94) 65%)' : 'radial-gradient(ellipse at 50% 45%,rgba(200,50,50,.08) 0%,rgba(8,12,22,.96) 65%)' }}
       >
         <ConfettiCanvas active={isVictory} />
 
         <div
           className="go-card"
-          style={{ position:'relative', width:'100%', maxWidth:400, margin:'0 16px', background:'#0e1220', borderRadius:16, border:`1.5px solid ${accentColor}`, padding:'36px 28px 28px', textAlign:'center' }}
+          style={{ position: 'relative', width: '100%', maxWidth: 400, margin: '0 16px', background: '#0e1220', borderRadius: 16, border: `1.5px solid ${accentColor}`, padding: '36px 28px 28px', textAlign: 'center' }}
         >
-          {/* Scanlines */}
-          <div style={{ position:'absolute', inset:0, borderRadius:16, pointerEvents:'none', backgroundImage:'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,.018) 2px,rgba(255,255,255,.018) 4px)' }} />
+          <div style={{ position: 'absolute', inset: 0, borderRadius: 16, pointerEvents: 'none', backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,.018) 2px,rgba(255,255,255,.018) 4px)' }} />
 
-          <button className="go-btn-close" onClick={() => setClosed(true)} title="Close and view board">
-            <X style={{ width:14, height:14 }} />
+          <button className="go-btn-close" onClick={() => setClosed(true)} title={t('overlay.closeViewBoard')}>
+            <X style={{ width: 14, height: 14 }} />
           </button>
 
-          <div style={{ marginBottom:12 }}>
+          <div style={{ marginBottom: 12 }}>
             <ResultIcon isVictory={isVictory} hasWinner={!!game.winner} />
           </div>
 
           <div
-            style={{ fontSize:56, fontWeight:900, letterSpacing:'-0.02em', lineHeight:1, marginBottom:16 }}
-            className={isVictory ? 'go-title-victory' : game.winner ? 'go-title-defeat' : 'go-title-draw'}
-          >
-            {resultLabel}
+            style={{ fontSize: 56, fontWeight: 900, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 16 }}
+            className={titleClassName}          >
+            {t(resultI18nKey)}
           </div>
 
           {game.winner && (
-            <div style={{ marginBottom:20, fontSize:14, color:'#666' }}>
+            <div style={{ marginBottom: 20, fontSize: 14, color: '#666' }}>
               <ResultSubtitle
                 isLocalGame={isLocalGame}
                 isVictory={isVictory}
@@ -318,21 +304,21 @@ export function GameOverlay({ game, currentUserId, onPlayAgain, onGoHome }: Game
             </div>
           )}
 
-          <div className="go-stats" style={{ display:'flex', justifyContent:'center', marginBottom:24, borderTop:'1px solid #1e2030', borderBottom:'1px solid #1e2030', padding:'14px 0' }}>
+          <div className="go-stats" style={{ display: 'flex', justifyContent: 'center', marginBottom: 24, borderTop: '1px solid #1e2030', borderBottom: '1px solid #1e2030', padding: '14px 0' }}>
             {stats.map((stat, i, arr) => (
-              <div key={stat.label} style={{ flex:1, borderRight: i < arr.length - 1 ? '1px solid #1e2030' : 'none' }}>
-                <div style={{ fontSize:10, color:'#444', textTransform:'uppercase', letterSpacing:'.1em', marginBottom:4 }}>{stat.label}</div>
-                <div style={{ fontSize:20, fontWeight:800, color:'#ccc' }}>{stat.value}</div>
+              <div key={stat.label} style={{ flex: 1, borderRight: i < arr.length - 1 ? '1px solid #1e2030' : 'none' }}>
+                <div style={{ fontSize: 10, color: '#444', textTransform: 'uppercase', letterSpacing: '.1em', marginBottom: 4 }}>{stat.label}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#ccc' }}>{stat.value}</div>
               </div>
             ))}
           </div>
 
           <div className="go-buttons">
             <button className="go-btn-primary" onClick={onPlayAgain}>
-              <RotateCcw style={{ width:15, height:15 }} /> Play Again
+              <RotateCcw style={{ width: 15, height: 15 }} /> {t('overlay.playAgain')}
             </button>
             <button className="go-btn-ghost" onClick={onGoHome}>
-              <Home style={{ width:15, height:15 }} /> Back to Games
+              <Home style={{ width: 15, height: 15 }} /> {t('overlay.backToGames')}
             </button>
           </div>
         </div>

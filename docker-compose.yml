@@ -88,7 +88,7 @@ services:
       DB_PASSWORD: ${MARIADB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       PUBLIC_URL: ${VITE_GAME_API_URL}
-      USERS_PUBLIC_URL: ${VITE_USERS_API_URL}
+      USERS_INTERNAL_URL: http://users:3000
       RUST_INTERNAL_URL: http://gamey:4000
     depends_on:
       mariadb:
@@ -124,8 +124,9 @@ services:
     ports:
       - "3001:3001"
     environment:
+      APP_ENV: ${APP_ENV:-production}
       WEBAPP_PORT: 3001
-      # Must match the gamey service name on monitor-net
+      PUBLIC_URL: ${VITE_INTEROP_API_URL}
       RUST_INTERNAL_URL: http://gamey:4000
     depends_on:
       gamey:
@@ -158,8 +159,10 @@ services:
     volumes:
       - ./users/monitoring/grafana/provisioning:/etc/grafana/provisioning
     environment:
-      - GF_LOG_LEVEL=error
-      - GF_LOG_MODE=console
+      GF_LOG_LEVEL: error
+      GF_LOG_MODE: console
+      GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL}
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
     networks:
       - monitor-net
 

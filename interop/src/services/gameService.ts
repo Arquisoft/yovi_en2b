@@ -26,18 +26,9 @@ import { applyMove } from './yenService';
 // ── Configuration ─────────────────────────────────────────────────────────────
 
 const RUST_URL = process.env.RUST_INTERNAL_URL ?? 'http://localhost:4000';
-const RUST_API_VERSION = 'v1';
-const RUST_TIMEOUT_MS = 2_000;
+const RUST_TIMEOUT_MS = 3_500;
 
-const DEFAULT_BOT_ID = 'random_bot';
-
-// Optional strategy → bot_id mapping for callers that pass a strategy name
-// instead of a raw bot_id.  Additional difficulty levels can be added here.
-const STRATEGY_TO_BOT: Record<string, string> = {
-  EASY: 'random_bot',
-  MEDIUM: 'fast_bot',
-  HARD: 'smart_bot',
-};
+type BotId = 'random_bot' | 'fast_bot' | 'smart_bot';
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -70,9 +61,8 @@ export const play = async (
   const rustResponse = await callRustEngine(position, resolvedBotId);
 
   const botCoords = rustResponse.coords;
-  const botToken = position.players[position.turn]; // current player's token
+  const botToken = position.players[position.turn];
 
-  // Apply the bot's move to produce the updated layout string
   const updatedLayout = applyMove(
     position.layout,
     botCoords,
@@ -90,25 +80,31 @@ export const play = async (
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
 /**
- * Resolve the effective bot ID from the caller-supplied options.
- * Priority: explicit bot_id > strategy mapping > default.
+ * Map user-supplied identifiers to a known bot ID.
+ * Returns a safe string literal — never the raw user-supplied value.
  */
-function resolveBotId(botId?: string, strategy?: string): string {
-  if (botId) return botId;
-  if (strategy && STRATEGY_TO_BOT[strategy.toUpperCase()]) {
-    return STRATEGY_TO_BOT[strategy.toUpperCase()];
+function resolveBotId(botId?: string, strategy?: string): BotId {
+  switch (botId ?? strategy?.toUpperCase()) {
+    case 'random_bot': case 'EASY':   return 'random_bot';
+    case 'fast_bot':   case 'MEDIUM': return 'fast_bot';
+    case 'smart_bot':  case 'HARD':   return 'smart_bot';
+    default:
+      if (botId) throw makeError('BOT_NOT_FOUND', `Bot '${botId}' is not registered in the engine.`, 404);
+      return 'random_bot';
   }
-  return DEFAULT_BOT_ID;
 }
 
 /**
  * Forward a YEN position to the Rust engine and return its move response.
- * Maps Rust/network failures to structured errors the controller can handle.
+ *
+ * The guard clause validates `botId` against string literals immediately before
+ * URL construction — this acts as a Sonar-recognised sanitiser that proves no
+ * user-controlled data can reach the URL path.
  */
-async function callRustEngine(yen: YEN, botId: string): Promise<RustMoveResponse> {
+async function callRustEngine(yen: YEN, botId: BotId): Promise<RustMoveResponse> {
   try {
     const response = await axios.post<RustMoveResponse>(
-      `${RUST_URL}/${RUST_API_VERSION}/ybot/choose/${botId}`,
+      `${RUST_URL}/v1/ybot/choose/${botId}`,
       yen,
       {
         timeout: RUST_TIMEOUT_MS,
@@ -125,7 +121,7 @@ async function callRustEngine(yen: YEN, botId: string): Promise<RustMoveResponse
       }
 
       if (axiosErr.response?.status === 404) {
-        throw makeError('BOT_NOT_FOUND', `Bot '${botId}' is not registered in the engine.`, 404);
+        throw makeError('BOT_NOT_FOUND', 'The requested bot is not registered in the engine.', 404);
       }
 
       const body = axiosErr.response?.data as any;
