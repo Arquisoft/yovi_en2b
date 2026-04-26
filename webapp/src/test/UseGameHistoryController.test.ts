@@ -44,15 +44,21 @@ function makeAuthMock(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  
+   vi.resetAllMocks()
+  
   vi.mocked(useAuth).mockReturnValue(makeAuthMock() as any)
-  vi.mocked(gameService.getUserGames).mockResolvedValue({ 
-    games: [mockSummary],
-    total: 1,
-    totalFinished: 1,
-    page: 1,
-    totalPages: 1
-  } as any)})
-
+  
+  vi.mocked(gameService.getUserGames).mockImplementation(() =>
+    Promise.resolve({
+      games: [mockSummary],
+      total: 1,
+      totalFinished: 1,
+      page: 1,
+      totalPages: 1,
+    } as any)
+  )
+})
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('useGameHistoryController — authenticated user', () => {
