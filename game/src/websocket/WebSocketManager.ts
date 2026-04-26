@@ -5,7 +5,6 @@ import jwt from 'jsonwebtoken'
 import { MatchmakingService } from './MatchmakingService'
 import type { ClientMessage, ConnectedClient, OnlineGameConfig, ServerMessage } from './types'
 import { GameService } from '../services/GameService'
-import type { BoardSize } from '../types/game'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'please_dont_tell_anyone'
 const USERS_PUBLIC_URL = process.env.USERS_PUBLIC_URL || 'http://localhost:3000'

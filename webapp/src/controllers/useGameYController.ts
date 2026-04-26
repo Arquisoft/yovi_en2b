@@ -275,9 +275,12 @@ export function useGameYController() {
       return
     }
 
-    const isPlayer1 = String(game.players.player1.id) === String(user?.id)
-    const surrenderingPlayer: PlayerColor =
-      game.config.mode === 'pvp-local' ? game.currentTurn : (isPlayer1 ? 'player1' : 'player2')
+    let surrenderingPlayer: PlayerColor
+    if (game.config.mode === 'pvp-local') {
+      surrenderingPlayer = game.currentTurn
+    } else {
+      surrenderingPlayer = String(game.players.player1.id) === String(user?.id) ? 'player1' : 'player2'
+    }
 
     try {
       const updated = await gameService.surrender(gameId, surrenderingPlayer, effectiveToken)
