@@ -6,20 +6,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ArrowLeft } from 'lucide-react'
 import type { RankingMode } from '@/types'
- 
+
+const MODES: { value: RankingMode; labelKey: string }[] = [
+  { value: 'pve-easy',   labelKey: 'ranking.modes.pve-easy' },
+  { value: 'pve-medium', labelKey: 'ranking.modes.pve-medium' },
+  { value: 'pve-hard',   labelKey: 'ranking.modes.pve-hard' },
+  { value: 'pvp-online', labelKey: 'ranking.modes.pvp-online' },
+]
+
 export function RankingPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { selectedMode, setSelectedMode, entries, isLoading, currentUsername } = useRankingController()
- 
-  const MODES: { value: RankingMode; labelKey: string }[] = [
-    { value: 'pve-easy',   labelKey: 'ranking.modes.pve-easy'   },
-    { value: 'pve-medium', labelKey: 'ranking.modes.pve-medium' },
-    { value: 'pve-hard',   labelKey: 'ranking.modes.pve-hard'   },
-  ]
- 
+  const { 
+    selectedMode, 
+    setSelectedMode, 
+    entries, 
+    isLoading, 
+    currentUsername 
+  } = useRankingController()
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl space-y-6">
+      {/* Cabecera */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -27,7 +35,8 @@ export function RankingPage() {
         </Button>
         <h1 className="text-3xl font-bold">{t('ranking.title')}</h1>
       </div>
- 
+
+      {/* Selector de Modos */}
       <div className="flex gap-2 flex-wrap">
         {MODES.map((mode) => (
           <button
@@ -43,7 +52,8 @@ export function RankingPage() {
           </button>
         ))}
       </div>
- 
+
+      {/* Tabla de Clasificación */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">
@@ -56,7 +66,10 @@ export function RankingPage() {
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
-            <RankingTable entries={entries.slice(0, 5)} currentUsername={currentUsername} />
+            <RankingTable 
+              entries={entries.slice(0, 5)} 
+              currentUsername={currentUsername} 
+            />
           )}
         </CardContent>
       </Card>

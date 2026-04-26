@@ -1,13 +1,14 @@
-// users/src/routes/statsRoutes.ts
 import { Router } from 'express';
 import { StatsController } from '../controllers/StatsController';
 import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
-// All stats routes require JWT
 router.get('/history', authMiddleware, StatsController.getMatchHistory);
 router.get('/winrate', authMiddleware, StatsController.getWinrate);
-router.post('/record', authMiddleware, StatsController.saveRecord);  
+router.post('/record', authMiddleware, StatsController.saveRecord);
+
+// Server-to-server endpoint — no JWT, protected by X-Internal-Secret header
+router.post('/record/internal', StatsController.saveInternalRecord);
 
 export default router;

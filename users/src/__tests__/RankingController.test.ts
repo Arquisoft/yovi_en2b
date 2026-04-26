@@ -1,13 +1,9 @@
-// users/__tests__/RankingController.test.ts
-
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { RankingController } from '../controllers/RankingController'
 import { RankingService } from '../services/RankingService'
 
 vi.mock('../services/RankingService', () => ({
-  RankingService: {
-    getRankingByMode: vi.fn(),
-  },
+  RankingService: { getRankingByMode: vi.fn() },
 }))
 
 const mockRanking = [
@@ -36,7 +32,7 @@ describe('RankingController', () => {
     expect(res.json).toHaveBeenCalledWith(mockRanking)
   })
 
-  it('returns ranking for pve-medium', async () => {
+    it('returns ranking for pve-medium', async () => {
     const req = { params: { mode: 'pve-medium' } } as any
     const res = mockRes()
     await RankingController.getRankingByMode(req, res)
@@ -49,6 +45,13 @@ describe('RankingController', () => {
     const res = mockRes()
     await RankingController.getRankingByMode(req, res)
     expect(RankingService.getRankingByMode).toHaveBeenCalledWith('pve-hard')
+    expect(res.json).toHaveBeenCalledWith(mockRanking)
+  })
+
+  it('returns ranking for pvp-online', async () => {
+    const req = { params: { mode: 'pvp-online' } } as any
+    const res = mockRes()
+    await RankingController.getRankingByMode(req, res)
     expect(res.json).toHaveBeenCalledWith(mockRanking)
   })
 
