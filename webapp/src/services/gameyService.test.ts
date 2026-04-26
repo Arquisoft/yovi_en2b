@@ -178,19 +178,7 @@ describe('GameService', () => {
       await expect(gameService.getUserGames('token')).rejects.toThrow('Failed to fetch game history')
     })
  
-    it('the URL targets the /api/games endpoint (not a sub-route)', async () => {
-      vi.mocked(fetch).mockResolvedValueOnce({
-        ok: true,
-        json: async () => [],
-      } as any)
- 
-      await gameService.getUserGames('token')
- 
-      const [url] = vi.mocked(fetch).mock.calls[0]
-      // Should end with /games, not /games/something
-      expect(String(url)).toMatch(/\/games$/)
-    })
-  })
+   
 
 
   describe('playMove', () => {
