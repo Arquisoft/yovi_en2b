@@ -50,8 +50,9 @@ export const getGames = async (req: AuthRequest, res: Response) => {
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
     }
-    const games = await gameService.getUserGames(userId);
-    return res.json(games);
+    const page = Math.max(1, Number.parseInt(req.query.page as string) || 1);
+    const result = await gameService.getUserGames(userId, page);
+    return res.json(result);
   } catch (err: any) {
     return res.status(err.status || 500).json({ error: err.message });
   }

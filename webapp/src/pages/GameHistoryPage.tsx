@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useGameHistoryController } from '@/controllers/useGameHistoryController'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { ArrowLeft, Play, Bot, Users, Globe, Trophy, BarChart2 } from 'lucide-react'
+import { ArrowLeft, Play, Bot, Users, Globe, Trophy, BarChart2, ChevronLeft, ChevronRight, ChevronFirst, ChevronLast } from 'lucide-react'
 import { cn } from '@/utils'
 import type { GameSummary, GameMode, PlayerColor } from '@/types'
 
@@ -24,7 +24,6 @@ function resultForGame(game: GameSummary, t: (k: string) => string): {
   className: string
 } {
   if (!game.winner) return { label: t('history.result.draw'), className: 'text-muted-foreground bg-muted' }
-  // player1Id is always the authenticated user in this list
   const humanIsPlayer1 = !game.players.player1.isBot
   const humanColor: PlayerColor = humanIsPlayer1 ? 'player1' : 'player2'
   const isWin = game.winner === humanColor
@@ -34,7 +33,6 @@ function resultForGame(game: GameSummary, t: (k: string) => string): {
 }
 
 function opponentName(game: GameSummary): string {
-  // The opponent is whoever is not the human
   return game.players.player1.isBot
     ? game.players.player1.name
     : game.players.player2.name
@@ -48,16 +46,76 @@ function formatDate(iso: string): string {
   })
 }
 
+// ─── Pagination ───────────────────────────────────────────────────────────────
+
+function Pagination({
+  page,
+  totalPages,
+  goToPage,
+}: Readonly<{ page: number; totalPages: number; goToPage: (p: number) => void }>) {
+  const { t } = useTranslation()
+
+  if (totalPages <= 1) return null
+
+  return (
+    <div className="flex items-center justify-center gap-1 pt-4 border-t border-border">
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => goToPage(1)}
+        disabled={page === 1}
+        aria-label={t('stats.first')}
+        title={t('stats.first')}
+      >
+        <ChevronFirst className="w-4 h-4" />
+      </Button>
+
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => goToPage(page - 1)}
+        disabled={page === 1}
+        aria-label={t('stats.previous')}
+        title={t('stats.previous')}
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </Button>
+
+      <span className="text-sm font-mono text-muted-foreground px-3 tabular-nums select-none">
+        {t('stats.pageOf', { page, total: totalPages })}
+      </span>
+
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => goToPage(page + 1)}
+        disabled={page === totalPages}
+        aria-label={t('stats.next')}
+        title={t('stats.next')}
+      >
+        <ChevronRight className="w-4 h-4" />
+      </Button>
+
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => goToPage(totalPages)}
+        disabled={page === totalPages}
+        aria-label={t('stats.last')}
+        title={t('stats.last')}
+      >
+        <ChevronLast className="w-4 h-4" />
+      </Button>
+    </div>
+  )
+}
+
 // ─── Row component ────────────────────────────────────────────────────────────
 
-function GameRow({ game, onReplay, onResume }: Readonly<{ 
-  game: GameSummary
-  onReplay: () => void
-  onResume: () => void 
-}>) {
+function GameRow({ game, onReplay, onResume }: Readonly<{ game: GameSummary; onReplay: () => void; onResume: () => void }>) {
   const { t } = useTranslation()
+  const isActive = game.status === 'playing'
   const result = resultForGame(game, t)
-  const isActive = game.status === 'playing' 
 
   return (
     <tr className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
@@ -130,12 +188,14 @@ function GameRow({ game, onReplay, onResume }: Readonly<{
     </tr>
   )
 }
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function GameHistoryPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { games, isLoading, error, isGuest } = useGameHistoryController()
+  const { games, isLoading, error, isGuest, totalFinished, page, totalPages, goToPage } =
+    useGameHistoryController()
 
   let content
 
@@ -157,30 +217,34 @@ export function GameHistoryPage() {
     )
   } else {
     content = (
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border text-muted-foreground text-left">
-              <th className="pb-2 font-medium pr-4">{t('history.colDate')}</th>
-              <th className="pb-2 font-medium pr-4">{t('history.colMode')}</th>
-              <th className="pb-2 font-medium pr-4">{t('history.colOpponent')}</th>
-              <th className="pb-2 font-medium pr-4 hidden sm:table-cell">{t('history.colBoard')}</th>
-              <th className="pb-2 font-medium pr-4 hidden md:table-cell">{t('history.colMoves')}</th>
-              <th className="pb-2 font-medium pr-4">{t('history.colResult')}</th>
-              <th className="pb-2 font-medium" />
-            </tr>
-          </thead>
-          <tbody>
-            {games.map(game => (
-              <GameRow
-                key={game.id}
-                game={game}
-                onReplay={() => navigate(`/games/y/replay/${game.id}`)}
-                onResume={() => navigate(`/games/y/play/${game.id}`)}
-              />
-            ))}
-          </tbody>
-        </table>
+      <div className="space-y-4">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-muted-foreground text-left">
+                <th className="pb-2 font-medium pr-4">{t('history.colDate')}</th>
+                <th className="pb-2 font-medium pr-4">{t('history.colMode')}</th>
+                <th className="pb-2 font-medium pr-4">{t('history.colOpponent')}</th>
+                <th className="pb-2 font-medium pr-4 hidden sm:table-cell">{t('history.colBoard')}</th>
+                <th className="pb-2 font-medium pr-4 hidden md:table-cell">{t('history.colMoves')}</th>
+                <th className="pb-2 font-medium pr-4">{t('history.colResult')}</th>
+                <th className="pb-2 font-medium" />
+              </tr>
+            </thead>
+            <tbody>
+              {games.map(game => (
+                <GameRow
+                  key={game.id}
+                  game={game}
+                  onReplay={() => navigate(`/games/y/replay/${game.id}`)}
+                  onResume={() => navigate(`/games/y/${game.id}`)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <Pagination page={page} totalPages={totalPages} goToPage={goToPage} />
       </div>
     )
   }
@@ -227,6 +291,16 @@ export function GameHistoryPage() {
         </Button>
         <h1 className="text-3xl font-bold">{t('history.title')}</h1>
       </div>
+
+      {/* Total finished games stat */}
+      {!isLoading && !error && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border bg-muted/30">
+          <Trophy className="w-5 h-5 text-primary flex-shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            {t('history.totalFinished', { count: totalFinished })}
+          </p>
+        </div>
+      )}
 
       <Card>
         <CardHeader>

@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { GameHistoryPage } from '@/pages/GameHistoryPage'
 import { useGameHistoryController } from '@/controllers/useGameHistoryController'
+import type { GameSummary } from '@/types'
 
 vi.mock('@/controllers/useGameHistoryController', () => ({
   useGameHistoryController: vi.fn(),
@@ -16,7 +17,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
-function makeSummary(overrides = {}) {
+function makeSummary(overrides: Partial<GameSummary> = {}): GameSummary {
   return {
     id: 'g1',
     config: { mode: 'pvp-local', boardSize: 5, timerEnabled: false },
@@ -34,20 +35,35 @@ function makeSummary(overrides = {}) {
   }
 }
 
-function makeController(overrides = {}) {
+const mockGoToPage = vi.fn()
+
+interface ControllerShape {
+  games: GameSummary[]
+  isLoading: boolean
+  error: string | null
+  isGuest: boolean
+  totalFinished: number
+  page: number
+  totalPages: number
+  goToPage: (p: number) => void
+}
+
+function makeController(overrides: Partial<ControllerShape> = {}): ControllerShape {
   return {
     games: [makeSummary()],
     isLoading: false,
     error: null,
     isGuest: false,
+    totalFinished: 1,
+    page: 1,
+    totalPages: 1,
+    goToPage: mockGoToPage,
     ...overrides,
   }
 }
 
-function renderPage(controllerOverrides = {}) {
-  vi.mocked(useGameHistoryController).mockReturnValue(
-    makeController(controllerOverrides) as any
-  )
+function renderPage(controllerOverrides: Partial<ControllerShape> = {}) {
+  vi.mocked(useGameHistoryController).mockReturnValue(makeController(controllerOverrides))
   return render(
     <MemoryRouter>
       <GameHistoryPage />
@@ -58,6 +74,7 @@ function renderPage(controllerOverrides = {}) {
 beforeEach(() => {
   vi.clearAllMocks()
   mockNavigate.mockReset()
+  mockGoToPage.mockReset()
 })
 
 // ─── Header & chrome ──────────────────────────────────────────────────────────
@@ -85,14 +102,18 @@ describe('GameHistoryPage — header', () => {
 describe('GameHistoryPage — loading', () => {
   it('shows a spinner when isLoading is true', () => {
     renderPage({ isLoading: true, games: [] })
-    expect(
-      document.querySelector('.animate-spin')
-    ).not.toBeNull()
+    expect(document.querySelector('.animate-spin')).not.toBeNull()
   })
 
   it('does not render the table while loading', () => {
     renderPage({ isLoading: true, games: [] })
     expect(screen.queryByText('Date')).toBeNull()
+  })
+
+  it('does not render the stat banner while loading', () => {
+    renderPage({ isLoading: true, games: [], totalFinished: 5 })
+    expect(screen.queryByText(/games completed/i)).toBeNull()
+    expect(screen.queryByText(/partidas completadas/i)).toBeNull()
   })
 })
 
@@ -108,6 +129,11 @@ describe('GameHistoryPage — error', () => {
     renderPage({ error: 'Service unavailable', games: [] })
     expect(screen.queryByText('Date')).toBeNull()
   })
+
+  it('does not render the stat banner on error', () => {
+    renderPage({ error: 'Service unavailable', games: [], totalFinished: 3 })
+    expect(screen.queryByText(/games completed/i)).toBeNull()
+  })
 })
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
@@ -121,6 +147,25 @@ describe('GameHistoryPage — empty state', () => {
   it('does not show the table when games list is empty', () => {
     renderPage({ games: [] })
     expect(screen.queryByText('Date')).toBeNull()
+  })
+})
+
+// ─── Total finished stat banner ───────────────────────────────────────────────
+
+describe('GameHistoryPage — totalFinished banner', () => {
+  it('shows the total finished games count', () => {
+    renderPage({ totalFinished: 42 })
+    expect(screen.getByText(/42/)).toBeDefined()
+  })
+
+  it('does not show the banner while loading', () => {
+    renderPage({ isLoading: true, games: [], totalFinished: 10 })
+    expect(screen.queryByText(/10/)).toBeNull()
+  })
+
+  it('does not show the banner on error', () => {
+    renderPage({ error: 'oops', games: [], totalFinished: 10 })
+    expect(screen.queryByText(/10/)).toBeNull()
   })
 })
 
@@ -142,7 +187,6 @@ describe('GameHistoryPage — table', () => {
         makeSummary({ id: 'g2', winner: 'player2' }),
       ],
     })
-    // Two "Replay" buttons = two rows
     expect(screen.getAllByText('Replay')).toHaveLength(2)
   })
 
@@ -157,16 +201,12 @@ describe('GameHistoryPage — table', () => {
   })
 
   it('shows "Loss" badge when the authenticated user lost', () => {
-    renderPage({
-      games: [makeSummary({ winner: 'player2' })],
-    })
+    renderPage({ games: [makeSummary({ winner: 'player2' })] })
     expect(screen.getByText('Loss')).toBeDefined()
   })
 
   it('shows "Draw" badge when there is no winner', () => {
-    renderPage({
-      games: [makeSummary({ winner: null })],
-    })
+    renderPage({ games: [makeSummary({ winner: null })] })
     expect(screen.getByText('Draw')).toBeDefined()
   })
 
@@ -224,7 +264,7 @@ describe('GameHistoryPage — active game', () => {
   it('clicking Resume navigates to the game page', () => {
     renderPage({ games: [makeSummary({ id: 'g1', status: 'playing', winner: null })] })
     fireEvent.click(screen.getByText('Resume'))
-    expect(mockNavigate).toHaveBeenCalledWith('/games/y/play/g1')
+    expect(mockNavigate).toHaveBeenCalledWith('/games/y/g1')
   })
 
   it('shows "In progress" badge instead of a result badge for an active game', () => {
@@ -260,7 +300,84 @@ describe('GameHistoryPage — active game', () => {
       ],
     })
     fireEvent.click(screen.getByText('Resume'))
-    expect(mockNavigate).toHaveBeenCalledWith('/games/y/play/active-game')
+    expect(mockNavigate).toHaveBeenCalledWith('/games/y/active-game')
+  })
+})
+
+// ─── Pagination controls ──────────────────────────────────────────────────────
+
+describe('GameHistoryPage — pagination', () => {
+  it('does not render pagination when totalPages is 1', () => {
+    renderPage({ totalPages: 1, page: 1 })
+    expect(screen.queryByLabelText(/previous/i)).toBeNull()
+    expect(screen.queryByLabelText(/next/i)).toBeNull()
+  })
+
+  it('renders pagination controls when totalPages > 1', () => {
+    renderPage({ totalPages: 3, page: 1 })
+    expect(screen.getByLabelText(/previous/i)).toBeDefined()
+    expect(screen.getByLabelText(/next/i)).toBeDefined()
+  })
+
+  it('shows current page and total pages', () => {
+    renderPage({ totalPages: 5, page: 2 })
+    expect(screen.getByText('2 / 5')).toBeDefined()
+  })
+
+  it('Previous and First buttons are disabled on page 1', () => {
+    renderPage({ totalPages: 3, page: 1 })
+    const prev = screen.getByLabelText(/previous/i).closest('button') as HTMLButtonElement
+    const first = screen.getByLabelText(/first/i).closest('button') as HTMLButtonElement
+    expect(prev.disabled).toBe(true)
+    expect(first.disabled).toBe(true)
+  })
+
+  it('Next and Last buttons are disabled on the last page', () => {
+    renderPage({ totalPages: 3, page: 3 })
+    const next = screen.getByLabelText(/next/i).closest('button') as HTMLButtonElement
+    const last = screen.getByLabelText(/last/i).closest('button') as HTMLButtonElement
+    expect(next.disabled).toBe(true)
+    expect(last.disabled).toBe(true)
+  })
+
+  it('Next and Last buttons are enabled when not on last page', () => {
+    renderPage({ totalPages: 3, page: 1 })
+    const next = screen.getByLabelText(/next/i).closest('button') as HTMLButtonElement
+    const last = screen.getByLabelText(/last/i).closest('button') as HTMLButtonElement
+    expect(next.disabled).toBe(false)
+    expect(last.disabled).toBe(false)
+  })
+
+  it('Previous and First buttons are enabled when not on first page', () => {
+    renderPage({ totalPages: 3, page: 2 })
+    const prev = screen.getByLabelText(/previous/i).closest('button') as HTMLButtonElement
+    const first = screen.getByLabelText(/first/i).closest('button') as HTMLButtonElement
+    expect(prev.disabled).toBe(false)
+    expect(first.disabled).toBe(false)
+  })
+
+  it('clicking Next calls goToPage with page + 1', () => {
+    renderPage({ totalPages: 3, page: 1 })
+    fireEvent.click(screen.getByLabelText(/next/i))
+    expect(mockGoToPage).toHaveBeenCalledWith(2)
+  })
+
+  it('clicking Previous calls goToPage with page - 1', () => {
+    renderPage({ totalPages: 3, page: 2 })
+    fireEvent.click(screen.getByLabelText(/previous/i))
+    expect(mockGoToPage).toHaveBeenCalledWith(1)
+  })
+
+  it('clicking First calls goToPage with 1', () => {
+    renderPage({ totalPages: 3, page: 3 })
+    fireEvent.click(screen.getByLabelText(/first/i))
+    expect(mockGoToPage).toHaveBeenCalledWith(1)
+  })
+
+  it('clicking Last calls goToPage with totalPages', () => {
+    renderPage({ totalPages: 3, page: 1 })
+    fireEvent.click(screen.getByLabelText(/last/i))
+    expect(mockGoToPage).toHaveBeenCalledWith(3)
   })
 })
 
@@ -276,6 +393,16 @@ describe('GameHistoryPage — guest view', () => {
     renderPage({ isGuest: true, games: [] })
     expect(screen.queryByText('Date')).toBeNull()
     expect(screen.queryByText('Replay')).toBeNull()
+  })
+
+  it('does not render pagination for guests', () => {
+    renderPage({ isGuest: true, games: [], totalPages: 5, page: 1 })
+    expect(screen.queryByLabelText(/next/i)).toBeNull()
+  })
+
+  it('does not render the stat banner for guests', () => {
+    renderPage({ isGuest: true, games: [], totalFinished: 10 })
+    expect(screen.queryByText(/games completed/i)).toBeNull()
   })
 
   it('shows Create Account button for guests', () => {

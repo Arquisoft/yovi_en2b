@@ -14,6 +14,7 @@ import type {
   GameConfig,
   GameState,
   GameSummary,
+  PaginatedGames,
   PieDecision,
   Player,
   PlayerColor,
@@ -23,6 +24,8 @@ import type {
 } from '../types/game';
 
 const USERS_INTERNAL_URL = process.env.USERS_INTERNAL_URL || 'http://localhost:3000';
+
+const PAGE_SIZE = 5;
 
 /**
  * Maps game config to a ranking mode string understood by the users service.
@@ -81,19 +84,27 @@ export class GameService {
     return this.toGameState(game, moves);
   }
 
+  async getUserGames(userId: number, page: number): Promise<PaginatedGames> {
+    const skip = (page - 1) * PAGE_SIZE;
 
-  async getUserGames(userId: number): Promise<GameSummary[]> {
-    const games = await this.gameRepo.find({
+    const [games, total] = await this.gameRepo.findAndCount({
       where: { player1Id: userId },
       order: { updatedAt: 'DESC' },
-      take: 50,
+      skip,
+      take: PAGE_SIZE,
     });
- 
-    if (games.length === 0) return [];
- 
+
+    // Count of all finished games (unpaginated) for the stat banner
+    const totalFinished = await this.gameRepo.count({
+      where: { player1Id: userId, status: 'finished' },
+    });
+
+    if (games.length === 0) {
+      return { games: [], total, totalFinished, page, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
+    }
+
     const gameIds = games.map(g => g.id);
- 
-    // Count moves per game in a single efficient query
+
     const moveCounts = await this.moveRepo
       .createQueryBuilder('move')
       .innerJoin('move.game', 'game')
@@ -102,12 +113,12 @@ export class GameService {
       .where('game.id IN (:...gameIds)', { gameIds })
       .groupBy('game.id')
       .getRawMany<{ gameId: string; cnt: string }>();
- 
+
     const countMap = new Map<string, number>(
       moveCounts.map(r => [r.gameId, Number.parseInt(r.cnt, 10)])
     );
- 
-    return games.map(game => ({
+
+    const summaries: GameSummary[] = games.map(game => ({
       id: game.id,
       config: game.config,
       status: game.status,
@@ -118,8 +129,15 @@ export class GameService {
       createdAt: game.createdAt.toISOString(),
       updatedAt: game.updatedAt.toISOString(),
     }));
-  }
 
+    return {
+      games: summaries,
+      total,
+      totalFinished,
+      page,
+      totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+    };
+  }
 
   async playMove(
     gameId: string,
@@ -408,7 +426,7 @@ export class GameService {
     const humanPlayer =
       game.players.player1.isBot ? game.players.player2 : game.players.player1;
 
-    if (humanPlayer.isLocal) return; // pvp-local: no record
+    if (humanPlayer.isLocal) return;
 
     const opponentPlayer =
       game.players.player1.id === humanPlayer.id

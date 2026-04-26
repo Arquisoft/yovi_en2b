@@ -244,6 +244,7 @@ const en = {
     colMoves: 'Moves',
     colResult: 'Result',
     resume: 'Resume',
+    totalFinished: '{{count}} games completed',
     result: {
       win: 'Win',
       loss: 'Loss',

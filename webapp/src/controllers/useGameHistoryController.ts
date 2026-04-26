@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react'
 import type { GameSummary } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { gameService } from '@/services/gameyService'
-
+ 
 export function useGameHistoryController() {
   const { token, isGuest } = useAuth()
   const [games, setGames] = useState<GameSummary[]>([])
+  const [totalFinished, setTotalFinished] = useState(0)
+  const [page, setPage] = useState(1)  
+  const [totalPages, setTotalPages] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -17,9 +20,13 @@ export function useGameHistoryController() {
 
     const load = async () => {
       try {
-        const list = await gameService.getUserGames(token)
-        setGames(list)
-      } catch (err) {
+        setIsLoading(true)
+         const response = await gameService.getUserGames(token, page) 
+        
+        setGames(response.games)
+        setTotalFinished(response.totalFinished)
+        setTotalPages(response.totalPages)
+       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load game history')
       } finally {
         setIsLoading(false)
@@ -27,7 +34,11 @@ export function useGameHistoryController() {
     }
 
     load()
-  }, [token, isGuest])
+  }, [token, isGuest, page]) 
 
-  return { games, isLoading, error, isGuest }
+  const goToPage = (newPage: number) => {
+     setPage(newPage)
+  }
+
+  return { games, isLoading, error, isGuest, totalFinished, page, totalPages, goToPage }
 }
