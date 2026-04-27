@@ -17,6 +17,7 @@ import { RankingPage } from './pages/RankingPage'
 import { useTranslation } from 'react-i18next'
 import { GameReplayPage } from './pages/GameReplayPage'
 import { GameHistoryPage } from './pages/GameHistoryPage'
+import { ProfilePage } from './pages/ProfilePage'
 
 function App() {
   const { isLoading } = useAuth()
@@ -55,6 +56,7 @@ function App() {
           {/* Game history & step-through replay */}
           <Route path="/history" element={<GameHistoryPage />} />
           <Route path="/games/y/replay/:gameId" element={<GameReplayPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Route>
 
