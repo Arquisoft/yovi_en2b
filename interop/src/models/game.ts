@@ -27,35 +27,20 @@ export interface Coordinates {
 
 // ── Rust engine response ───────────────────────────────────────────────────────
 // Mirrors gamey/src/bot_server/choose.rs  MoveResponse
+// May return either a coordinate move or a special action (e.g. swap).
 export interface RustMoveResponse {
   api_version: string;
   bot_id: string;
-  coords: Coordinates;
+  coords?: Coordinates;
+  action?: string;
 }
 
-// ── Request body for POST /games/play ────────────────────────────────────────
-// `position` is required — the board state in YEN notation (JSON object).
-// `bot_id` is optional — selects which registered Rust bot to use.
-//   When omitted the default bot is used ("random_bot").
-// `strategy` is optional — additional hint forwarded to bots that support
-//   difficulty levels (e.g. "EASY" | "MEDIUM" | "HARD" | "EXPERT").
-//   Ignored by bots that do not recognise it.
-export interface PlayRequest {
-  position: YEN;
-  bot_id?: string;
-  strategy?: string;
-}
-
-// ── Response body for POST /games/play ───────────────────────────────────────
-// Returns the bot's chosen move expressed in YEN notation as required by the
-// project specification ("the method will return the next move using YEN
-// notation").  The `move` field contains the coordinate string "x,y,z" and
-// `position` is the full updated board layout after the bot places its piece.
-export interface PlayResponse {
-  move: string;       // "x,y,z" coordinate string of the bot's chosen cell
-  position: string;   // updated YEN layout string after the bot's move
-  bot_id: string;     // which bot was used
-}
+// ── Response for GET /play ────────────────────────────────────────────────────
+// Either a normal move expressed as barycentric coordinates, or a special
+// action such as "swap" (pie rule) or "resign".
+export type PlayResponse =
+  | { coords: Coordinates }
+  | { action: string };
 
 // ── Structured error body ─────────────────────────────────────────────────────
 // Matches ErrorResponse schema in openapi.yaml

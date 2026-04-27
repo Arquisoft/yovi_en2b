@@ -1,57 +1,71 @@
 // ──────────────────────────────────────────────────────────────────────────────
 // controllers/gameController.ts
 //
-// Thin HTTP handler for POST /games/play.
+// Thin HTTP handler for GET /play.
 //
-//   1. Validates the request body (position required, bot_id / strategy optional).
+//   1. Reads `position` (required) and `bot_id` / `strategy` (optional) from
+//      query parameters.  `position` must be a JSON-encoded YEN object.
 //   2. Calls gameService.play().
-//   3. Returns 200 with the bot's move, or a structured error.
+//   3. Returns 200 with the bot's move ({coords} or {action}), or a structured
+//      error.
 //
-// No gameId param, no callerUserId extraction, no 202 handling — the endpoint
-// is stateless.
+// No request body — the endpoint uses GET with query parameters.
 // ──────────────────────────────────────────────────────────────────────────────
 
-import type { Response } from 'express';
-import type { AuthRequest } from '../types/request';
-import type { ApiError, PlayRequest } from '../models/game';
+import type { Request, Response } from 'express';
+import type { ApiError } from '../models/game';
 import { play } from '../services/gameService';
 import { isValidYEN } from '../services/yenService';
 
-// ── POST /games/play ──────────────────────────────────────────────────────────
+// ── GET /play ─────────────────────────────────────────────────────────────────
 
 /**
- * Receive a board position in YEN notation and return the bot's next move.
+ * Receive a board position in YEN notation (JSON query param) and return the
+ * bot's next move.
  *
- * Body: {
- *   position: YEN      — required, the current board state
- *   bot_id?: string    — optional, defaults to "random_bot"
- *   strategy?: string  — optional, e.g. "EASY" | "HARD"
- * }
+ * Query params:
+ *   position  (required) — JSON-encoded YEN object
+ *   bot_id    (optional) — defaults to "random_bot"
+ *   strategy  (optional) — e.g. "EASY" | "MEDIUM" | "HARD"
  *
- * Response 200: PlayResponse  { move, position, bot_id }
- * Response 400: INVALID_POSITION — position is missing or malformed
+ * Response 200: { coords: {x,y,z} }  or  { action: "swap" | "resign" | … }
+ * Response 400: INVALID_POSITION — position is missing, not JSON, or malformed
  * Response 404: BOT_NOT_FOUND    — bot_id is not registered in the engine
  * Response 422: NO_MOVES_AVAILABLE
  * Response 502: ENGINE_ERROR
  * Response 503: ENGINE_TIMEOUT
  */
-export const playMove = async (req: AuthRequest, res: Response): Promise<void> => {
-  const { position, bot_id, strategy } = req.body as Partial<PlayRequest>;
+export const playMove = async (req: Request, res: Response): Promise<void> => {
+  const positionRaw = req.query.position as string | undefined;
+  const bot_id      = req.query.bot_id   as string | undefined;
+  const strategy    = req.query.strategy as string | undefined;
 
-  // ── Validate the required `position` field ────────────────────────────────
-  if (!position) {
+  // ── Validate the required `position` query param ──────────────────────────
+  if (!positionRaw) {
     const error: ApiError = {
       code: 'INVALID_POSITION',
-      message: 'Request body must contain a "position" field with the board state in YEN notation.',
+      message: 'Query parameter "position" is required and must be a JSON-encoded YEN object.',
     };
     res.status(400).json(error);
     return;
   }
 
-  if (!isValidYEN(position)) {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(positionRaw);
+  } catch {
     const error: ApiError = {
       code: 'INVALID_POSITION',
-      message: 'The "position" field is not a valid YEN object. '
+      message: 'Query parameter "position" is not valid JSON.',
+    };
+    res.status(400).json(error);
+    return;
+  }
+
+  if (!isValidYEN(parsed)) {
+    const error: ApiError = {
+      code: 'INVALID_POSITION',
+      message: 'The "position" parameter is not a valid YEN object. '
         + 'Expected { size: number, turn: number, players: string[], layout: string }.',
     };
     res.status(400).json(error);
@@ -59,7 +73,7 @@ export const playMove = async (req: AuthRequest, res: Response): Promise<void> =
   }
 
   try {
-    const result = await play(position, bot_id, strategy);
+    const result = await play(parsed, bot_id, strategy);
     res.status(200).json(result);
   } catch (err: any) {
     const httpStatus: number = err.httpStatus ?? 500;
