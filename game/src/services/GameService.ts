@@ -11,7 +11,7 @@ import type {
   GameSummary, PaginatedGames,
 } from '../types/game';
 
-const USERS_INTERNAL_URL = process.env.USERS_INTERNAL_URL || 'https://users:3000';
+const USERS_INTERNAL_URL = process.env.USERS_INTERNAL_URL;
 const INTERNAL_SECRET = process.env.INTERNAL_SECRET || 'internal_secret';
 
 const PAGE_SIZE = 5;
@@ -75,14 +75,17 @@ export class GameService {
     const skip = (page - 1) * PAGE_SIZE;
 
     const [games, total] = await this.gameRepo.findAndCount({
-      where: { player1Id: userId },
+      where: [{ player1Id: userId }, { player2Id: userId }],
       order: { updatedAt: 'DESC' },
       skip,
       take: PAGE_SIZE,
     });
 
     const totalFinished = await this.gameRepo.count({
-      where: { player1Id: userId, status: 'finished' },
+      where: [
+        { player1Id: userId, status: 'finished' },
+        { player2Id: userId, status: 'finished' },
+      ],
     });
 
     if (games.length === 0) {
@@ -234,6 +237,10 @@ export class GameService {
     if ((game.phase ?? 'playing') === 'pie-decision') throw Object.assign(new Error('Waiting for Pie Rule decision'), { status: 409 });
     if (game.currentTurn !== player) throw Object.assign(new Error('Not your turn'), { status: 409 });
     if (!isValidMove(game.boardState, row, col)) throw Object.assign(new Error('Invalid move'), { status: 409 });
+    if (game.timerState) {
+      const updated = this.computeUpdatedTimer(game.timerState, player, Date.now());
+      if (this.timedOutWinner(updated)) throw Object.assign(new Error('Time expired'), { status: 409 });
+    }
   }
 
   private computePostMoveTimer(timer: TimerState | null, winner: PlayerColor | null, nextTurn: PlayerColor, now: number): TimerState | null {

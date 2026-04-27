@@ -133,6 +133,35 @@ describe('useGameYController — core', () => {
     expect(result.current.canPlay).toBe(true)
   })
 
+  it('canPlay is false when the active player liveTimer is at 0', async () => {
+    vi.mocked(gameService.getGameState).mockResolvedValue({
+      ...mockGame,
+      timer: {
+        player1RemainingMs: 0, player2RemainingMs: 60000,
+        activePlayer: 'player1', lastSyncTimestamp: Date.now(),
+      },
+    } as any)
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.canPlay).toBe(false)
+  })
+
+  it('auto-calls surrender when liveTimer reaches 0 for the active player', async () => {
+    // Start the game with the active player already at 0 ms — the timeout
+    // effect fires on the first liveTimer update without needing fake timers.
+    vi.mocked(gameService.getGameState).mockResolvedValue({
+      ...mockGame,
+      timer: {
+        player1RemainingMs: 0, player2RemainingMs: 60000,
+        activePlayer: 'player1', lastSyncTimestamp: Date.now(),
+      },
+    } as any)
+
+    const { result } = renderHook(() => useGameYController())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    await waitFor(() => expect(gameService.surrender).toHaveBeenCalledWith('game-123', 'player1', 'mock-token'))
+  })
+
   it('handleCellClick calls playMove with token for authenticated user', async () => {
     const { result } = renderHook(() => useGameYController())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

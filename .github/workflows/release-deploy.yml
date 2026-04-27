@@ -243,9 +243,10 @@ jobs:
         MARIADB_USER: ${{ secrets.MARIADB_USER }}
         MARIADB_PASSWORD: ${{ secrets.MARIADB_PASSWORD }}
         JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        INTERNAL_SECRET: ${{ secrets.INTERNAL_SECRET }}
       with:
         host: ${{ secrets.DEPLOY_HOST }}
         username: ${{ secrets.DEPLOY_USER }}
         key: ${{ secrets.DEPLOY_KEY }}
-        envs: REPO_OWNER,REPO_NAME,MARIADB_ROOT_PASSWORD,MARIADB_USER,MARIADB_PASSWORD,JWT_SECRET
+        envs: REPO_OWNER,REPO_NAME,MARIADB_ROOT_PASSWORD,MARIADB_USER,MARIADB_PASSWORD,JWT_SECRET,INTERNAL_SECRET
         script_path: .github/workflows/deploy.sh

@@ -115,7 +115,8 @@ const es = {
   },
   stats: {
     title: 'Estadísticas', winrate: 'Porcentaje de victorias', overall: 'Global', recent: 'Últimas 20 partidas',
-    matchHistory: 'Historial de partidas', noMatches: 'Aún no has jugado ninguna partida',
+    matchHistory: 'Resumen de partidas',
+    viewFullHistory: 'Ver historial completo', noMatches: 'Aún no has jugado ninguna partida',
     noMatchesFilter: 'Ninguna partida coincide con los filtros seleccionados',
     opponent: 'Oponente', result: 'Resultado', duration: 'Duración', date: 'Fecha', gameMode: 'Modo',
     win: 'Victoria', loss: 'Derrota', noData: 'Sin datos',
@@ -131,7 +132,7 @@ const es = {
     rankHash: '#', player: 'Jugador', victories: 'Victorias', you: '(tú)',
     modes: {
       'pve-easy': 'Bot fácil', 'pve-medium': 'Bot intermedio',
-      'pve-hard': 'Bot difícil', 'pvp-online': 'Online',
+      'pve-hard': 'Bot difícil', 'pvp-online': 'Online', 'pvp-local': 'Local',
     },
   },
    // ── Game History ──────────────────────────────────────────────────────────────
@@ -145,8 +146,11 @@ const es = {
     colMode: 'Modo',
     colOpponent: 'Oponente',
     colBoard: 'Tablero',
+    colDuration: 'Duración',
     colMoves: 'Jugadas',
     colResult: 'Resultado',
+    filterAll: 'Todas',
+    filterAllModes: 'Todos los modos',
     resume: 'Reanudar',
     totalFinished: '{{count}} partidas completadas',
     result: {

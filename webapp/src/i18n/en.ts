@@ -115,7 +115,8 @@ const en = {
   },
   stats: {
     title: 'Statistics', winrate: 'Winrate', overall: 'Overall', recent: 'Last 20 games',
-    matchHistory: 'Match History', noMatches: 'No matches played yet',
+    matchHistory: 'Match Summary',
+    viewFullHistory: 'View full history', noMatches: 'No matches played yet',
     noMatchesFilter: 'No matches match the selected filters',
     opponent: 'Opponent', result: 'Result', duration: 'Duration', date: 'Date', gameMode: 'Mode',
     win: 'Win', loss: 'Loss', noData: 'No data',
@@ -131,7 +132,7 @@ const en = {
     rankHash: '#', player: 'Player', victories: 'Victories', you: '(you)',
     modes: {
       'pve-easy': 'Easy Bot', 'pve-medium': 'Medium Bot',
-      'pve-hard': 'Hard Bot', 'pvp-online': 'Online',
+      'pve-hard': 'Hard Bot', 'pvp-online': 'Online', 'pvp-local': 'Local',
     },
   },
   // ── Game History ──────────────────────────────────────────────────────────────
@@ -145,8 +146,11 @@ const en = {
     colMode: 'Mode',
     colOpponent: 'Opponent',
     colBoard: 'Board',
+    colDuration: 'Duration',
     colMoves: 'Moves',
     colResult: 'Result',
+    filterAll: 'All',
+    filterAllModes: 'All modes',
     resume: 'Resume',
     totalFinished: '{{count}} games completed',
     result: {
