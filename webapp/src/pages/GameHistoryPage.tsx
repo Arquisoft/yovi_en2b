@@ -420,8 +420,8 @@ export function GameHistoryPage() {
                     key={game.id}
                     game={game}
                     currentUserId={currentUserId}
-                    onReplay={() => navigate(`/games/y/replay/${game.id}`)}
-                    onResume={() => navigate(`/games/y/play/${game.id}`)}
+                    onReplay={() => navigate(`/games/${game.config.variant ?? 'y'}/replay/${game.id}`)}
+                    onResume={() => navigate(`/games/${game.config.variant ?? 'y'}/play/${game.id}`)}
                   />
                 ))}
               </tbody>

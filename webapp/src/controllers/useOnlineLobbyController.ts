@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { wsService } from '@/services/websocketService'
 import { loadOnlineConfig } from '@/utils/onlineConfig'
+import type { GameVariant } from '@/types'
 
 export type LobbyStatus = 'connecting' | 'queuing' | 'matched' | 'error'
 
@@ -21,6 +22,7 @@ export interface OnlineLobbyController extends OnlineLobbyState {
 export function useOnlineLobbyController(): OnlineLobbyController {
   const { token, isGuest } = useAuth()
   const navigate = useNavigate()
+  const { variant = 'y' } = useParams<{ variant: GameVariant }>()
 
   const [status, setStatus] = useState<LobbyStatus>('connecting')
   const [opponentName, setOpponentName] = useState<string | null>(null)
@@ -45,7 +47,10 @@ export function useOnlineLobbyController(): OnlineLobbyController {
       await wsService.connect(token)
       if (!mounted.current) return
 
-      wsService.send({ type: 'join_queue', config: loadOnlineConfig() })
+      // Stamp the variant onto the config so the server queues us in the
+      // right bucket and creates the matched game with the right rules.
+      const config = { ...loadOnlineConfig(variant), variant }
+      wsService.send({ type: 'join_queue', config })
     } catch (err) {
       if (!mounted.current) return
       setStatus('error')
@@ -53,7 +58,7 @@ export function useOnlineLobbyController(): OnlineLobbyController {
     } finally {
       connectingRef.current = false
     }
-  }, [token, isGuest, navigate])
+  }, [token, isGuest, navigate, variant])
 
   useEffect(() => {
     mounted.current = true
@@ -74,7 +79,7 @@ export function useOnlineLobbyController(): OnlineLobbyController {
       // Brief delay so the user sees who they matched with
       setTimeout(() => {
         if (mounted.current) {
-          navigate(`/games/y/play/${data.gameId}`)
+          navigate(`/games/${variant}/play/${data.gameId}`)
         }
       }, 1200)
     })
@@ -106,8 +111,8 @@ export function useOnlineLobbyController(): OnlineLobbyController {
     matchedRef.current = false // reset so cleanup also sends leave_queue if needed
     wsService.send({ type: 'leave_queue' })
     wsService.disconnect()
-    navigate('/games/y')
-  }, [navigate])
+    navigate(`/games/${variant}`)
+  }, [navigate, variant])
 
   const retry = useCallback(() => {
     setStatus('connecting')

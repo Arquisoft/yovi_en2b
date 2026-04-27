@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { wsService } from '@/services/websocketService'
+import type { GameVariant } from '@/types'
 
 export type RoomJoinStatus = 'idle' | 'connecting' | 'waiting' | 'matched' | 'error'
 
 export function useOnlineRoomController() {
   const { token, isGuest } = useAuth()
   const navigate = useNavigate()
+  const { variant = 'y' } = useParams<{ variant: GameVariant }>()
 
   const [codeInput, setCodeInput] = useState('')
   const [joinStatus, setJoinStatus] = useState<RoomJoinStatus>('idle')
@@ -23,7 +25,7 @@ export function useOnlineRoomController() {
       if (!mounted.current) return
       setJoinStatus('matched')
       setTimeout(() => {
-        if (mounted.current) navigate(`/games/y/play/${data.gameId}`)
+        if (mounted.current) navigate(`/games/${variant}/play/${data.gameId}`)
       }, 1200)
     })
 
@@ -40,7 +42,7 @@ export function useOnlineRoomController() {
       unsubError()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate])
+  }, [navigate, variant])
 
   const handleJoin = useCallback(async () => {
     const code = codeInput.trim().toUpperCase()
@@ -55,6 +57,7 @@ export function useOnlineRoomController() {
         await wsService.connect(token)
       }
       if (!mounted.current) return
+      // Joiner doesn't pick the variant — the host's room config does.
       wsService.send({ type: 'join_room', code })
       setJoinStatus('waiting')
     } catch (err) {
@@ -65,12 +68,12 @@ export function useOnlineRoomController() {
   }, [codeInput, token, isGuest])
 
   const handleCreateRoom = useCallback(() => {
-    navigate('/games/y/config/pvp-online')
-  }, [navigate])
+    navigate(`/games/${variant}/config/pvp-online`)
+  }, [navigate, variant])
 
   const handleCancel = useCallback(() => {
-    navigate('/games/y')
-  }, [navigate])
+    navigate(`/games/${variant}`)
+  }, [navigate, variant])
 
   const handleRetry = useCallback(() => {
     setJoinStatus('idle')

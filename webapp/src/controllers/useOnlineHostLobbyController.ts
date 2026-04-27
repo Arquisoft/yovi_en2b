@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { wsService } from '@/services/websocketService'
 import { loadOnlineConfig } from '@/utils/onlineConfig'
+import type { GameVariant } from '@/types'
 
 export type HostLobbyStatus = 'connecting' | 'waiting' | 'matched' | 'error'
 
 export function useOnlineHostLobbyController() {
   const { token, isGuest } = useAuth()
   const navigate = useNavigate()
+  const { variant = 'y' } = useParams<{ variant: GameVariant }>()
 
   const [status, setStatus] = useState<HostLobbyStatus>('connecting')
   const [roomCode, setRoomCode] = useState<string | null>(null)
@@ -37,7 +39,7 @@ export function useOnlineHostLobbyController() {
       setOpponentName(data.opponentName as string)
       setStatus('matched')
       setTimeout(() => {
-        if (mounted.current) navigate(`/games/y/play/${data.gameId}`)
+        if (mounted.current) navigate(`/games/${variant}/play/${data.gameId}`)
       }, 1200)
     })
 
@@ -53,7 +55,10 @@ export function useOnlineHostLobbyController() {
           await wsService.connect(token)
         }
         if (!mounted.current) return
-        wsService.send({ type: 'create_room', config: loadOnlineConfig() })
+        // Stamp the variant on the room config so the joiner — who doesn't
+        // pick a variant — gets the correct game type.
+        const config = { ...loadOnlineConfig(variant), variant }
+        wsService.send({ type: 'create_room', config })
       } catch (err) {
         if (!mounted.current) return
         setStatus('error')
@@ -73,8 +78,8 @@ export function useOnlineHostLobbyController() {
   }, [])
 
   const handleCancel = useCallback(() => {
-    navigate('/games/y/online')
-  }, [navigate])
+    navigate(`/games/${variant}/online`)
+  }, [navigate, variant])
 
   const handleCopy = useCallback(() => {
     if (!roomCode) return
@@ -91,9 +96,10 @@ export function useOnlineHostLobbyController() {
     setError(null)
     setRoomCode(null)
     if (token && !isGuest) {
-      wsService.send({ type: 'create_room', config: loadOnlineConfig() })
+      const config = { ...loadOnlineConfig(variant), variant }
+      wsService.send({ type: 'create_room', config })
     }
-  }, [token, isGuest])
+  }, [token, isGuest, variant])
 
   return {
     status,

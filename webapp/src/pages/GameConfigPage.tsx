@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useGameConfigController } from '@/controllers/useGameConfigController'
 import { Button } from '@/components/ui/Button'
@@ -8,11 +8,12 @@ import { Select } from '@/components/ui/Select'
 import { Switch } from '@/components/ui/Switch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { ArrowLeft, AlertCircle } from 'lucide-react'
-import type { BotLevel, PlayerColor } from '@/types'
+import type { BotLevel, PlayerColor, GameVariant } from '@/types'
 
 export function GameConfigPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { variant = 'y' } = useParams<{ variant: GameVariant }>()
   const {
     mode,
     boardSizeInput, setBoardSizeInput, boardSizeError, parsedBoardSize,
@@ -48,7 +49,7 @@ export function GameConfigPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-lg mx-auto">
-        <Button variant="ghost" onClick={() => navigate('/games/y')} className="mb-6">
+        <Button variant="ghost" onClick={() => navigate(`/games/${variant}`)} className="mb-6">
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('common.back')}
         </Button>

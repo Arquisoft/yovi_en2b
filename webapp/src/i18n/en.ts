@@ -51,6 +51,23 @@ const en = {
     playersRange: '{{min}}-{{max}} players', playNow: 'Play Now',
     comingSoon: 'Coming Soon', selectGame: 'Select a game from the list',
   },
+  variants: {
+    'game-y': {
+      name: 'Game Y',
+      description: 'A strategic connection game played on a triangular hexagonal board.',
+    },
+    'game-why-not': {
+      name: 'WhY Not?',
+      description: 'The misère variant of Game Y — same triangular board, but connecting all three sides means you lose!',
+    },
+    'other-game1': {
+      name: 'Other Game 1',
+      description: 'A mock game with just to fill the grid display',
+    },
+    // Keyed by URL variant param (matches the :variant route segment)
+    y: { name: 'Game Y' },
+    'why-not': { name: 'WhY Not?' },
+  },
   gameModes: {
     title: 'Game Y', subtitle: 'Select how you want to play', backToGames: 'Back to Games',
     pvpLocal: { title: 'Local Match', description: 'Play against a friend on the same device. Take turns placing stones.' },

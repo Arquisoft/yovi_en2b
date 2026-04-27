@@ -24,6 +24,7 @@ vi.mock('@/services/websocketService', () => ({
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
+  useParams: () => ({ variant: 'y' }),
 }))
 
 // --- Helpers ---

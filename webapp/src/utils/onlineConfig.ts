@@ -1,4 +1,4 @@
-import type { BoardSize, OnlineGameConfig } from '@/types'
+import type { BoardSize, GameVariant, OnlineGameConfig } from '@/types'
 
 export const DEFAULT_ONLINE_CONFIG: OnlineGameConfig = {
   boardSize: 11 as BoardSize,
@@ -6,10 +6,16 @@ export const DEFAULT_ONLINE_CONFIG: OnlineGameConfig = {
   timerSeconds: 600,
 }
 
-export function loadOnlineConfig(): OnlineGameConfig {
+/**
+ * Loads the saved online configuration for a specific game variant from
+ * sessionStorage.  The storage key matches the one written by
+ * `useGameConfigController` (`yovi_config_${variant}_pvp-online`), so each
+ * variant remembers its own online settings independently.
+ */
+export function loadOnlineConfig(variant: GameVariant = 'y'): OnlineGameConfig {
   try {
-    const raw = sessionStorage.getItem('yovi_config_pvp-online')
-    if (!raw) return DEFAULT_ONLINE_CONFIG
+    const raw = sessionStorage.getItem(`yovi_config_${variant}_pvp-online`)
+    if (!raw) return { ...DEFAULT_ONLINE_CONFIG, variant }
     const saved = JSON.parse(raw) as {
       boardSizeInput?: string
       timerInput?: string
@@ -23,6 +29,7 @@ export function loadOnlineConfig(): OnlineGameConfig {
     const validTimerMs = timerMinutes >= 1 && timerMinutes <= 20 ? timerMinutes * 60 : 600
     const timerEnabled = saved.timerEnabled ?? true
     return {
+      variant,
       boardSize: validBoardSize as BoardSize,
       timerEnabled,
       timerSeconds: timerEnabled ? validTimerMs : undefined,
@@ -30,6 +37,6 @@ export function loadOnlineConfig(): OnlineGameConfig {
       playerColor: saved.playerColor ?? 'player1',
     }
   } catch {
-    return DEFAULT_ONLINE_CONFIG
+    return { ...DEFAULT_ONLINE_CONFIG, variant }
   }
 }

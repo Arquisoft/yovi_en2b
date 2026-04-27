@@ -51,6 +51,23 @@ const es = {
     playersRange: '{{min}}-{{max}} jugadores', playNow: 'Jugar ahora',
     comingSoon: 'Próximamente', selectGame: 'Selecciona un juego de la lista',
   },
+  variants: {
+    'game-y': {
+      name: 'Juego Y',
+      description: 'Un juego estratégico de conexión sobre un tablero triangular hexagonal.',
+    },
+    'game-why-not': {
+      name: '¿WhY Not?',
+      description: 'La variante misère del Juego Y — mismo tablero triangular, ¡pero conectar los tres lados significa perder!',
+    },
+    'other-game1': {
+      name: 'Otro juego 1',
+      description: 'Un juego de prueba para rellenar la cuadrícula',
+    },
+    // Keyed by URL variant param (matches the :variant route segment)
+    y: { name: 'Juego Y' },
+    'why-not': { name: '¿WhY Not?' },
+  },
   gameModes: {
     title: 'Juego Y', subtitle: 'Selecciona cómo quieres jugar', backToGames: 'Volver a juegos',
     pvpLocal: { title: 'Partida local', description: 'Juega contra un amigo en el mismo dispositivo. Turnos alternos.' },

@@ -74,7 +74,7 @@ export function GameSelectionPage() {
                           ? activeGame.thumbnail.replace('.png', '-dark.png')
                           : activeGame.thumbnail.replace('.png', '-light.png')
                       }
-                      alt={activeGame.name}
+                      alt={t(activeGame.name)}
                       className="w-full h-full object-cover transition-all duration-300"
                       onError={() => setImgError(true)}
                     />
@@ -94,7 +94,7 @@ export function GameSelectionPage() {
                 {/* Info */}
                 <div className="p-6 flex-1 flex flex-col">
                   <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-2xl font-bold">{activeGame.name}</h2>
+                    <h2 className="text-2xl font-bold">{t(activeGame.name)}</h2>
                     <span className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Users className="w-4 h-4" />
                       {activeGame.minPlayers === activeGame.maxPlayers
@@ -107,7 +107,7 @@ export function GameSelectionPage() {
                   </div>
 
                   <p className="text-muted-foreground flex-1">
-                    {activeGame.description}
+                    {t(activeGame.description)}
                   </p>
 
                   <Button
@@ -173,7 +173,7 @@ export function GameSelectionPage() {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{game.name}</p>
+                      <p className="font-medium truncate">{t(game.name)}</p>
                       <p className="text-xs text-muted-foreground flex items-center gap-1">
                         <Users className="w-3 h-3" />
                         {game.minPlayers === game.maxPlayers
