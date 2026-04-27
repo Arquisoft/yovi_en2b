@@ -14,12 +14,15 @@ import type { GameSummary, GameMode, PlayerColor } from '@/types'
 
 // ─── Filter / sort types ──────────────────────────────────────────────────────
 
-type GameSortField = 'date' | 'mode' | 'opponent' | 'duration' | 'moves' | 'result'
+type GameSortField =
+  | 'date' | 'variant' | 'mode' | 'opponent'
+  | 'result' | 'board' | 'duration' | 'moves'
 type SortDirection = 'asc' | 'desc'
 
 interface HistoryFilter {
   result: 'all' | 'win' | 'loss'
   mode: string
+  variant: string
   sortField: GameSortField
   sortDirection: SortDirection
 }
@@ -37,8 +40,16 @@ function gameModeKey(game: GameSummary): string {
   return game.config.mode
 }
 
+function gameVariantKey(game: GameSummary): string {
+  return game.config.variant ?? 'y'
+}
+
 function modeLabel(key: string, t: (k: string) => string): string {
   return t(`ranking.modes.${key}`)
+}
+
+function variantLabel(slug: string, t: (k: string, opts?: any) => string): string {
+  return t(`variants.${slug}.name`, { defaultValue: slug })
 }
 
 function humanColor(game: GameSummary, currentUserId: string): PlayerColor {
@@ -86,6 +97,7 @@ function applyFilter(games: GameSummary[], filter: HistoryFilter, currentUserId:
       if (filter.result === 'loss' && isWin) return false
     }
     if (filter.mode !== 'all' && gameModeKey(g) !== filter.mode) return false
+    if (filter.variant !== 'all' && gameVariantKey(g) !== filter.variant) return false
     return true
   })
 }
@@ -100,8 +112,10 @@ function applySort(
   return [...games].sort((a, b) => {
     switch (field) {
       case 'date':     return (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime()) * d
+      case 'variant':  return gameVariantKey(a).localeCompare(gameVariantKey(b)) * d
       case 'mode':     return gameModeKey(a).localeCompare(gameModeKey(b)) * d
       case 'opponent': return opponentName(a, currentUserId).localeCompare(opponentName(b, currentUserId)) * d
+      case 'board':    return (a.config.boardSize - b.config.boardSize) * d
       case 'duration': return (gameDurationMs(a) - gameDurationMs(b)) * d
       case 'moves':    return (a.moveCount - b.moveCount) * d
       case 'result': {
@@ -146,9 +160,10 @@ function SortButton({ field, label, current, direction, onSort }: Readonly<{
 
 // ─── FilterBar ────────────────────────────────────────────────────────────────
 
-function FilterBar({ filter, availableModes, onChange }: Readonly<{
+function FilterBar({ filter, availableModes, availableVariants, onChange }: Readonly<{
   filter: HistoryFilter
   availableModes: string[]
+  availableVariants: string[]
   onChange: (f: HistoryFilter) => void
 }>) {
   const { t } = useTranslation()
@@ -184,6 +199,23 @@ function FilterBar({ filter, availableModes, onChange }: Readonly<{
           ))}
         </div>
       </div>
+
+      {availableVariants.length > 1 && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">{t('history.colVariant')}:</span>
+          <select
+            value={filter.variant}
+            onChange={(e) => onChange({ ...filter, variant: e.target.value })}
+            className="text-xs rounded border border-border bg-card px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+            aria-label="Filter by game variant"
+          >
+            <option value="all">{t('history.filterAllVariants')}</option>
+            {availableVariants.map((slug) => (
+              <option key={slug} value={slug}>{variantLabel(slug, t)}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {availableModes.length > 1 && (
         <div className="flex items-center gap-1.5">
@@ -256,6 +288,9 @@ function GameRow({ game, currentUserId, onReplay, onResume }: Readonly<{
       <td className="py-3 pr-4 text-sm text-muted-foreground whitespace-nowrap">
         {formatDate(game.updatedAt)}
       </td>
+      <td className="py-3 pr-4 text-xs text-muted-foreground hidden sm:table-cell">
+        {variantLabel(gameVariantKey(game), t)}
+      </td>
       <td className="py-3 pr-4">
         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground px-2 py-0.5 rounded-full border border-border bg-muted/50">
           <ModeIcon mode={game.config.mode} />
@@ -264,15 +299,6 @@ function GameRow({ game, currentUserId, onReplay, onResume }: Readonly<{
       </td>
       <td className="py-3 pr-4 font-medium text-sm truncate max-w-[120px]">
         {opponentName(game, currentUserId)}
-      </td>
-      <td className="py-3 pr-4 text-sm text-muted-foreground hidden sm:table-cell">
-        {game.config.boardSize}×{game.config.boardSize}
-      </td>
-      <td className="py-3 pr-4 text-sm text-muted-foreground hidden md:table-cell tabular-nums">
-        {isActive ? '—' : formatTime(gameDurationMs(game))}
-      </td>
-      <td className="py-3 pr-4 text-sm text-muted-foreground hidden md:table-cell font-mono">
-        {t('history.moves', { count: game.moveCount })}
       </td>
       <td className="py-3 pr-4">
         {isActive ? (
@@ -284,6 +310,15 @@ function GameRow({ game, currentUserId, onReplay, onResume }: Readonly<{
             {result.label}
           </span>
         )}
+      </td>
+      <td className="py-3 pr-4 text-sm text-muted-foreground hidden sm:table-cell">
+        {game.config.boardSize}×{game.config.boardSize}
+      </td>
+      <td className="py-3 pr-4 text-sm text-muted-foreground hidden md:table-cell tabular-nums">
+        {isActive ? '—' : formatTime(gameDurationMs(game))}
+      </td>
+      <td className="py-3 pr-4 text-sm text-muted-foreground hidden md:table-cell font-mono">
+        {t('history.moves', { count: game.moveCount })}
       </td>
       <td className="py-3">
         {isActive ? (
@@ -313,12 +348,18 @@ export function GameHistoryPage() {
   const [filter, setFilter] = useState<HistoryFilter>({
     result: 'all',
     mode: 'all',
+    variant: 'all',
     sortField: 'date',
     sortDirection: 'desc',
   })
 
   const availableModes = useMemo(
     () => [...new Set(games.map(gameModeKey))].sort((a, b) => a.localeCompare(b)),
+    [games],
+  )
+
+  const availableVariants = useMemo(
+    () => [...new Set(games.map(gameVariantKey))].sort((a, b) => a.localeCompare(b)),
     [games],
   )
 
@@ -381,7 +422,12 @@ export function GameHistoryPage() {
   } else {
     content = (
       <div className="space-y-4">
-        <FilterBar filter={filter} availableModes={availableModes} onChange={setFilter} />
+        <FilterBar
+          filter={filter}
+          availableModes={availableModes}
+          availableVariants={availableVariants}
+          onChange={setFilter}
+        />
 
         {processed.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground py-6">{t('stats.noMatchesFilter')}</p>
@@ -393,23 +439,26 @@ export function GameHistoryPage() {
                   <th className="pb-2 pr-4">
                     <SortButton field="date" label={t('history.colDate')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
                   </th>
+                  <th className="pb-2 pr-4 hidden sm:table-cell">
+                    <SortButton field="variant" label={t('history.colVariant')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
+                  </th>
                   <th className="pb-2 pr-4">
                     <SortButton field="mode" label={t('history.colMode')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
                   </th>
                   <th className="pb-2 pr-4">
                     <SortButton field="opponent" label={t('history.colOpponent')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
                   </th>
-                  <th className="pb-2 pr-4 hidden sm:table-cell text-xs font-medium text-muted-foreground">
-                    {t('history.colBoard')}
+                  <th className="pb-2 pr-4">
+                    <SortButton field="result" label={t('history.colResult')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
+                  </th>
+                  <th className="pb-2 pr-4 hidden sm:table-cell">
+                    <SortButton field="board" label={t('history.colBoard')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
                   </th>
                   <th className="pb-2 pr-4 hidden md:table-cell">
                     <SortButton field="duration" label={t('history.colDuration')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
                   </th>
                   <th className="pb-2 pr-4 hidden md:table-cell">
                     <SortButton field="moves" label={t('history.colMoves')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
-                  </th>
-                  <th className="pb-2 pr-4">
-                    <SortButton field="result" label={t('history.colResult')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
                   </th>
                   <th className="pb-2" />
                 </tr>

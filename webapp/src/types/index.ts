@@ -213,6 +213,8 @@ export interface MatchRecord {
   playedAt: string
   /** Optional: game mode slug, e.g. 'pve-easy', 'pve-medium', 'pve-hard', 'pvp-local' */
   gameMode?: string | null
+  /** Optional: game variant slug, e.g. 'y', 'why-not'. Older records may be null. */
+  gameVariant?: GameVariant | string | null
 }
 
 export interface WinrateStat {
@@ -227,12 +229,13 @@ export interface StatsData {
 
 // ==================== Stats Filtering ====================
 
-export type MatchSortField = 'date' | 'duration' | 'result' | 'opponent' | 'gameMode'
+export type MatchSortField = 'date' | 'duration' | 'result' | 'opponent' | 'gameMode' | 'gameVariant'
 export type SortDirection = 'asc' | 'desc'
 
 export interface MatchHistoryFilter {
   result?: 'win' | 'loss' | 'all'
   gameMode?: string
+  gameVariant?: string
   sortField: MatchSortField
   sortDirection: SortDirection
 }

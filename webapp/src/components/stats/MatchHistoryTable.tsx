@@ -27,6 +27,8 @@ function sortRecords(
         return a.opponentName.localeCompare(b.opponentName) * dir
       case 'gameMode':
         return ((a.gameMode ?? '').localeCompare(b.gameMode ?? '')) * dir
+      case 'gameVariant':
+        return (((a.gameVariant ?? '') as string).localeCompare((b.gameVariant ?? '') as string)) * dir
       default:
         return 0
     }
@@ -40,6 +42,7 @@ function filterRecords(
   return records.filter((r) => {
     if (filter.result && filter.result !== 'all' && r.result !== filter.result) return false
     if (filter.gameMode && filter.gameMode !== 'all' && r.gameMode !== filter.gameMode) return false
+    if (filter.gameVariant && filter.gameVariant !== 'all' && r.gameVariant !== filter.gameVariant) return false
     return true
   })
 }
@@ -58,7 +61,7 @@ export function SortButton({ field, label, current, direction, onSort }: Readonl
   const isActive = current === field
 
     let sortIcon
-  
+
     if (isActive) {
       if (direction === 'asc') {
         sortIcon = <ArrowUp className="w-3 h-3" data-testid="sort-asc" />
@@ -86,15 +89,23 @@ export function SortButton({ field, label, current, direction, onSort }: Readonl
   )
 }
 
+// ── Variant label helper ──────────────────────────────────────────────────────
+
+function variantLabel(slug: string | null | undefined, t: (k: string, opts?: any) => string): string {
+  if (!slug) return t('stats.unknownVariant')
+  return t(`variants.${slug}.name`, { defaultValue: slug })
+}
+
 // ── FilterBar ─────────────────────────────────────────────────────────────────
 
 interface FilterBarProps {
   filter: MatchHistoryFilter
   availableModes: string[]
+  availableVariants: string[]
   onChange: (f: MatchHistoryFilter) => void
 }
 
-export function FilterBar({ filter, availableModes, onChange }: Readonly<FilterBarProps>) {
+export function FilterBar({ filter, availableModes, availableVariants, onChange }: Readonly<FilterBarProps>) {
   const { t } = useTranslation()
 
   const resultOptions = [
@@ -106,6 +117,11 @@ export function FilterBar({ filter, availableModes, onChange }: Readonly<FilterB
   const modeOptions = [
     { value: 'all', label: t('stats.filterAllModes') },
     ...availableModes.map((m) => ({ value: m, label: t(`ranking.modes.${m}`, { defaultValue: m }) })),
+  ]
+
+  const variantOptions = [
+    { value: 'all', label: t('stats.filterAllVariants') },
+    ...availableVariants.map((v) => ({ value: v, label: variantLabel(v, t) })),
   ]
 
   return (
@@ -133,6 +149,25 @@ export function FilterBar({ filter, availableModes, onChange }: Readonly<FilterB
           ))}
         </div>
       </div>
+
+      {/* Variant filter — only shown if there are multiple variants */}
+      {availableVariants.length > 1 && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">{t('stats.gameVariant')}:</span>
+          <select
+            value={filter.gameVariant ?? 'all'}
+            onChange={(e) => onChange({ ...filter, gameVariant: e.target.value })}
+            className="text-xs rounded border border-border bg-card px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"
+            aria-label="Filter by game variant"
+          >
+            {variantOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Game mode filter — only shown if there are multiple modes */}
       {availableModes.length > 1 && (
@@ -168,14 +203,21 @@ export function MatchHistoryTable({ history }: Readonly<MatchHistoryTableProps>)
   const [filter, setFilter] = useState<MatchHistoryFilter>({
     result: 'all',
     gameMode: 'all',
+    gameVariant: 'all',
     sortField: 'date',
     sortDirection: 'desc',
   })
 
-  // Extract unique game modes from history for the filter dropdown
   const availableModes = useMemo(() => {
     const modes = new Set(history.map((r) => r.gameMode).filter(Boolean) as string[])
     return Array.from(modes).sort((a, b) => a.localeCompare(b))
+  }, [history])
+
+  const availableVariants = useMemo(() => {
+    const variants = new Set(
+      history.map((r) => r.gameVariant).filter((v): v is string => Boolean(v)),
+    )
+    return Array.from(variants).sort((a, b) => a.localeCompare(b))
   }, [history])
 
   const handleSort = (field: MatchSortField) => {
@@ -204,11 +246,15 @@ export function MatchHistoryTable({ history }: Readonly<MatchHistoryTableProps>)
     return <p className="text-center text-sm text-muted-foreground py-8">{t('stats.noMatches')}</p>
   }
 
+  const showVariantCol = availableVariants.length > 0
+  const showModeCol = availableModes.length > 0
+
   return (
     <div className="space-y-3">
       <FilterBar
         filter={filter}
         availableModes={availableModes}
+        availableVariants={availableVariants}
         onChange={handleFilterChange}
       />
 
@@ -220,6 +266,37 @@ export function MatchHistoryTable({ history }: Readonly<MatchHistoryTableProps>)
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left">
+                  <th className="pb-2 pr-3 hidden sm:table-cell">
+                    <SortButton
+                      field="date"
+                      label={t('stats.date')}
+                      current={filter.sortField}
+                      direction={filter.sortDirection}
+                      onSort={handleSort}
+                    />
+                  </th>
+                  {showVariantCol && (
+                    <th className="pb-2 pr-3 hidden sm:table-cell">
+                      <SortButton
+                        field="gameVariant"
+                        label={t('stats.gameVariant')}
+                        current={filter.sortField}
+                        direction={filter.sortDirection}
+                        onSort={handleSort}
+                      />
+                    </th>
+                  )}
+                  {showModeCol && (
+                    <th className="pb-2 pr-3 hidden sm:table-cell">
+                      <SortButton
+                        field="gameMode"
+                        label={t('stats.gameMode')}
+                        current={filter.sortField}
+                        direction={filter.sortDirection}
+                        onSort={handleSort}
+                      />
+                    </th>
+                  )}
                   <th className="pb-2 pr-3">
                     <SortButton
                       field="opponent"
@@ -247,31 +324,24 @@ export function MatchHistoryTable({ history }: Readonly<MatchHistoryTableProps>)
                       onSort={handleSort}
                     />
                   </th>
-                  {availableModes.length > 0 && (
-                    <th className="pb-2 pr-3 hidden sm:table-cell">
-                      <SortButton
-                        field="gameMode"
-                        label={t('stats.gameMode')}
-                        current={filter.sortField}
-                        direction={filter.sortDirection}
-                        onSort={handleSort}
-                      />
-                    </th>
-                  )}
-                  <th className="pb-2 hidden sm:table-cell">
-                    <SortButton
-                      field="date"
-                      label={t('stats.date')}
-                      current={filter.sortField}
-                      direction={filter.sortDirection}
-                      onSort={handleSort}
-                    />
-                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {paginated.map((match) => (
                   <tr key={match.id} className="py-2">
+                    <td className="py-2 pr-3 text-muted-foreground hidden sm:table-cell">
+                      {new Date(match.playedAt).toLocaleDateString()}
+                    </td>
+                    {showVariantCol && (
+                      <td className="py-2 pr-3 text-muted-foreground hidden sm:table-cell text-xs">
+                        {variantLabel(match.gameVariant, t)}
+                      </td>
+                    )}
+                    {showModeCol && (
+                      <td className="py-2 pr-3 text-muted-foreground hidden sm:table-cell text-xs">
+                        {match.gameMode ? t(`ranking.modes.${match.gameMode}`, { defaultValue: match.gameMode }) : '—'}
+                      </td>
+                    )}
                     <td className="py-2 pr-3 font-medium">{match.opponentName}</td>
                     <td className="py-2 pr-3">
                       <span
@@ -287,14 +357,6 @@ export function MatchHistoryTable({ history }: Readonly<MatchHistoryTableProps>)
                     </td>
                     <td className="py-2 pr-3 text-muted-foreground tabular-nums">
                       {formatTime(match.durationSeconds * 1000)}
-                    </td>
-                    {availableModes.length > 0 && (
-                      <td className="py-2 pr-3 text-muted-foreground hidden sm:table-cell text-xs">
-                        {match.gameMode ? t(`ranking.modes.${match.gameMode}`, { defaultValue: match.gameMode }) : '—'}
-                      </td>
-                    )}
-                    <td className="py-2 text-muted-foreground hidden sm:table-cell">
-                      {new Date(match.playedAt).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}
