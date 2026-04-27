@@ -4,8 +4,9 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useLanguage } from '@/i18n/LanguageContext'
 import { Button } from '@/components/ui/Button'
+import { Tooltip, TooltipProvider } from '@/components/ui/Tooltip'
 import { SUPPORTED_LOCALES, type SupportedLocale } from '@/i18n/i18n'
-import { Sun, Moon, LogOut, User, Hexagon, BarChart2, Trophy,  Clock } from 'lucide-react'
+import { Sun, Moon, LogOut, User, Hexagon, BarChart2, Trophy, Clock } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -38,65 +39,75 @@ export function AppNavbar() {
           <span className="font-bold text-lg">{t('app.name')}</span>
         </Link>
 
-        <nav className="flex items-center gap-2">
-         <select
-            value={locale}
-            onChange={(e) => setLanguage(e.target.value as SupportedLocale)}
-            className="bg-background text-foreground border border-border rounded-md px-2 py-1 text-sm appearance-none"
-          >
-            {SUPPORTED_LOCALES.map((lang) => (
-              <option key={lang} value={lang}>
-                {lang.toUpperCase()}
-              </option>
-            ))}
-          </select>
+        <TooltipProvider delayDuration={400}>
+          <nav className="flex items-center gap-2">
+            <select
+              value={locale}
+              onChange={(e) => setLanguage(e.target.value as SupportedLocale)}
+              className="bg-background text-foreground border border-border rounded-md px-2 py-1 text-sm appearance-none"
+            >
+              {SUPPORTED_LOCALES.map((lang) => (
+                <option key={lang} value={lang}>
+                  {lang.toUpperCase()}
+                </option>
+              ))}
+            </select>
 
-          {/* Theme toggle */}
-          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={t('nav.toggleTheme')}>
-            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
-
-          {user && (
-            <div className="flex items-center gap-2">
-              {/* Username — clickable → profile page */}
-              <button
-                onClick={() => !isGuest && navigate('/profile')}
-                className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                aria-label={t('nav.profile')}
-                disabled={isGuest}
-              >
-                <User className="h-4 w-4" />
-                <span>{user.username}</span>
-                {isGuest && (
-                  <span className="text-xs px-1.5 py-0.5 rounded-full border border-border bg-muted text-muted-foreground leading-none">
-                    {t('nav.guestBadge')}
-                  </span>
-                )}
-              </button>
-
-              <Button variant="ghost" size="icon" onClick={() => navigate('/stats')} aria-label={t('nav.statistics')}>
-                <BarChart2 className="h-5 w-5" />
+            <Tooltip label={t('nav.toggleTheme')}>
+              <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label={t('nav.toggleTheme')}>
+                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </Button>
+            </Tooltip>
 
-            <Button variant="ghost" size="icon" onClick={() => navigate('/history')} aria-label={t('nav.history')}>
-                <Clock className="h-5 w-5" />
-              </Button>
+            {user && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => !isGuest && navigate('/profile')}
+                  className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={t('nav.profile')}
+                  disabled={isGuest}
+                >
+                  <User className="h-4 w-4" />
+                  <span>{user.username}</span>
+                  {isGuest && (
+                    <span className="text-xs px-1.5 py-0.5 rounded-full border border-border bg-muted text-muted-foreground leading-none">
+                      {t('nav.guestBadge')}
+                    </span>
+                  )}
+                </button>
 
-              <Button variant="ghost" size="icon" onClick={() => navigate('/ranking')} aria-label={t('nav.ranking')}>
-                <Trophy className="h-5 w-5" />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowLogoutDialog(true)}
-                aria-label={t('nav.logout')}
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </div>
-          )}
-        </nav>
+                <Tooltip label={t('nav.statistics')}>
+                  <Button variant="ghost" size="icon" onClick={() => navigate('/stats')} aria-label={t('nav.statistics')}>
+                    <BarChart2 className="h-5 w-5" />
+                  </Button>
+                </Tooltip>
+
+                <Tooltip label={t('nav.history')}>
+                  <Button variant="ghost" size="icon" onClick={() => navigate('/history')} aria-label={t('nav.history')}>
+                    <Clock className="h-5 w-5" />
+                  </Button>
+                </Tooltip>
+
+                <Tooltip label={t('nav.ranking')}>
+                  <Button variant="ghost" size="icon" onClick={() => navigate('/ranking')} aria-label={t('nav.ranking')}>
+                    <Trophy className="h-5 w-5" />
+                  </Button>
+                </Tooltip>
+
+                <Tooltip label={t('nav.logout')}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowLogoutDialog(true)}
+                    aria-label={t('nav.logout')}
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </Tooltip>
+              </div>
+            )}
+          </nav>
+        </TooltipProvider>
       </div>
 
       <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
