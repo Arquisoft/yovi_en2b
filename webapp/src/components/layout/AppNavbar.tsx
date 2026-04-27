@@ -58,7 +58,13 @@ export function AppNavbar() {
 
           {user && (
             <div className="flex items-center gap-2">
-              <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
+              {/* Username — clickable → profile page */}
+              <button
+                onClick={() => !isGuest && navigate('/profile')}
+                className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                aria-label={t('nav.profile')}
+                disabled={isGuest}
+              >
                 <User className="h-4 w-4" />
                 <span>{user.username}</span>
                 {isGuest && (
@@ -66,7 +72,7 @@ export function AppNavbar() {
                     {t('nav.guestBadge')}
                   </span>
                 )}
-              </div>
+              </button>
 
               <Button variant="ghost" size="icon" onClick={() => navigate('/stats')} aria-label={t('nav.statistics')}>
                 <BarChart2 className="h-5 w-5" />
