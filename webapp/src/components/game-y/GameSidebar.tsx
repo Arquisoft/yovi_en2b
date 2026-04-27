@@ -19,6 +19,12 @@ interface GameSidebarProps {
   isMobile?: boolean
 }
 
+function getPlayerColor(game: GameState, userId: string): PlayerColor | null {
+  if (game.players.player1.id === userId) return 'player1'
+  if (game.players.player2.id === userId) return 'player2'
+  return null
+}
+
 function getTurnLabel(game: GameState, effectiveCurrentTurn: PlayerColor, t: TFunction): string {
   if (game.status === 'finished') {
     if (game.winner) {
@@ -50,12 +56,7 @@ export function GameSidebar({
   const navigate = useNavigate()
   const showChat = game.config.mode !== 'pvp-local'
 
-  const currentPlayerColor: PlayerColor | null =
-    game.players.player1.id === currentUserId
-      ? 'player1'
-      : game.players.player2.id === currentUserId
-        ? 'player2'
-        : null
+  const currentPlayerColor = getPlayerColor(game, currentUserId)
 
   const botColor: PlayerColor | null =
     game.config.mode === 'pve'
