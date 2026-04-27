@@ -318,7 +318,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const { manager } = getManager()
       const client = makeClient(1, { inQueue: true })
       manager._injectClient(client)
-      ;(manager as any).matchmaking.join({ userId: 1, username: 'player1', token: 'tok', joinedAt: Date.now() })
+      ;(manager as any).matchmaking.join('y', { userId: 1, username: 'player1', token: 'tok', joinedAt: Date.now() })
 
       expect(manager.getQueueSize()).toBe(1)
       ;(manager as any).handleDisconnect(1)
@@ -329,7 +329,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const { manager } = getManager()
       const client = makeClient(1, { inQueue: true })
       manager._injectClient(client)
-      ;(manager as any).matchmaking.join({ userId: 1, username: 'player1', token: 'tok', joinedAt: Date.now() })
+      ;(manager as any).matchmaking.join('y', { userId: 1, username: 'player1', token: 'tok', joinedAt: Date.now() })
 
       ;(manager as any).handleDisconnect(1)
       // client still in map only if it had a game; here it doesn't → deleted

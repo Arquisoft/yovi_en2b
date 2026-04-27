@@ -9,8 +9,10 @@ export type GameStatus = 'waiting' | 'playing' | 'finished' | 'abandoned'
 // move when Pie Rule is enabled, and exits once player2 chooses keep or swap.
 export type GamePhase = 'playing' | 'pie-decision'
 export type PieDecision = 'keep' | 'swap'
+export type GameVariant = 'y' | 'why-not'
 
 export interface GameConfig {
+  variant?: GameVariant
   mode: GameMode
   boardSize: BoardSize
   timerEnabled: boolean

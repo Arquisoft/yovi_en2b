@@ -4,7 +4,9 @@ import type { IncomingMessage, Server } from 'node:http'
 import jwt from 'jsonwebtoken'
 import { MatchmakingService } from './MatchmakingService'
 import type { ClientMessage, ConnectedClient, OnlineGameConfig, ServerMessage } from './types'
+import { DEFAULT_VARIANT } from './types'
 import { GameService } from '../services/GameService'
+import type { GameVariant } from '../types/game'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'please_dont_tell_anyone'
 const USERS_PUBLIC_URL = process.env.USERS_PUBLIC_URL || 'http://localhost:3000'
@@ -189,7 +191,8 @@ export class WebSocketManager {
       return
     }
 
-    this.matchmaking.join({
+    const variant = config?.variant ?? DEFAULT_VARIANT
+    this.matchmaking.join(variant, {
       userId: client.userId,
       username: client.username,
       token: client.token,
@@ -198,10 +201,14 @@ export class WebSocketManager {
     })
     client.inQueue = true
 
-    this.sendTo(client.ws, { type: 'queue_joined', queueSize: this.matchmaking.size() })
+    this.sendTo(client.ws, {
+      type: 'queue_joined',
+      queueSize: this.matchmaking.sizeOf(variant),
+      variant,
+    })
 
-    // Try to pair this player with another waiter
-    await this.tryMatch()
+    // Try to pair this player with another waiter for the same variant.
+    await this.tryMatch(variant)
   }
 
   private handleLeaveQueue(client: ConnectedClient): void {
@@ -211,8 +218,8 @@ export class WebSocketManager {
     this.sendTo(client.ws, { type: 'queue_left' })
   }
 
-  private async tryMatch(): Promise<void> {
-    const pair = this.matchmaking.tryMatch()
+  private async tryMatch(variant: GameVariant): Promise<void> {
+    const pair = this.matchmaking.tryMatch(variant)
     if (!pair) return
 
     const [entry1, entry2] = pair
@@ -221,8 +228,9 @@ export class WebSocketManager {
 
     if (!client1 || !client2) {
       // One player disconnected before matching — re-queue the surviving one
-      if (client1) this.matchmaking.join(entry1)
-      if (client2) this.matchmaking.join(entry2)
+      // back into the same variant queue they were in.
+      if (client1) this.matchmaking.join(variant, entry1)
+      if (client2) this.matchmaking.join(variant, entry2)
       return
     }
 
@@ -233,6 +241,7 @@ export class WebSocketManager {
       const cfg = entry1.config
       const config = {
         mode: 'pvp-online' as const,
+        variant,
         boardSize: cfg?.boardSize ?? 11,
         timerEnabled: cfg?.timerEnabled ?? true,
         timerSeconds: (cfg?.timerEnabled ?? true) ? (cfg?.timerSeconds ?? 600) : undefined,
@@ -267,9 +276,9 @@ export class WebSocketManager {
       })
     } catch (err) {
       console.error('Failed to create online game:', err)
-      // Return both players to the queue
-      this.matchmaking.join(entry1)
-      this.matchmaking.join(entry2)
+      // Return both players to the queue they came from
+      this.matchmaking.join(variant, entry1)
+      this.matchmaking.join(variant, entry2)
       if (client1) this.sendTo(client1.ws, { type: 'error', code: 'MATCH_FAILED', message: 'Could not create game, retrying' })
       if (client2) this.sendTo(client2.ws, { type: 'error', code: 'MATCH_FAILED', message: 'Could not create game, retrying' })
     }
@@ -434,6 +443,7 @@ export class WebSocketManager {
       const cfg = room.config
       const gameConfig = {
         mode: 'pvp-online' as const,
+        variant: cfg?.variant ?? DEFAULT_VARIANT,
         boardSize: cfg?.boardSize ?? 11,
         timerEnabled: cfg?.timerEnabled ?? true,
         timerSeconds: (cfg?.timerEnabled ?? true) ? (cfg?.timerSeconds ?? 600) : undefined,
