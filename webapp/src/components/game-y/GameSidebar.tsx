@@ -69,19 +69,21 @@ export function GameSidebar({
   }
 
   return (
-    <div className="h-full flex flex-col gap-4 p-4 overflow-y-auto">
+    <div className={`h-full flex flex-col ${isMobile ? 'gap-2 p-2' : 'gap-4 p-4 overflow-y-auto'}`}>
 
-      {/* Game info */}
-      <div className="flex-shrink-0 space-y-2">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg">
-            {t(`variants.${game.config.variant ?? 'y'}.name`, { defaultValue: t('game.gameY') })}
-          </h2>
-          <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded">
-            {game.config.boardSize}×{game.config.boardSize}
-          </span>
+      {/* Game info — hidden on mobile (redundant with board header) */}
+      {!isMobile && (
+        <div className="flex-shrink-0 space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-lg">
+              {t(`variants.${game.config.variant ?? 'y'}.name`, { defaultValue: t('game.gameY') })}
+            </h2>
+            <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded">
+              {game.config.boardSize}×{game.config.boardSize}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Turn indicator */}
       <div className={cn(
@@ -120,8 +122,8 @@ export function GameSidebar({
         </div>
       )}
 
-      {/* Player indicators without timer */}
-      {!liveTimer && (
+      {/* Player indicators without timer — hidden on mobile when chat is shown (turn indicator suffices) */}
+      {!liveTimer && (!isMobile || !showChat) && (
         <div className="flex-shrink-0 space-y-2">
           <div className={cn(
             'flex items-center gap-2 p-3 rounded-lg border',
@@ -140,10 +142,12 @@ export function GameSidebar({
         </div>
       )}
 
-      {/* Moves counter */}
-      <p className="flex-shrink-0 text-sm text-muted-foreground text-center">
-        {t('game.moves', { count: game.moves.length })}
-      </p>
+      {/* Moves counter — hidden on mobile to save space */}
+      {!isMobile && (
+        <p className="flex-shrink-0 text-sm text-muted-foreground text-center">
+          {t('game.moves', { count: game.moves.length })}
+        </p>
+      )}
 
       {/* Chat */}
       {showChat && (

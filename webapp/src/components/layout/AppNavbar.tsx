@@ -208,7 +208,7 @@ export function AppNavbar() {
       <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Sign out</DialogTitle>
+            <DialogTitle>{t('nav.signOutConfirmTitle')}</DialogTitle>
             <DialogDescription>
               {t('nav.signOutConfirmDescription')}
             </DialogDescription>

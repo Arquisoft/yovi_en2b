@@ -58,7 +58,7 @@ export function OnlineHostLobbyPage() {
               <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
                 {t('online.roomCode')}
               </p>
-              <p className="text-4xl font-mono font-bold tracking-[0.25em] text-primary select-all">
+              <p className="text-3xl sm:text-4xl font-mono font-bold tracking-[0.25em] text-primary select-all">
                 {roomCode}
               </p>
               <Button

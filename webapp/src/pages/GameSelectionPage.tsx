@@ -93,9 +93,9 @@ export function GameSelectionPage() {
 
                 {/* Info */}
                 <div className="p-6 flex-1 flex flex-col">
-                  <div className="flex items-center justify-between mb-2">
-                    <h2 className="text-2xl font-bold">{t(activeGame.name)}</h2>
-                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <h2 className="text-2xl font-bold min-w-0 truncate">{t(activeGame.name)}</h2>
+                    <span className="flex items-center gap-1 text-sm text-muted-foreground shrink-0">
                       <Users className="w-4 h-4" />
                       {activeGame.minPlayers === activeGame.maxPlayers
                         ? t('gameSelection.players', { count: activeGame.minPlayers })

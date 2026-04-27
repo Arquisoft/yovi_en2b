@@ -76,7 +76,7 @@ export function ChatPanel({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-48 min-h-[120px]">
+      <div className={`overflow-y-auto p-3 space-y-2 ${isCollapsible ? 'flex-1 min-h-0' : 'max-h-48 min-h-[120px]'}`}>
         {messages.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground py-4">
             {t('chat.noMessages')}
