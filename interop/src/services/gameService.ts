@@ -3,30 +3,22 @@
 //
 // Stateless play service.  The single exported function receives a board
 // position in YEN notation, forwards it to the selected Rust bot, and returns
-// the bot's chosen move together with the updated board layout.
-//
-// The service maps directly onto the project-specification
-// contract:
-//
-//   "a 'play' method will be exposed, requiring at least one 'position'
-//    parameter indicating the board state in YEN notation and another optional
-//    parameter called 'bot_id' which indicates the bot identifier to play with.
-//    The method will return the next move using YEN notation."
+// the bot's chosen move as either barycentric coordinates or a special action
+// (swap, resign, etc.).
 //
 // Rust engine endpoint (unchanged):
 //   POST /{api_version}/ybot/choose/{bot_id}
 //   Body: YEN JSON object
-//   Response: { api_version, bot_id, coords: { x, y, z } }
+//   Response: { api_version, bot_id, coords?: { x, y, z }, action?: string }
 // ──────────────────────────────────────────────────────────────────────────────
 
 import axios, { AxiosError } from 'axios';
 import type { YEN, RustMoveResponse, PlayResponse } from '../models/game';
-import { applyMove } from './yenService';
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
 const RUST_URL = process.env.RUST_INTERNAL_URL ?? 'http://localhost:4000';
-const RUST_TIMEOUT_MS = 3_500;
+const RUST_TIMEOUT_MS = parseInt(process.env.RUST_TIMEOUT_MS ?? '3500', 10);
 
 type BotId = 'random_bot' | 'fast_bot' | 'smart_bot';
 
@@ -42,8 +34,8 @@ type BotId = 'random_bot' | 'fast_bot' | 'smart_bot';
  * @param strategy  Optional strategy / difficulty hint.  Only consulted when
  *                  `botId` is not provided.
  *
- * @returns PlayResponse containing the move coords, updated layout, and the
- *          bot that was used.
+ * @returns PlayResponse — either { coords: {x,y,z} } for a normal move or
+ *          { action: string } for a special action such as "swap" or "resign".
  *
  * @throws  Structured errors with `code` and `httpStatus`:
  *            BOT_NOT_FOUND (404)       — bot_id is not registered in Rust
@@ -57,24 +49,17 @@ export const play = async (
   strategy?: string
 ): Promise<PlayResponse> => {
   const resolvedBotId = resolveBotId(botId, strategy);
-
   const rustResponse = await callRustEngine(position, resolvedBotId);
 
-  const botCoords = rustResponse.coords;
-  const botToken = position.players[position.turn];
+  if (rustResponse.action) {
+    return { action: rustResponse.action };
+  }
 
-  const updatedLayout = applyMove(
-    position.layout,
-    botCoords,
-    botToken,
-    position.size
-  );
+  if (!rustResponse.coords) {
+    throw makeError('ENGINE_ERROR', 'The bot engine returned a response with neither coords nor action.', 502);
+  }
 
-  return {
-    move: `${botCoords.x},${botCoords.y},${botCoords.z}`,
-    position: updatedLayout,
-    bot_id: resolvedBotId,
-  };
+  return { coords: rustResponse.coords };
 };
 
 // ── Internal helpers ──────────────────────────────────────────────────────────

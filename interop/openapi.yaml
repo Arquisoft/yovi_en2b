@@ -53,8 +53,8 @@ paths:
                     type: number
                     example: 3600.5
 
-  /games/play:
-    post:
+  /play:
+    get:
       summary: Request the next bot move
       tags:
         - Play
@@ -62,9 +62,19 @@ paths:
         Exposes the `play` method as defined in the project specification.
 
         The caller submits the current board state using the **YEN notation**
-        and optionally selects a bot or strategy.
-        The method returns the engine's chosen move together with the updated
-        board layout, also expressed in YEN notation.
+        as a JSON-encoded query parameter and optionally selects a bot.
+        The method returns the engine's chosen move as barycentric coordinates,
+        or a special action such as `"swap"` (pie rule) or `"resign"`.
+
+        ### Example — normal move
+        ```
+        curl -G "http://localhost:3001/play" \
+          --data-urlencode 'position={"size":3,"turn":0,"players":["B","R"],"layout":"./B./..."}'
+        ```
+        Response: `{"coords":{"x":1,"y":1,"z":0}}`
+
+        ### Example — swap action (pie rule)
+        Response: `{"action":"swap"}`
 
         ### Bot resolution order
         The bot to use is resolved with the following priority:
@@ -108,7 +118,6 @@ paths:
         ### Coordinates
         The Rust engine represents board cells using **barycentric coordinates**
         `(x, y, z)` where `x + y + z = size − 1` and `x, y, z ≥ 0`.
-        The move returned by this endpoint uses the string format `"x,y,z"`.
 
         For a size-4 board the cell coordinates are:
 
@@ -119,85 +128,101 @@ paths:
         (0,0,3)  (0,1,2)  (0,2,1)  (0,3,0)
         ```
       operationId: play
-      requestBody:
-        required: true
-        description: |
-          The board position in YEN notation is the only required field.
-          `bot_id` and `strategy` are optional and control which bot is used.
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PlayRequest'
-            examples:
-              position_only:
-                summary: Position only — default bot (random_bot)
-                value:
-                  position:
-                    size: 3
-                    turn: 0
-                    players: ["B", "R"]
-                    layout: "./../..."
-              with_bot_id:
-                summary: Explicit bot selection
-                value:
-                  position:
-                    size: 3
-                    turn: 0
-                    players: ["B", "R"]
-                    layout: "./../..."
-                  bot_id: random_bot
-              with_strategy:
-                summary: Difficulty strategy — maps to smart_bot
-                value:
-                  position:
-                    size: 4
-                    turn: 1
-                    players: ["B", "R"]
-                    layout: "B/.B/RB./B..R"
-                  strategy: HARD
-              bot_id_and_strategy:
-                summary: Both provided — bot_id takes precedence
-                value:
-                  position:
-                    size: 3
-                    turn: 0
-                    players: ["B", "R"]
-                    layout: "./../..."
-                  bot_id: fast_bot
-                  strategy: EASY
+      parameters:
+        - name: position
+          in: query
+          required: true
+          description: |
+            The current board state encoded as a **JSON string** in YEN notation.
+            Must be URL-encoded when sent as a query parameter.
+
+            Example value (before URL-encoding):
+            `{"size":3,"turn":0,"players":["B","R"],"layout":"./B./..."}`
+          schema:
+            type: string
+          examples:
+            position_only:
+              summary: Size-3 board, B's turn
+              value: '{"size":3,"turn":0,"players":["B","R"],"layout":"./B./..."}'
+            mid_game:
+              summary: Size-4 board mid-game, R's turn
+              value: '{"size":4,"turn":1,"players":["B","R"],"layout":"B/.B/RB./B..R"}'
+        - name: bot_id
+          in: query
+          required: false
+          description: |
+            Identifier of a specific bot registered in the Rust engine.
+            When provided, takes priority over `strategy`.
+
+            Available bots:
+            - `random_bot` — selects a random legal move.
+            - `fast_bot` — uses Minimax with alpha-beta pruning and
+              iterative deepening within a time limit.
+            - `smart_bot` — uses Minimax with alpha-beta pruning and
+              iterative deepening with more freedom to search deeper.
+
+            Any value not in this list results in a **404 BOT_NOT_FOUND** error.
+          schema:
+            type: string
+            enum: [random_bot, fast_bot, smart_bot]
+          example: fast_bot
+        - name: strategy
+          in: query
+          required: false
+          description: |
+            Difficulty level hint. Consulted only when `bot_id` is absent.
+            Maps to a registered bot internally.
+
+            | Value    | Resolved bot   |
+            |----------|----------------|
+            | `EASY`   | `random_bot`   |
+            | `MEDIUM` | `fast_bot`     |
+            | `HARD`   | `smart_bot`    |
+
+            Matching is **case-insensitive** (`"hard"` and `"HARD"` are equivalent).
+          schema:
+            type: string
+            enum: [EASY, MEDIUM, HARD]
+          example: HARD
       responses:
         '200':
           description: |
             The bot's move was calculated successfully.
 
-            Returns the coordinate of the chosen cell (`move`), the updated
-            board layout after the move is applied (`position`), and the
-            identifier of the bot that was used (`bot_id`).
+            Returns either:
+            - A **move** response with the barycentric coordinates of the chosen
+              cell: `{"coords":{"x":1,"y":1,"z":0}}`
+            - A **special action** such as swap (pie rule) or resign:
+              `{"action":"swap"}` or `{"action":"resign"}`
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PlayResponse'
               examples:
-                random_bot_move:
-                  summary: random_bot plays bottom-left cell on a size-3 board
+                normal_move:
+                  summary: Bot plays a cell — barycentric coordinates
                   value:
-                    move: "0,0,2"
-                    position: "B/../..."
-                    bot_id: random_bot
-                smart_bot_move:
-                  summary: smart_bot plays a mid-game move on a size-4 board
+                    coords:
+                      x: 1
+                      y: 1
+                      z: 0
+                swap_action:
+                  summary: Bot invokes the pie rule (swap)
                   value:
-                    move: "1,1,1"
-                    position: "B/.B/RBB/B..R"
-                    bot_id: smart_bot
+                    action: swap
+                resign_action:
+                  summary: Bot resigns
+                  value:
+                    action: resign
         '400':
           description: |
-            **INVALID_POSITION** — the `position` field is absent or the YEN
-            object is structurally invalid.
+            **INVALID_POSITION** — the `position` query parameter is absent,
+            not valid JSON, or the YEN object is structurally invalid.
 
             This is returned when any of the following conditions are met:
-            - `position` is missing from the request body.
-            - `position` is not a JSON object (e.g. a plain string).
+            - `position` is missing from the query string.
+            - `position` is not valid JSON.
+            - `position` is not a JSON object (e.g. a number or string).
             - `position` is missing a required field (`size`, `turn`, `players`,
               or `layout`).
             - `size` is not a positive integer.
@@ -212,15 +237,20 @@ paths:
                 $ref: '#/components/schemas/ApiError'
               examples:
                 missing_position:
-                  summary: position field is absent
+                  summary: position parameter is absent
                   value:
                     code: INVALID_POSITION
-                    message: 'Request body must contain a "position" field with the board state in YEN notation.'
+                    message: 'Query parameter "position" is required and must be a JSON-encoded YEN object.'
+                invalid_json:
+                  summary: position is not valid JSON
+                  value:
+                    code: INVALID_POSITION
+                    message: 'Query parameter "position" is not valid JSON.'
                 invalid_yen_object:
                   summary: position is not a valid YEN object
                   value:
                     code: INVALID_POSITION
-                    message: 'The "position" field is not a valid YEN object. Expected { size: number, turn: number, players: string[], layout: string }.'
+                    message: 'The "position" parameter is not a valid YEN object. Expected { size: number, turn: number, players: string[], layout: string }.'
         '404':
           description: |
             **BOT_NOT_FOUND** — the `bot_id` supplied in the request is not
@@ -247,8 +277,7 @@ paths:
         '500':
           description: |
             **INTERNAL_ERROR** — an unexpected server-side error occurred that
-            is not covered by the more specific error codes. Returned when the
-            thrown error carries no recognised `code` or `httpStatus`.
+            is not covered by the more specific error codes.
           content:
             application/json:
               schema:
@@ -270,8 +299,8 @@ paths:
         '503':
           description: |
             **ENGINE_TIMEOUT** — the Rust bot engine did not respond within the
-            configured timeout window (2 seconds). This may happen when the
-            minimax bot searches deeply on large boards.
+            configured timeout window. This may happen when the minimax bot
+            searches deeply on large boards.
           content:
             application/json:
               schema:
@@ -337,88 +366,61 @@ components:
           pattern: '^[BR.]+(/[BR.]+)*$'
           example: "B/.B/RB./B..R"
 
-    PlayRequest:
-      type: object
-      description: |
-        Request body for the `play` method. Only `position` is required.
-        `bot_id` and `strategy` are optional parameters that control which
-        bot strategy is used to generate the next move.
-      required:
-        - position
-      properties:
-        position:
-          $ref: '#/components/schemas/YEN'
-          description: |
-            The current board state in YEN notation. This is the only
-            mandatory parameter as specified by the project requirements.
-        bot_id:
-          type: string
-          enum: [random_bot, fast_bot, smart_bot]
-          description: |
-            Identifier of a specific bot registered in the Rust engine.
-            When provided, this takes priority over `strategy`.
-
-            Available bots:
-            - `random_bot` — selects a random legal move.
-            - `fast_bot` — uses Minimax with alpha-beta pruning and
-              iterative deepening within a time limit.
-            - `smart_bot` — uses Minimax with alpha-beta pruning and
-              iterative deepening with more freedom to search deeper.
-
-            Any value not in this list results in a **404 BOT_NOT_FOUND** error.
-          example: fast_bot
-        strategy:
-          type: string
-          description: |
-            Difficulty level hint. Consulted only when `bot_id` is absent.
-            Maps to a registered bot internally.
-
-            | Value    | Resolved bot   |
-            |----------|----------------|
-            | `EASY`   | `random_bot`   |
-            | `MEDIUM` | `fast_bot`     |
-            | `HARD`   | `smart_bot`    |
-
-            Matching is **case-insensitive** (`"hard"` and `"HARD"` are
-            equivalent).
-          enum: [EASY, MEDIUM, HARD]
-          example: HARD
-
     PlayResponse:
-      type: object
       description: |
         Response returned by a successful call to the `play` method.
 
-        As required by the specification, the next move is expressed using
-        YEN notation: `move` contains the barycentric coordinate string of
-        the chosen cell, and `position` contains the updated board layout
-        string after the bot has placed its piece.
+        One of two shapes:
+        - **Move**: `{"coords":{"x":1,"y":1,"z":0}}` — the cell the bot chose,
+          expressed as barycentric coordinates.
+        - **Action**: `{"action":"swap"}` or `{"action":"resign"}` — a special
+          action when the bot invokes the pie rule or resigns.
+      oneOf:
+        - $ref: '#/components/schemas/MoveResponse'
+        - $ref: '#/components/schemas/ActionResponse'
+
+    MoveResponse:
+      type: object
+      description: The bot chose a cell on the board.
       required:
-        - move
-        - position
-        - bot_id
+        - coords
       properties:
-        move:
+        coords:
+          $ref: '#/components/schemas/Coordinates'
+
+    ActionResponse:
+      type: object
+      description: The bot performed a special action (swap, resign, etc.).
+      required:
+        - action
+      properties:
+        action:
           type: string
-          description: |
-            Barycentric coordinate of the cell chosen by the bot, encoded as
-            the string `"x,y,z"`. The values satisfy `x + y + z = size − 1`.
-          pattern: '^\d+,\d+,\d+$'
-          example: "1,1,1"
-        position:
-          type: string
-          description: |
-            Updated YEN `layout` string after the bot has applied its move.
-            Has the same format as `YEN.layout` (rows separated by `/`,
-            cells encoded as `.`, `B`, or `R`).
-          example: "B/.B/RBB/B..R"
-        bot_id:
-          type: string
-          description: |
-            Identifier of the bot that was actually used to generate the move.
-            Useful when the caller did not specify `bot_id` explicitly (e.g.
-            when `strategy` was used or the default bot was applied).
-          example: fast_bot
+          description: Name of the action performed.
+          example: swap
+
+    Coordinates:
+      type: object
+      description: |
+        Barycentric coordinates of a cell on the Game Y board.
+        The values satisfy `x + y + z = size − 1` with `x, y, z ≥ 0`.
+      required:
+        - x
+        - y
+        - z
+      properties:
+        x:
+          type: integer
+          minimum: 0
+          example: 1
+        y:
+          type: integer
+          minimum: 0
+          example: 1
+        z:
+          type: integer
+          minimum: 0
+          example: 0
 
     ApiError:
       type: object
@@ -444,4 +446,4 @@ components:
         message:
           type: string
           description: Human-readable description of what went wrong.
-          example: 'Request body must contain a "position" field with the board state in YEN notation.'
+          example: 'Query parameter "position" is required and must be a JSON-encoded YEN object.'

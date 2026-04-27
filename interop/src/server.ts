@@ -29,8 +29,15 @@ app.use(helmet({
 app.use(express.json());
 
 // ── Routes ───────────────────────────────────────────────────────────────────
+// swagger-ui-express renders relative asset paths (./swagger-ui.css, etc.).
+// If a browser hits /api-docs (no trailing slash), those paths resolve one
+// directory up and 404.  The regex ensures we only redirect the exact no-slash
+// case; Express's non-strict matching would turn a string route into a loop on
+// /api-docs/.  nginx's proxy_redirect / /interop/ then rewrites the Location
+// header so the browser lands on the correct public URL.
+app.get(/^\/api-docs$/, (_req, res) => res.redirect(301, '/api-docs/'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
-app.use('/games', gameRoutes);
+app.use(gameRoutes);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date(), uptime: process.uptime() });

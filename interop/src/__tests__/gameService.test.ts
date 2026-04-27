@@ -7,14 +7,16 @@
 // There is no store, no database, no auth — just: position in, move out.
 //
 // Scope:
-//   play() — happy path with explicit bot_id
+//   play() — happy path with explicit bot_id → returns { coords }
 //           — happy path with strategy falling back to bot_id mapping
 //           — happy path with neither bot_id nor strategy (default bot)
+//           — happy path when engine returns { action } (e.g. swap)
 //           — ENGINE_TIMEOUT (503) when axios times out
 //           — BOT_NOT_FOUND (404) when Rust returns 404
 //           — NO_MOVES_AVAILABLE (422) when Rust says no valid moves
 //           — ENGINE_ERROR (502) for any other axios failure
-//           — applyMove called with correct token for the current turn
+//           — forwards the full YEN position object to the Rust engine
+//           — strategy lookup is case-insensitive
 // ──────────────────────────────────────────────────────────────────────────────
 
 import axios from 'axios';
@@ -32,15 +34,21 @@ const mockedAxios = axios as jest.Mocked<typeof axios>;
 // Size-3 empty board, B's turn (turn = 0)
 const emptyPosition: YEN = emptyYEN(3);
 
-// Position where it is R's turn (turn = 1)
-const rTurnPosition: YEN = { ...emptyYEN(3), turn: 1 };
-
-// Standard engine response: bot places a piece at (0, 0, 2) — bottom-left cell
-const engineResponse = {
+// Standard engine response: bot places a piece at (0, 0, 2)
+const engineMoveResponse = {
   data: {
     api_version: 'v1',
     bot_id: 'random_bot',
     coords: { x: 0, y: 0, z: 2 },
+  },
+};
+
+// Engine response for a swap action
+const engineSwapResponse = {
+  data: {
+    api_version: 'v1',
+    bot_id: 'random_bot',
+    action: 'swap',
   },
 };
 
@@ -52,24 +60,20 @@ beforeEach(() => {
 // ── Happy paths ───────────────────────────────────────────────────────────────
 
 describe('play — happy paths', () => {
-  it('returns move coords and updated layout when bot_id is provided explicitly', async () => {
-    mockedAxios.post.mockResolvedValue(engineResponse);
+  it('returns { coords } when bot_id is provided explicitly', async () => {
+    mockedAxios.post.mockResolvedValue(engineMoveResponse);
 
     const result = await play(emptyPosition, 'random_bot');
 
-    expect(result.move).toBe('0,0,2');
-    expect(result.bot_id).toBe('random_bot');
-    // The updated layout must contain a B token (B's turn on an empty board)
-    expect(result.position).toContain('B');
+    expect(result).toEqual({ coords: { x: 0, y: 0, z: 2 } });
   });
 
   it('resolves bot_id from strategy when bot_id is omitted', async () => {
-    mockedAxios.post.mockResolvedValue(engineResponse);
+    mockedAxios.post.mockResolvedValue(engineMoveResponse);
 
     const result = await play(emptyPosition, undefined, 'HARD');
 
-    expect(result.bot_id).toBe('smart_bot');
-    // Rust must have been called with the mapped bot id
+    expect(result).toEqual({ coords: { x: 0, y: 0, z: 2 } });
     expect(mockedAxios.post).toHaveBeenCalledWith(
       expect.stringContaining('smart_bot'),
       emptyPosition,
@@ -78,11 +82,11 @@ describe('play — happy paths', () => {
   });
 
   it('falls back to "random_bot" when neither bot_id nor strategy is supplied', async () => {
-    mockedAxios.post.mockResolvedValue(engineResponse);
+    mockedAxios.post.mockResolvedValue(engineMoveResponse);
 
     const result = await play(emptyPosition);
 
-    expect(result.bot_id).toBe('random_bot');
+    expect(result).toEqual({ coords: { x: 0, y: 0, z: 2 } });
     expect(mockedAxios.post).toHaveBeenCalledWith(
       expect.stringContaining('random_bot'),
       emptyPosition,
@@ -90,32 +94,28 @@ describe('play — happy paths', () => {
     );
   });
 
-  it('places the correct token when it is R\'s turn', async () => {
-    const rEngineResponse = {
-      data: { api_version: 'v1', bot_id: 'random_bot', coords: { x: 0, y: 0, z: 2 } },
-    };
-    mockedAxios.post.mockResolvedValue(rEngineResponse);
+  it('returns { action } when the engine responds with a special action', async () => {
+    mockedAxios.post.mockResolvedValue(engineSwapResponse);
 
-    const result = await play(rTurnPosition);
+    const result = await play(emptyPosition, 'random_bot');
 
-    // R's token must appear in the updated layout (not B)
-    expect(result.position).toContain('R');
+    expect(result).toEqual({ action: 'swap' });
   });
 
   it('forwards the full YEN position object to the Rust engine', async () => {
-    mockedAxios.post.mockResolvedValue(engineResponse);
+    mockedAxios.post.mockResolvedValue(engineMoveResponse);
 
     await play(emptyPosition, 'random_bot');
 
     expect(mockedAxios.post).toHaveBeenCalledWith(
       expect.any(String),
-      emptyPosition,         // exact position object, not a layout string
+      emptyPosition,
       expect.objectContaining({ headers: { 'Content-Type': 'application/json' } })
     );
   });
 
   it('strategy lookup is case-insensitive', async () => {
-    mockedAxios.post.mockResolvedValue(engineResponse);
+    mockedAxios.post.mockResolvedValue(engineMoveResponse);
 
     await play(emptyPosition, undefined, 'medium');
 
