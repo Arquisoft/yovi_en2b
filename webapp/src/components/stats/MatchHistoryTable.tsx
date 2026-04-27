@@ -246,9 +246,6 @@ export function MatchHistoryTable({ history }: Readonly<MatchHistoryTableProps>)
     return <p className="text-center text-sm text-muted-foreground py-8">{t('stats.noMatches')}</p>
   }
 
-  const showVariantCol = availableVariants.length > 0
-  const showModeCol = availableModes.length > 0
-
   return (
     <div className="space-y-3">
       <FilterBar
@@ -275,28 +272,15 @@ export function MatchHistoryTable({ history }: Readonly<MatchHistoryTableProps>)
                       onSort={handleSort}
                     />
                   </th>
-                  {showVariantCol && (
-                    <th className="pb-2 pr-3 hidden sm:table-cell">
-                      <SortButton
-                        field="gameVariant"
-                        label={t('stats.gameVariant')}
-                        current={filter.sortField}
-                        direction={filter.sortDirection}
-                        onSort={handleSort}
-                      />
-                    </th>
-                  )}
-                  {showModeCol && (
-                    <th className="pb-2 pr-3 hidden sm:table-cell">
-                      <SortButton
-                        field="gameMode"
-                        label={t('stats.gameMode')}
-                        current={filter.sortField}
-                        direction={filter.sortDirection}
-                        onSort={handleSort}
-                      />
-                    </th>
-                  )}
+                  <th className="pb-2 pr-3 hidden sm:table-cell">
+                    <SortButton
+                      field="gameMode"
+                      label={t('stats.gameMode')}
+                      current={filter.sortField}
+                      direction={filter.sortDirection}
+                      onSort={handleSort}
+                    />
+                  </th>
                   <th className="pb-2 pr-3">
                     <SortButton
                       field="opponent"
@@ -327,39 +311,45 @@ export function MatchHistoryTable({ history }: Readonly<MatchHistoryTableProps>)
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {paginated.map((match) => (
-                  <tr key={match.id} className="py-2">
-                    <td className="py-2 pr-3 text-muted-foreground hidden sm:table-cell">
-                      {new Date(match.playedAt).toLocaleDateString()}
-                    </td>
-                    {showVariantCol && (
-                      <td className="py-2 pr-3 text-muted-foreground hidden sm:table-cell text-xs">
-                        {variantLabel(match.gameVariant, t)}
+                {paginated.map((match) => {
+                  const slug = match.gameVariant
+                  const isNonDefault = slug && slug !== 'y'
+                  return (
+                    <tr key={match.id} className="py-2">
+                      <td className="py-2 pr-3 text-muted-foreground hidden sm:table-cell whitespace-nowrap">
+                        {new Date(match.playedAt).toLocaleDateString()}
                       </td>
-                    )}
-                    {showModeCol && (
-                      <td className="py-2 pr-3 text-muted-foreground hidden sm:table-cell text-xs">
-                        {match.gameMode ? t(`ranking.modes.${match.gameMode}`, { defaultValue: match.gameMode }) : '—'}
+                      <td className="py-2 pr-3 hidden sm:table-cell">
+                        <div className="flex flex-col gap-0.5">
+                          {isNonDefault && (
+                            <span className="text-[10px] font-medium text-primary/70 leading-none">
+                              {variantLabel(slug, t)}
+                            </span>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {match.gameMode ? t(`ranking.modes.${match.gameMode}`, { defaultValue: match.gameMode }) : '—'}
+                          </span>
+                        </div>
                       </td>
-                    )}
-                    <td className="py-2 pr-3 font-medium">{match.opponentName}</td>
-                    <td className="py-2 pr-3">
-                      <span
-                        className={cn(
-                          'px-2 py-0.5 rounded-full text-xs font-semibold',
-                          match.result === 'win'
-                            ? 'bg-player1/15 text-player1'
-                            : 'bg-player2/15 text-player2',
-                        )}
-                      >
-                        {match.result === 'win' ? t('stats.win') : t('stats.loss')}
-                      </span>
-                    </td>
-                    <td className="py-2 pr-3 text-muted-foreground tabular-nums">
-                      {formatTime(match.durationSeconds * 1000)}
-                    </td>
-                  </tr>
-                ))}
+                      <td className="py-2 pr-3 font-medium">{match.opponentName}</td>
+                      <td className="py-2 pr-3">
+                        <span
+                          className={cn(
+                            'px-2 py-0.5 rounded-full text-xs font-semibold',
+                            match.result === 'win'
+                              ? 'bg-player1/15 text-player1'
+                              : 'bg-player2/15 text-player2',
+                          )}
+                        >
+                          {match.result === 'win' ? t('stats.win') : t('stats.loss')}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-3 text-muted-foreground tabular-nums">
+                        {formatTime(match.durationSeconds * 1000)}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

@@ -16,7 +16,7 @@ import type { GameSummary, GameMode, PlayerColor } from '@/types'
 
 type GameSortField =
   | 'date' | 'variant' | 'mode' | 'opponent'
-  | 'result' | 'board' | 'duration' | 'moves'
+  | 'result' | 'board' | 'duration' | 'moves' | 'stats'
 type SortDirection = 'asc' | 'desc'
 
 interface HistoryFilter {
@@ -282,24 +282,37 @@ function GameRow({ game, currentUserId, onReplay, onResume }: Readonly<{
   const { t } = useTranslation()
   const result = resultForGame(game, currentUserId, t)
   const isActive = game.status === 'playing'
+  const variant = gameVariantKey(game)
+  const isNonDefault = variant !== 'y'
 
   return (
     <tr className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+      {/* Date */}
       <td className="py-3 pr-4 text-sm text-muted-foreground whitespace-nowrap">
         {formatDate(game.updatedAt)}
       </td>
-      <td className="py-3 pr-4 text-xs text-muted-foreground hidden sm:table-cell">
-        {variantLabel(gameVariantKey(game), t)}
-      </td>
+
+      {/* Game = variant (if non-default) + mode badge */}
       <td className="py-3 pr-4">
-        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground px-2 py-0.5 rounded-full border border-border bg-muted/50">
-          <ModeIcon mode={game.config.mode} />
-          {modeLabel(gameModeKey(game), t)}
-        </span>
+        <div className="flex flex-col gap-0.5">
+          {isNonDefault && (
+            <span className="text-[10px] font-medium text-primary/70 leading-none">
+              {variantLabel(variant, t)}
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground px-2 py-0.5 rounded-full border border-border bg-muted/50 w-fit">
+            <ModeIcon mode={game.config.mode} />
+            {modeLabel(gameModeKey(game), t)}
+          </span>
+        </div>
       </td>
-      <td className="py-3 pr-4 font-medium text-sm truncate max-w-[120px]">
+
+      {/* Opponent */}
+      <td className="py-3 pr-4 font-medium text-sm truncate max-w-[110px]">
         {opponentName(game, currentUserId)}
       </td>
+
+      {/* Result */}
       <td className="py-3 pr-4">
         {isActive ? (
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full text-yellow-600 bg-yellow-500/10">
@@ -311,15 +324,21 @@ function GameRow({ game, currentUserId, onReplay, onResume }: Readonly<{
           </span>
         )}
       </td>
+
+      {/* Board */}
       <td className="py-3 pr-4 text-sm text-muted-foreground hidden sm:table-cell">
         {game.config.boardSize}×{game.config.boardSize}
       </td>
-      <td className="py-3 pr-4 text-sm text-muted-foreground hidden md:table-cell tabular-nums">
-        {isActive ? '—' : formatTime(gameDurationMs(game))}
+
+      {/* Duration · Moves */}
+      <td className="py-3 pr-4 hidden md:table-cell">
+        <div className="flex flex-col gap-0.5 text-xs text-muted-foreground tabular-nums font-mono">
+          <span>{isActive ? '—' : formatTime(gameDurationMs(game))}</span>
+          <span>{t('history.moves', { count: game.moveCount })}</span>
+        </div>
       </td>
-      <td className="py-3 pr-4 text-sm text-muted-foreground hidden md:table-cell font-mono">
-        {t('history.moves', { count: game.moveCount })}
-      </td>
+
+      {/* Action */}
       <td className="py-3">
         {isActive ? (
           <Button size="sm" variant="ghost" onClick={onResume} className="gap-1.5 h-7 text-xs text-primary">
@@ -439,9 +458,6 @@ export function GameHistoryPage() {
                   <th className="pb-2 pr-4">
                     <SortButton field="date" label={t('history.colDate')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
                   </th>
-                  <th className="pb-2 pr-4 hidden sm:table-cell">
-                    <SortButton field="variant" label={t('history.colVariant')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
-                  </th>
                   <th className="pb-2 pr-4">
                     <SortButton field="mode" label={t('history.colMode')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
                   </th>
@@ -456,9 +472,6 @@ export function GameHistoryPage() {
                   </th>
                   <th className="pb-2 pr-4 hidden md:table-cell">
                     <SortButton field="duration" label={t('history.colDuration')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
-                  </th>
-                  <th className="pb-2 pr-4 hidden md:table-cell">
-                    <SortButton field="moves" label={t('history.colMoves')} current={filter.sortField} direction={filter.sortDirection} onSort={handleSort} />
                   </th>
                   <th className="pb-2" />
                 </tr>
