@@ -153,7 +153,7 @@ paths:
                     example: Login successful
                   token:
                     type: string
-                    description: JWT token valid for 24 hours. Pass as `Authorization: Bearer <token>`.
+                    description: "JWT token valid for 24 hours. Pass as `Authorization: Bearer <token>`."
                     example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
                   user:
                     $ref: "#/components/schemas/UserProfileBasic"

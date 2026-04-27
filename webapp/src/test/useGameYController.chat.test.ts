@@ -156,7 +156,7 @@ describe('handleSendMessage — pvp-online', () => {
     })
 
     const newCalls = vi.mocked(wsService.send).mock.calls.slice(sendCallsBefore)
-    expect(newCalls.some(([msg]) => msg.type === 'chat_message')).toBe(false)
+    expect(newCalls.some(([msg]) => (msg as any).type === 'chat_message')).toBe(false)
     expect(result.current.chatMessages).toHaveLength(0)
   })
 
@@ -276,7 +276,7 @@ describe('handleSendMessage — pvp-local', () => {
     expect(gameService.sendChatMessage).toHaveBeenCalledWith(
       'game-123', 'user-1', 'Alice', 'Hello local!'
     )
-    const chatCalls = vi.mocked(wsService.send).mock.calls.filter(([m]) => m.type === 'chat_message')
+    const chatCalls = vi.mocked(wsService.send).mock.calls.filter(([m]) => (m as any).type === 'chat_message')
     expect(chatCalls).toHaveLength(0)
   })
 })
