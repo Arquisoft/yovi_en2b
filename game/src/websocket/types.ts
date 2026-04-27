@@ -43,7 +43,7 @@ export type ServerMessage =
   | { type: 'queue_joined'; queueSize: number; variant: GameVariant }
   | { type: 'queue_left' }
   | { type: 'room_created'; code: string }
-  | { type: 'matched'; gameId: string; opponentName: string; playerColor: PlayerColor; opponentId: number }
+  | { type: 'matched'; gameId: string; opponentName: string; playerColor: PlayerColor; opponentId: number; variant: GameVariant }
   | { type: 'game_update'; game: unknown }
   | { type: 'opponent_disconnected'; gracePeriodMs: number }
   | { type: 'opponent_reconnected' }

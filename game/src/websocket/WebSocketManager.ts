@@ -266,6 +266,7 @@ export class WebSocketManager {
         opponentName: entry2.username,
         playerColor: 'player1',
         opponentId: entry2.userId,
+        variant,
       })
       this.sendTo(client2.ws, {
         type: 'matched',
@@ -273,6 +274,7 @@ export class WebSocketManager {
         opponentName: entry1.username,
         playerColor: 'player2',
         opponentId: entry1.userId,
+        variant,
       })
     } catch (err) {
       console.error('Failed to create online game:', err)
@@ -474,6 +476,7 @@ export class WebSocketManager {
         opponentName: client.username,
         playerColor: hostColor,
         opponentId: client.userId,
+        variant: gameConfig.variant,
       })
       this.sendTo(client.ws, {
         type: 'matched',
@@ -481,6 +484,7 @@ export class WebSocketManager {
         opponentName: room.hostUsername,
         playerColor: joinerColor,
         opponentId: room.hostId,
+        variant: gameConfig.variant,
       })
     } catch (err: any) {
       this.sendTo(client.ws, { type: 'error', code: 'ROOM_FAILED', message: err.message ?? 'Failed to create game' })
