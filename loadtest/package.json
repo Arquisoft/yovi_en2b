@@ -1,0 +1,17 @@
+{
+  "name": "yovi-loadtest-seeder",
+  "version": "1.0.0",
+  "description": "DB seeder for YOVI Gatling load tests",
+  "scripts": {
+    "seed": "npx tsx seed-users.ts",
+    "seed:dev": "npx tsx seed-users.ts --api http://api.localhost/users --count 50",
+    "seed:prod": "npx tsx seed-users.ts --api https://api.micrati.com/users --count 500 --out ./gatling/resources/users.json"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.1",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
