@@ -57,6 +57,7 @@ const es = {
     pvpOnline: { title: 'Partida online', description: 'Desafía a jugadores de todo el mundo en partidas en tiempo real.' },
     pve: { title: 'Contra el ordenador', description: 'Practica contra una IA a distintos niveles de dificultad.' },
     soon: 'Pronto',
+    loginRequired: 'Inicia sesión',
   },
   gameConfig: {
     localMatch: 'Partida local', vsComputer: 'Contra el ordenador', gameSetup: 'Configuración',

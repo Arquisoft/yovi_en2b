@@ -5,6 +5,7 @@ import { GameModePage } from '@/pages/GameModePage'
 
 const mockNavigate = vi.fn()
 const mockHandleSelectMode = vi.fn()
+const mockUseAuth = vi.fn()
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
@@ -12,11 +13,15 @@ vi.mock('react-router-dom', () => ({
 vi.mock('@/controllers/useGameModeController', () => ({
   useGameModeController: () => ({ handleSelectMode: mockHandleSelectMode }),
 }))
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => mockUseAuth(),
+}))
 
 describe('GameModePage', () => {
   beforeEach(() => {
     mockNavigate.mockClear()
     mockHandleSelectMode.mockClear()
+    mockUseAuth.mockReturnValue({ isGuest: false })
   })
 
   it('renders the three mode cards', () => {
@@ -44,10 +49,23 @@ describe('GameModePage', () => {
     expect(mockHandleSelectMode).toHaveBeenCalledWith('pve')
   })
 
-  it('calls handleSelectMode for pvp-online', () => {
+  it('calls handleSelectMode for pvp-online when authenticated', () => {
     render(<GameModePage />)
     fireEvent.click(screen.getByText('Online Match'))
-    // pvp-online is now enabled — handleSelectMode should be called
     expect(mockHandleSelectMode).toHaveBeenCalledWith('pvp-online')
+  })
+
+  it('navigates to /login when guest clicks pvp-online', () => {
+    mockUseAuth.mockReturnValue({ isGuest: true })
+    render(<GameModePage />)
+    fireEvent.click(screen.getByText('Online Match'))
+    expect(mockNavigate).toHaveBeenCalledWith('/login')
+    expect(mockHandleSelectMode).not.toHaveBeenCalled()
+  })
+
+  it('shows Sign in badge on pvp-online card for guests', () => {
+    mockUseAuth.mockReturnValue({ isGuest: true })
+    render(<GameModePage />)
+    expect(screen.getByText('Sign in')).toBeInTheDocument()
   })
 })
