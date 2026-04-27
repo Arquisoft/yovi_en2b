@@ -10,12 +10,16 @@ export function OnlineRoomPage() {
     setCodeInput,
     joinStatus,
     error,
+    hostName,
+    matchedVariant,
     handleCreateRoom,
     handleJoin,
     handleCancel,
     handleRetry,
     isGuest,
   } = useOnlineRoomController()
+
+  const matchedVariantName = t(`variants.${matchedVariant}.name`, { defaultValue: matchedVariant })
 
   // Idle state: matches the container layout used by GameModePage / GameConfigPage
   if (joinStatus === 'idle') {
@@ -119,12 +123,22 @@ export function OnlineRoomPage() {
         {/* ── MATCHED ──────────────────────────────────────────────────── */}
         {joinStatus === 'matched' && (
           <div className="animate-in fade-in zoom-in duration-300 space-y-4">
+            <div className="inline-flex items-center justify-center px-3 py-1 rounded-full border border-border bg-muted/50 text-xs font-medium text-muted-foreground">
+              {t('online.variantLabel', { name: matchedVariantName })}
+            </div>
             <div className="flex justify-center">
               <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
                 <UserCheck className="w-8 h-8 text-green-500" />
               </div>
             </div>
-            <h2 className="text-xl font-semibold text-green-500">{t('online.matched')}</h2>
+            <div>
+              <h2 className="text-xl font-semibold text-green-500">{t('online.matched')}</h2>
+              {hostName && (
+                <p className="text-muted-foreground mt-1">
+                  {t('online.joinedHost', { name: hostName })}
+                </p>
+              )}
+            </div>
             <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
               <div className="h-full bg-primary animate-pulse w-full" />
             </div>

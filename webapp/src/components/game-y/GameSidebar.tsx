@@ -74,7 +74,9 @@ export function GameSidebar({
       {/* Game info */}
       <div className="flex-shrink-0 space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg">{t('game.gameY')}</h2>
+          <h2 className="font-semibold text-lg">
+            {t(`variants.${game.config.variant ?? 'y'}.name`, { defaultValue: t('game.gameY') })}
+          </h2>
           <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded">
             {game.config.boardSize}×{game.config.boardSize}
           </span>

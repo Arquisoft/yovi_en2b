@@ -5,19 +5,29 @@ import { Wifi, WifiOff, UserCheck, AlertCircle } from 'lucide-react'
 
 export function OnlineLobbyPage() {
   const { t } = useTranslation()
-  const { 
-    status, 
-    opponentName, 
-    error, 
-    queueSize, 
-    leaveQueue, 
-    retry 
+  const {
+    status,
+    opponentName,
+    error,
+    queueSize,
+    variant,
+    leaveQueue,
+    retry,
   } = useOnlineLobbyController()
+
+  const variantName = t(`variants.${variant}.name`, { defaultValue: variant })
+  const showVariantBadge = status === 'connecting' || status === 'queuing' || status === 'matched'
 
   return (
     <div className="flex items-center justify-center h-full p-4">
       <div className="text-center space-y-6 max-w-sm w-full">
-        
+
+        {showVariantBadge && (
+          <div className="inline-flex items-center justify-center px-3 py-1 rounded-full border border-border bg-muted/50 text-xs font-medium text-muted-foreground">
+            {t('online.variantLabel', { name: variantName })}
+          </div>
+        )}
+
         {/* --- ESTADO: CONNECTING --- */}
         {status === 'connecting' && (
           <div className="space-y-4">

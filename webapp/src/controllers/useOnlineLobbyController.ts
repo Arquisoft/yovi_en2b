@@ -12,6 +12,7 @@ interface OnlineLobbyState {
   opponentName: string | null
   error: string | null
   queueSize: number
+  variant: GameVariant
 }
 
 export interface OnlineLobbyController extends OnlineLobbyState {
@@ -76,10 +77,14 @@ export function useOnlineLobbyController(): OnlineLobbyController {
       setOpponentName(data.opponentName as string)
       setStatus('matched')
 
+      // Server-supplied variant is authoritative — the user's URL might say `y`
+      // even if they were queued for `why-not` (defensive against future flows).
+      const matchedVariant = (data.variant as GameVariant) ?? variant
+
       // Brief delay so the user sees who they matched with
       setTimeout(() => {
         if (mounted.current) {
-          navigate(`/games/${variant}/play/${data.gameId}`)
+          navigate(`/games/${matchedVariant}/play/${data.gameId}`)
         }
       }, 1200)
     })
@@ -126,6 +131,7 @@ export function useOnlineLobbyController(): OnlineLobbyController {
     opponentName,
     error,
     queueSize,
+    variant,
     leaveQueue,
     retry,
   }

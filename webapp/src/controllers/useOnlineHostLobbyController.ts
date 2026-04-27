@@ -107,6 +107,7 @@ export function useOnlineHostLobbyController() {
     opponentName,
     error,
     copied,
+    variant,
     handleCancel,
     handleCopy,
     handleRetry,

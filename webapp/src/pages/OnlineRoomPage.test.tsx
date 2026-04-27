@@ -19,6 +19,8 @@ function makeController(overrides: Record<string, any> = {}) {
     setCodeInput: vi.fn(),
     joinStatus: 'idle' as const,
     error: null,
+    hostName: null,
+    matchedVariant: 'y',
     isGuest: false,
     handleCreateRoom: vi.fn(),
     handleJoin: vi.fn(),

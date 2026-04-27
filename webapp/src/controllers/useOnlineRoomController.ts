@@ -14,6 +14,8 @@ export function useOnlineRoomController() {
   const [codeInput, setCodeInput] = useState('')
   const [joinStatus, setJoinStatus] = useState<RoomJoinStatus>('idle')
   const [error, setError] = useState<string | null>(null)
+  const [hostName, setHostName] = useState<string | null>(null)
+  const [matchedVariant, setMatchedVariant] = useState<GameVariant | null>(null)
 
   const mounted = useRef(true)
   const hasJoined = useRef(false)
@@ -23,9 +25,13 @@ export function useOnlineRoomController() {
 
     const unsubMatched = wsService.on('matched', (data: any) => {
       if (!mounted.current) return
+      setHostName(data.opponentName as string)
+      // The joiner doesn't pick a variant — adopt whatever the host's room used.
+      const serverVariant = (data.variant as GameVariant) ?? variant
+      setMatchedVariant(serverVariant)
       setJoinStatus('matched')
       setTimeout(() => {
-        if (mounted.current) navigate(`/games/${variant}/play/${data.gameId}`)
+        if (mounted.current) navigate(`/games/${serverVariant}/play/${data.gameId}`)
       }, 1200)
     })
 
@@ -85,6 +91,9 @@ export function useOnlineRoomController() {
     setCodeInput,
     joinStatus,
     error,
+    hostName,
+    /** Variant the joiner ended up matched into (server-supplied; falls back to URL variant). */
+    matchedVariant: matchedVariant ?? variant,
     handleCreateRoom,
     handleJoin,
     handleCancel,
