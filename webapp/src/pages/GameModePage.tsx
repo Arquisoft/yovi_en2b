@@ -35,9 +35,8 @@ export function GameModePage() {
               <ModeCard
                 key={mode}
                 mode={mode}
-                disabled={guestBlocked}
                 loginRequired={guestBlocked}
-                onSelect={() => !guestBlocked && handleSelectMode(mode)}
+                onSelect={() => guestBlocked ? navigate('/login') : handleSelectMode(mode)}
               />
             )
           })}
