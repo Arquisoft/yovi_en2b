@@ -4,12 +4,12 @@ use crate::{Coordinates, GameY};
 use smallvec::SmallVec;
 use std::time::{Duration, Instant};
 
-use super::{ABORTED, INFINITY, WIN_SCORE};
 use super::eval::evaluate_state;
 use super::state::MinimaxState;
 use super::tables::{
-    ASPIRATION_DELTA, KILLER_SLOTS, HistoryTable, KillerTable, TranspositionTable, TtFlag,
+    ASPIRATION_DELTA, HistoryTable, KILLER_SLOTS, KillerTable, TranspositionTable, TtFlag,
 };
+use super::{ABORTED, Goal, INFINITY, WIN_SCORE};
 
 // ============================================================================
 // Move ordering
@@ -101,6 +101,7 @@ fn pvs_child_score(
     history: &mut HistoryTable,
     start_time: Instant,
     max_limit: Duration,
+    goal: Goal,
 ) -> i32 {
     if searched == 0 {
         let child = negamax(
@@ -114,6 +115,7 @@ fn pvs_child_score(
             history,
             start_time,
             max_limit,
+            goal,
         );
         if child == ABORTED {
             return ABORTED;
@@ -131,6 +133,7 @@ fn pvs_child_score(
             history,
             start_time,
             max_limit,
+            goal,
         );
         if child == ABORTED {
             return ABORTED;
@@ -148,6 +151,7 @@ fn pvs_child_score(
                 history,
                 start_time,
                 max_limit,
+                goal,
             );
             if child2 == ABORTED {
                 return ABORTED;
@@ -204,20 +208,29 @@ fn compute_tt_flag(best_score: i32, alpha_orig: i32, beta: i32) -> TtFlag {
 // Public helper
 // ============================================================================
 
-/// Runs the minimax engine for `game` and returns the chosen [`Coordinates`].
+/// Runs the minimax engine for `game` under the given [`Goal`] and returns the
+/// chosen [`Coordinates`].
 pub fn choose_move_with_minimax(
     game: &GameY,
     min_time_ms: u64,
     max_time_ms: u64,
+    goal: Goal,
 ) -> Option<Coordinates> {
     let bot_player = game.next_player()?;
     let mut state = MinimaxState::new(game, bot_player);
 
-    if let Some(coords) = greedy_search(&mut state) {
-        return Some(coords);
+    // Greedy detection assumes the standard win semantics: "connecting wins,
+    // so play it / block it". Under misère the same detection would identify
+    // *losing* cells, where the correct response is more subtle (avoid playing
+    // them yourself, but do not assume the opponent will be forced into them).
+    // Defer that reasoning to the full search rather than re-implementing it.
+    if matches!(goal, Goal::Standard) {
+        if let Some(coords) = greedy_search(&mut state) {
+            return Some(coords);
+        }
     }
 
-    let (best_move, _) = iterative_deepening_search(&mut state, min_time_ms, max_time_ms);
+    let (best_move, _) = iterative_deepening_search(&mut state, min_time_ms, max_time_ms, goal);
     Some(Coordinates::from_index(best_move as u32, game.board_size()))
 }
 
@@ -226,7 +239,7 @@ pub fn choose_move_with_minimax(
 // ============================================================================
 
 /// Checks every available cell for an immediate bot win or an immediate threat
-/// that must be blocked.
+/// that must be blocked. Used only under [`Goal::Standard`].
 pub(super) fn greedy_search(state: &mut MinimaxState) -> Option<Coordinates> {
     let moves: SmallVec<[usize; 128]> = state.available_cells().collect();
 
@@ -254,6 +267,7 @@ pub(super) fn iterative_deepening_search(
     state: &mut MinimaxState,
     min_time_ms: u64,
     max_time_ms: u64,
+    goal: Goal,
 ) -> (usize, i32) {
     let start_time = Instant::now();
     let min_limit = Duration::from_millis(min_time_ms);
@@ -285,6 +299,7 @@ pub(super) fn iterative_deepening_search(
                 &mut history,
                 start_time,
                 max_limit,
+                goal,
             )
         } else {
             search_best_move(
@@ -297,6 +312,7 @@ pub(super) fn iterative_deepening_search(
                 &mut history,
                 start_time,
                 max_limit,
+                goal,
             )
         };
 
@@ -336,6 +352,7 @@ pub(super) fn aspiration_search(
     history: &mut HistoryTable,
     start_time: Instant,
     max_limit: Duration,
+    goal: Goal,
 ) -> (usize, i32) {
     let mut delta = ASPIRATION_DELTA;
 
@@ -344,7 +361,7 @@ pub(super) fn aspiration_search(
         let beta = (prev_score + delta).min(INFINITY);
 
         let (mv, score) = search_best_move(
-            state, depth, alpha, beta, killers, tt, history, start_time, max_limit,
+            state, depth, alpha, beta, killers, tt, history, start_time, max_limit, goal,
         );
 
         if score == ABORTED {
@@ -359,6 +376,7 @@ pub(super) fn aspiration_search(
         if delta >= INFINITY / 2 {
             return search_best_move(
                 state, depth, -INFINITY, INFINITY, killers, tt, history, start_time, max_limit,
+                goal,
             );
         }
     }
@@ -376,6 +394,7 @@ pub(super) fn search_best_move(
     history: &mut HistoryTable,
     start_time: Instant,
     max_limit: Duration,
+    goal: Goal,
 ) -> (usize, i32) {
     let ordered = state.shortest_path_deltas(state.bot_id);
     let mut moves: Vec<usize> = ordered.into_iter().map(|(idx, _)| idx).collect();
@@ -392,19 +411,33 @@ pub(super) fn search_best_move(
     let mut best_score = -INFINITY;
     let mut best_move = moves[0];
     let mut searched: u32 = 0;
+    let terminal_score = goal.terminal_on_connection();
 
     for &move_idx in &moves {
         state.make_move(move_idx, player);
 
         if state.check_win(player) {
+            // Side-to-move just completed the connection.  Its sign depends on
+            // the goal: a win under Standard, a loss under Misere.
             state.undo_move(move_idx);
-            tt.store(state.hash, depth, WIN_SCORE, TtFlag::Exact, Some(move_idx));
-            return (move_idx, WIN_SCORE);
+            tt.store(state.hash, depth, terminal_score, TtFlag::Exact, Some(move_idx));
+            // Under misère this is a *bad* outcome for the bot; record it but
+            // continue searching for a strictly better move.
+            if terminal_score >= best_score {
+                best_score = terminal_score;
+                best_move = move_idx;
+            }
+            // Beta cutoff is only safe when the terminal is a win; under misère
+            // we must keep searching for any non-losing move.
+            if matches!(goal, Goal::Standard) {
+                return (move_idx, terminal_score);
+            }
+            continue;
         }
 
         let score = pvs_child_score(
             state, depth, alpha, beta, opponent, searched, killers, tt, history, start_time,
-            max_limit,
+            max_limit, goal,
         );
         state.undo_move(move_idx);
 
@@ -443,6 +476,7 @@ pub(super) fn negamax(
     history: &mut HistoryTable,
     start_time: Instant,
     max_limit: Duration,
+    goal: Goal,
 ) -> i32 {
     if start_time.elapsed() >= max_limit {
         return ABORTED;
@@ -456,7 +490,7 @@ pub(super) fn negamax(
     }
 
     if depth == 0 {
-        let score = evaluate_state(state, player);
+        let score = evaluate_state(state, player, goal);
         tt.store(position_hash, 0, score, TtFlag::Exact, None);
         return score;
     }
@@ -472,6 +506,7 @@ pub(super) fn negamax(
     let mut best_move_found: Option<usize> = None;
     let mut searched: u32 = 0;
     let p_idx = state.player_idx(player);
+    let terminal_score = goal.terminal_on_connection();
 
     for move_idx in moves {
         state.make_move(move_idx, player);
@@ -482,16 +517,32 @@ pub(super) fn negamax(
             tt.store(
                 position_hash,
                 depth,
-                WIN_SCORE,
+                terminal_score,
                 TtFlag::Exact,
                 Some(move_idx),
             );
-            return WIN_SCORE;
+            // Under Standard a connection is a win for the side to move and we
+            // can return immediately; under Misere it is a loss, so we record
+            // the score and keep looking for a non-losing alternative.
+            if matches!(goal, Goal::Standard) {
+                return terminal_score;
+            }
+            if terminal_score > best_score {
+                best_score = terminal_score;
+                best_move_found = Some(move_idx);
+            }
+            if terminal_score > alpha {
+                alpha = terminal_score;
+            }
+            if alpha >= beta {
+                break;
+            }
+            continue;
         }
 
         let score = pvs_child_score(
             state, depth, alpha, beta, opponent, searched, killers, tt, history, start_time,
-            max_limit,
+            max_limit, goal,
         );
         state.undo_move(move_idx);
 
