@@ -133,6 +133,11 @@ export function useGameYController() {
       }
     })
 
+    // Another tab took over this user's session — show the connection-lost banner.
+    const unsubSessionReplaced = wsService.on('session_replaced', () => {
+      setWsConnectionFailed(true)
+    })
+
     return () => {
       unsubUpdate()
       unsubDisconnected()
@@ -140,6 +145,7 @@ export function useGameYController() {
       unsubError()
       unsubChat()
       unsubWsReconnect()
+      unsubSessionReplaced()
     }
   }, [game?.id, game?.config?.mode])
 

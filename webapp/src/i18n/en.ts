@@ -139,6 +139,7 @@ const en = {
     codeCopied: 'Copied!',
     cancelRoom: 'Cancel',
     guestCannotJoin: 'Sign in to join a private room',
+    sessionReplaced: 'Your session was opened in another tab. This tab has been disconnected.',
   },
   chat: { title: 'Chat', noMessages: 'No messages yet', placeholder: 'Type a message...', you: 'You' },
   overlay: {

@@ -13,6 +13,10 @@ const USERS_PUBLIC_URL = process.env.USERS_PUBLIC_URL || 'http://localhost:3000'
 
 /** Grace period after disconnect before the game is abandoned (ms) */
 const DISCONNECT_GRACE_MS = 30_000
+/** How often to send WS-level pings to detect zombie sockets (ms) */
+const HEARTBEAT_INTERVAL_MS = 25_000
+/** How long to wait for a pong before terminating a zombie socket (ms) */
+const HEARTBEAT_TIMEOUT_MS = 10_000
 
 /**
  * WebSocketManager is the central hub for all real-time online multiplayer
@@ -50,6 +54,34 @@ export class WebSocketManager {
   private handleConnection(ws: WebSocket, _req: IncomingMessage): void {
     let authenticatedUserId: number | null = null
 
+    // ── Heartbeat — detect zombie sockets (e.g. silent 4G drops) ─────────────
+    // The browser responds to WS-level pings automatically; no client code needed.
+    let isAlive = true
+    let pongTimer: ReturnType<typeof setTimeout> | null = null
+
+    const pingInterval = setInterval(() => {
+      if (!isAlive) {
+        ws.terminate()
+        return
+      }
+      isAlive = false
+      ws.ping()
+      pongTimer = setTimeout(() => {
+        if (!isAlive) ws.terminate()
+      }, HEARTBEAT_TIMEOUT_MS)
+    }, HEARTBEAT_INTERVAL_MS)
+
+    ws.on('pong', () => {
+      isAlive = true
+      if (pongTimer !== null) { clearTimeout(pongTimer); pongTimer = null }
+    })
+
+    const cleanupHeartbeat = () => {
+      clearInterval(pingInterval)
+      if (pongTimer !== null) { clearTimeout(pongTimer); pongTimer = null }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     ws.on('message', async (raw: Buffer) => {
       try {
         const message: ClientMessage = JSON.parse(raw.toString())
@@ -71,12 +103,14 @@ export class WebSocketManager {
     })
 
     ws.on('close', () => {
+      cleanupHeartbeat()
       if (authenticatedUserId !== null) {
         this.handleDisconnect(authenticatedUserId)
       }
     })
 
     ws.on('error', () => {
+      cleanupHeartbeat()
       if (authenticatedUserId !== null) {
         this.handleDisconnect(authenticatedUserId)
       }
@@ -89,18 +123,29 @@ export class WebSocketManager {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as { id: number; username: string; role: string }
 
-      // If the player is reconnecting during a grace period, restore the client
       const existing = this.clients.get(decoded.id)
-      if (existing?.disconnectedAt !== undefined) {
-        existing.ws = ws
-        existing.disconnectedAt = undefined
-        existing.token = token
+      if (existing) {
+        if (existing.disconnectedAt !== undefined) {
+          // Grace-period reconnect — restore the connection in place.
+          existing.ws = ws
+          existing.disconnectedAt = undefined
+          existing.token = token
+          if (existing.currentGameId) {
+            this.broadcastToOpponent(decoded.id, { type: 'opponent_reconnected' })
+          }
+          this.sendTo(ws, { type: 'authenticated', userId: decoded.id, username: decoded.username })
+          return decoded.id
+        }
 
-        // Notify the opponent that the player is back
+        // Active duplicate connection (second tab / fresh reload while still connected).
+        // Notify the old socket and transfer state to the new one cleanly.
+        this.sendTo(existing.ws, { type: 'session_replaced' })
+        existing.ws.close()
+        existing.ws = ws
+        existing.token = token
         if (existing.currentGameId) {
           this.broadcastToOpponent(decoded.id, { type: 'opponent_reconnected' })
         }
-
         this.sendTo(ws, { type: 'authenticated', userId: decoded.id, username: decoded.username })
         return decoded.id
       }
@@ -155,6 +200,10 @@ export class WebSocketManager {
 
       case 'create_room':
         this.handleCreateRoom(client, message.config)
+        break
+
+      case 'cancel_room':
+        this.handleCancelRoom(client)
         break
 
       case 'join_room':
@@ -413,6 +462,15 @@ export class WebSocketManager {
     })
 
     this.sendTo(client.ws, { type: 'room_created', code })
+  }
+
+  private handleCancelRoom(client: ConnectedClient): void {
+    for (const [code, room] of this.rooms) {
+      if (room.hostId === client.userId) {
+        this.rooms.delete(code)
+        break
+      }
+    }
   }
 
   private async handleJoinRoom(client: ConnectedClient, code: string): Promise<void> {

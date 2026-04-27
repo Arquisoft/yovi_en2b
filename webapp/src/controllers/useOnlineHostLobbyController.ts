@@ -19,9 +19,12 @@ export function useOnlineHostLobbyController() {
   const [copied, setCopied] = useState(false)
 
   const mounted = useRef(true)
+  // Tracks whether a match happened — prevents cancel_room on unmount if matched.
+  const matchedRef = useRef(false)
 
   useEffect(() => {
     mounted.current = true
+    matchedRef.current = false
 
     if (!token || isGuest) {
       navigate('/login', { replace: true })
@@ -36,10 +39,13 @@ export function useOnlineHostLobbyController() {
 
     const unsubMatched = wsService.on('matched', (data: any) => {
       if (!mounted.current) return
+      matchedRef.current = true
       setOpponentName(data.opponentName as string)
       setStatus('matched')
+      // Use server-supplied variant — host might theoretically differ in future flows.
+      const serverVariant = (data.variant as GameVariant) ?? variant
       setTimeout(() => {
-        if (mounted.current) navigate(`/games/${variant}/play/${data.gameId}`)
+        if (mounted.current) navigate(`/games/${serverVariant}/play/${data.gameId}`)
       }, 1200)
     })
 
@@ -55,8 +61,6 @@ export function useOnlineHostLobbyController() {
           await wsService.connect(token)
         }
         if (!mounted.current) return
-        // Stamp the variant on the room config so the joiner — who doesn't
-        // pick a variant — gets the correct game type.
         const config = { ...loadOnlineConfig(variant), variant }
         wsService.send({ type: 'create_room', config })
       } catch (err) {
@@ -73,11 +77,22 @@ export function useOnlineHostLobbyController() {
       unsubCreated()
       unsubMatched()
       unsubError()
+      // Cancel the room on the server if we never matched.
+      // Without this, the room stays alive in server memory even though the
+      // host has navigated away — any guest entering the code would trigger a
+      // match that the host never sees.
+      if (!matchedRef.current) {
+        wsService.send({ type: 'cancel_room' })
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleCancel = useCallback(() => {
+    // Explicit cancel: clean up server state before navigating.
+    if (!matchedRef.current) {
+      wsService.send({ type: 'cancel_room' })
+    }
     navigate(`/games/${variant}/online`)
   }, [navigate, variant])
 
@@ -91,13 +106,22 @@ export function useOnlineHostLobbyController() {
     })
   }, [roomCode])
 
-  const handleRetry = useCallback(() => {
+  const handleRetry = useCallback(async () => {
     setStatus('connecting')
     setError(null)
     setRoomCode(null)
-    if (token && !isGuest) {
+    matchedRef.current = false
+
+    if (!token || isGuest) return
+    try {
+      if (!wsService.isConnected()) {
+        await wsService.connect(token)
+      }
       const config = { ...loadOnlineConfig(variant), variant }
       wsService.send({ type: 'create_room', config })
+    } catch (err) {
+      setStatus('error')
+      setError(err instanceof Error ? err.message : 'Connection failed')
     }
   }, [token, isGuest, variant])
 

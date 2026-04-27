@@ -113,9 +113,8 @@ export function useOnlineLobbyController(): OnlineLobbyController {
   }, [connect])
 
   const leaveQueue = useCallback(() => {
-    matchedRef.current = false // reset so cleanup also sends leave_queue if needed
+    matchedRef.current = true // prevent the cleanup effect from double-sending leave_queue
     wsService.send({ type: 'leave_queue' })
-    wsService.disconnect()
     navigate(`/games/${variant}`)
   }, [navigate, variant])
 

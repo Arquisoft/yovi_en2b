@@ -259,7 +259,7 @@ describe('useOnlineLobbyController — WS error event', () => {
 // --- leaveQueue ---
 
 describe('useOnlineLobbyController — leaveQueue', () => {
-  it('sends leave_queue, disconnects and navigates to /games/y', async () => {
+  it('sends leave_queue and navigates to /games/y without disconnecting the WS', async () => {
     const { result } = renderHook(() => useOnlineLobbyController())
     await waitFor(() => expect(wsService.connect).toHaveBeenCalled())
 
@@ -268,32 +268,27 @@ describe('useOnlineLobbyController — leaveQueue', () => {
     })
 
     expect(wsService.send).toHaveBeenCalledWith({ type: 'leave_queue' })
-    expect(wsService.disconnect).toHaveBeenCalled()
+    // WS stays alive — other pages reuse the same singleton connection
+    expect(wsService.disconnect).not.toHaveBeenCalled()
     expect(mockNavigate).toHaveBeenCalledWith('/games/y')
   })
 
-  it('resets matchedRef so cleanup also sends leave_queue if needed', async () => {
+  it('sets matchedRef so the cleanup effect does not double-send leave_queue', async () => {
     const { result, unmount } = renderHook(() => useOnlineLobbyController())
     await waitFor(() => expect(wsService.connect).toHaveBeenCalled())
-
-    // Simulate match first, then user manually leaves before timeout
-    act(() => {
-      emitWsEvent('matched', { opponentName: 'Bob', gameId: 'game-1' })
-    })
 
     act(() => {
       result.current.leaveQueue()
     })
 
-    // leaveQueue resets matchedRef → cleanup on unmount sends leave_queue again
     vi.mocked(wsService.send).mockClear()
     act(() => { unmount() })
 
-    // The cleanup in the effect fires leave_queue because matchedRef was reset to false
+    // matchedRef is set to true by leaveQueue, so cleanup should NOT send leave_queue again
     const leaveCalls = vi.mocked(wsService.send).mock.calls.filter(
       ([msg]: any) => msg.type === 'leave_queue',
     )
-    expect(leaveCalls.length).toBeGreaterThanOrEqual(1)
+    expect(leaveCalls.length).toBe(0)
   })
 })
 

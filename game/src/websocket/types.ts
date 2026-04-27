@@ -27,6 +27,7 @@ export type ClientMessage =
   | { type: 'join_queue'; config?: OnlineGameConfig }
   | { type: 'leave_queue' }
   | { type: 'create_room'; config?: OnlineGameConfig }
+  | { type: 'cancel_room' }
   | { type: 'join_room'; code: string }
   | { type: 'join_game'; gameId: string }
   | { type: 'leave_game'; gameId: string }
@@ -50,6 +51,7 @@ export type ServerMessage =
   | { type: 'chat_message'; gameId: string; senderId: string; senderName: string; content: string; timestamp: string }
   | { type: 'error'; code: string; message: string }
   | { type: 'pong' }
+  | { type: 'session_replaced' }
 
 // ── Internal client record ────────────────────────────────────────────────────
 

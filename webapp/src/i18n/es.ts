@@ -139,6 +139,7 @@ const es = {
     codeCopied: '¡Copiado!',
     cancelRoom: 'Cancelar',
     guestCannotJoin: 'Inicia sesión para unirte a una sala privada',
+    sessionReplaced: 'Tu sesión se abrió en otra pestaña. Esta pestaña ha sido desconectada.',
   },
   chat: { title: 'Chat', noMessages: 'Sin mensajes aún', placeholder: 'Escribe un mensaje...', you: 'Tú' },
   overlay: {
