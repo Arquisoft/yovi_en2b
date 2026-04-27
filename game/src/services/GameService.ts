@@ -358,16 +358,17 @@ export class GameService {
     if (!game.winner) return;
     const rankingMode = toRankingMode(game.config);
     if (!rankingMode) return;
+    const gameVariant = game.config.variant ?? 'y';
     const durationSeconds = Math.floor((game.updatedAt.getTime() - game.createdAt.getTime()) / 1000);
 
     if (game.config.mode === 'pve') {
-      await this.recordMatchForPvePlayer(game, rankingMode, durationSeconds, callerToken);
+      await this.recordMatchForPvePlayer(game, rankingMode, gameVariant, durationSeconds, callerToken);
     } else {
-      await this.recordMatchForOnlinePlayers(game, rankingMode, durationSeconds);
+      await this.recordMatchForOnlinePlayers(game, rankingMode, gameVariant, durationSeconds);
     }
   }
 
-  private async recordMatchForPvePlayer(game: Game, rankingMode: string, durationSeconds: number, callerToken?: string): Promise<void> {
+  private async recordMatchForPvePlayer(game: Game, rankingMode: string, gameVariant: string, durationSeconds: number, callerToken?: string): Promise<void> {
     const humanPlayer = game.players.player1.isBot ? game.players.player2 : game.players.player1;
     if (humanPlayer.isLocal || !callerToken) return;
     const opponent = game.players.player1.id === humanPlayer.id ? game.players.player2 : game.players.player1;
@@ -375,16 +376,16 @@ export class GameService {
     await fetch(`${USERS_INTERNAL_URL}/api/stats/record`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${callerToken}` },
-      body: JSON.stringify({ opponentName: opponent.name, result, durationSeconds, gameMode: rankingMode }),
+      body: JSON.stringify({ opponentName: opponent.name, result, durationSeconds, gameMode: rankingMode, gameVariant }),
     });
   }
 
-  private async recordMatchForOnlinePlayers(game: Game, rankingMode: string, durationSeconds: number): Promise<void> {
+  private async recordMatchForOnlinePlayers(game: Game, rankingMode: string, gameVariant: string, durationSeconds: number): Promise<void> {
     const post = (userId: number | null, opponentName: string, result: 'win' | 'loss') =>
       fetch(`${USERS_INTERNAL_URL}/api/stats/record/internal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': INTERNAL_SECRET },
-        body: JSON.stringify({ userId, opponentName, result, durationSeconds, gameMode: rankingMode }),
+        body: JSON.stringify({ userId, opponentName, result, durationSeconds, gameMode: rankingMode, gameVariant }),
       });
 
     const tasks: Promise<Response>[] = [];
