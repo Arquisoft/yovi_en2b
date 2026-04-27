@@ -11,7 +11,7 @@ The goal is to provide traceability between quality goals (see section 1.2 <<Qua
 The project follows a layered testing approach that mirrors the system's architecture.
 Each service owns its own test suite, run in isolation with coverage reporting.
 End-to-end acceptance tests drive the full stack through a real browser.
-A separate load test exercises the interoperability API under concurrent load.
+Separate load tests ensure that the application will behave correctly under normal load.
 
 [options="header",cols="2,2,2,2"]
 |===
