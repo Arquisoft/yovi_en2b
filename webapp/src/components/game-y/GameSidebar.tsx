@@ -63,6 +63,7 @@ export function GameSidebar({
       : null
   const effectiveCurrentTurn: PlayerColor =
     isBotThinking && botColor ? botColor : game.currentTurn
+  const showPlayerIndicators = !liveTimer && (!isMobile || !showChat)
 
   return (
     <div className={`h-full flex flex-col ${isMobile ? 'gap-2 p-2' : 'gap-4 p-4 overflow-y-auto'}`}>
@@ -119,7 +120,7 @@ export function GameSidebar({
       )}
 
       {/* Player indicators without timer — hidden on mobile when chat is shown (turn indicator suffices) */}
-      {!liveTimer && (!isMobile || !showChat) && (
+      {showPlayerIndicators && (
         <div className="flex-shrink-0 space-y-2">
           <div className={cn(
             'flex items-center gap-2 p-3 rounded-lg border',
