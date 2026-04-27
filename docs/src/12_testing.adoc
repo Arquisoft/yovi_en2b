@@ -33,7 +33,7 @@ A separate load test exercises the interoperability API under concurrent load.
 |On demand; also runnable in CI via `test:e2e:ci`
 
 |**Load tests**
-|Throughput and latency of the interoperability API under concurrent traffic
+|Throughput and latency of the interoperability API under concurrent traffic, and end-to-end user-perceived performance of the full stack under a stepped closed-workload profile
 |Gatling (Java DSL)
 |Run manually against the production deployment; results are reported in section <<Load Tests>>
 |===
@@ -144,7 +144,7 @@ It has both pure unit tests and an integration test that calls the real engine.
 |Game service wrapper: routing the board state to the correct `gamey` bot, parsing the move response, and propagating engine errors.
 
 |`gameRoutes.integration.test.ts`
-|Integration: full HTTP round-trip through `POST /games/play` against a live `gamey` instance, verifying that the response contains a valid move for the submitted YEN position.
+|Integration: full HTTP round-trip through `GET /play` against a live `gamey` instance, verifying that the response contains a valid move for the submitted YEN position.
 |===
 
 ==== webapp — React Frontend
@@ -213,18 +213,23 @@ npm --prefix webapp run test:e2e
 
 === Load Tests
 
-Load testing targets the **interoperability API** (`POST /interop/games/play`), which is the most computationally intensive public endpoint — it forwards board states to the Rust engine and waits for a move.
-Tests are implemented with **Gatling** (Java DSL) in `loadtest/gatling/simulations/InteropSimulation.java`.
+Two Gatling simulations were executed against the production deployment to evaluate the system's behaviour under concurrent load.
+`InteropSimulation` stresses the external bot API (`POST /interop/games/play`) with four classes of concurrent callers, each exercising a different bot strategy and compute cost.
+`RecordedSimulation` replays a realistic end-user flow (login → create game → play move → fetch stats) captured from a real browser session, injected under a stepped closed-workload profile (10 → 20 → 30 concurrent users).
+Both are implemented with **Gatling** (Java DSL) in `loadtest/gatling/simulations/`.
 
 ==== Simulation Design
 
+===== InteropSimulation
+
+Targets `GET /play` directly.
 The simulation runs for a maximum of **3 minutes** and injects virtual users (VUs) in a ramp to reach the following peak concurrency:
 
 [options="header",cols="1,2,2,2"]
 |===
 |Scenario |Bot strategy |Peak VUs |Board sizes tested
 
-|A · InteropOverhead
+|A · RandomBot
 |`random_bot` (no minimax)
 |5
 |size 4 (empty and mid-game)
@@ -252,20 +257,79 @@ The simulation runs for a maximum of **3 minutes** and injects virtual users (VU
 
 **Peak total: 14 concurrent virtual users.**
 
-The simulation distinguishes between successful engine responses (`200`) and overload rejections (`503`) by labelling Gatling groups with the HTTP status of the previous iteration (e.g. `SmartBot_200`, `SmartBot_503`).
-This makes it possible to read the p95 latency of real engine computations separately from fast rejection responses in the HTML report.
+The simulation labels each Gatling group with the HTTP status of the previous iteration (e.g. `SmartBot_200`, `SmartBot_503`), making it possible to read the p95 latency of real engine computations separately from fast rejection responses.
 
-==== Acceptance Criterion
+===== RecordedSimulation
 
-The simulation asserts that the health-probe scenario (`GET /health`) has **0% failed requests**.
-Play requests accept `200` or `503` responses; the distribution between them is the key finding: a high `503` rate indicates that the engine is saturated under the given concurrency.
+Targets the full vertical stack: Nginx → webapp → users service → game service → Rust engine.
+The scenario was captured with Gatling Recorder from a real browser session on the production deployment and trimmed to the critical business path:
+
+----
+login  →  static assets  →  create game  →  play move 1  →  fetch stats
+----
+
+A closed-workload injection profile (10 → 20 → 30 concurrent users, 60 s each) is used so that the server's own throughput dictates the request rate, making the capacity curve readable without queue inflation.
+
+[options="header",cols="1,2,2"]
+|===
+|Plateau |Concurrent users |Duration
+
+|1
+|10
+|60 s
+
+|2
+|20
+|60 s
+
+|3
+|30
+|60 s
+|===
+
+**Peak total: 30 concurrent virtual users.**
+
+==== Acceptance Criteria
+
+For `InteropSimulation`, the health-probe scenario (`GET /interop/health`) must have **0% failed requests**.
+Play requests accept `200` or `503`; the distribution between them is the key finding — a high `503` rate indicates engine saturation.
+
+For `RecordedSimulation`, every request across the full login → move → stats flow must return the expected 2xx/201 status.
+Any non-success response on a business endpoint is counted as a KO.
 
 ==== Findings
 
-Under the tested load (14 VUs peak, 3-minute soak) the health probe never failed.
-The `SmartBot` scenario (2 VUs, size-9 boards) produced the highest latency and the greatest share of `503` overload responses, consistent with the `3 000 ms` compute budget per move.
-The `random_bot` and `fast_bot` scenarios completed well within their respective latency budgets at the tested concurrency.
-Full per-scenario percentile results are available in the Gatling HTML report located in `loadtest/loadtests-results/`.
+===== InteropSimulation
+
+Over the 3-minute soak at 14 VUs peak, 2 463 requests were issued with **0 KOs**.
+The health probe never failed (always `200` in < 20 ms).
+Steady-state throughput settled at ≈ 13–15 req/s with a typical per-second p50 of **254 ms** and p95 of **622 ms**.
+
+The bottleneck is specifically the `SmartBot / C4` scenario: `smart_bot` on an empty size-9 board (45 cells, full 3 000 ms minimax budget).
+While a C4 request occupies a gamey worker, all other concurrent requests wait and eventually time out at the interop side — the classic head-of-line blocking pattern.
+This produced a **33.9% rate** of seconds where the worst-second p95 reached ≈ 2 070–2 077 ms.
+Simpler requests (`random_bot`, small boards) completed well within their compute budget when the engine was not blocked by C4.
+
+===== RecordedSimulation
+
+Over the 3 m 13 s run at up to 30 VUs, 4 480 requests were issued with **0 KOs** (zero auth errors, zero move failures, zero 5xx responses).
+Throughput scaled nearly perfectly linearly with concurrency: 11.8 req/s at 10 users → 23.4 req/s at 20 users → 35.4 req/s at 30 users (scaling efficiency 1.00).
+The median response time remained **flat at ≈ 200 ms** across all three plateaus.
+p95 grew only modestly from **588 ms to 633 ms** as concurrency tripled — a 7% increase.
+The 2 s per-second p95 barrier was first breached at t = 131 s (11 s into the 30-user plateau), and p95 never reached 3 000 ms.
+No saturation point was found within the tested range.
+
+===== Combined findings
+
+The two simulations together show that the system's practical capacity is gated by the Rust engine, not by the TypeScript services or the database:
+
+* **For standard user-facing traffic** the system is comfortable well beyond 30 concurrent users. Linear throughput scaling and a flat median latency confirm that no queue builds up anywhere in the chain at the tested load.
+* **For automated bot traffic** via the public interop API the ceiling is lower: 14 VUs generating interleaved `smart_bot` + size-9 requests is enough to trigger 503s on 33.9% of active seconds.
+
+This asymmetry is expected: during normal gameplay each client sends one move at a time and waits, so users never collide on the same expensive engine call.
+A bot client, by contrast, can flood the endpoint with adversarially large boards that saturate the single-instance Rust engine almost immediately.
+
+Full per-scenario percentile results and the Gatling HTML reports are available in `loadtest/loadtests-results/`.
 
 === Code Coverage
 
