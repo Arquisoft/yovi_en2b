@@ -193,6 +193,81 @@ fn update_search_state(
     false
 }
 
+/// Handles a connection win at the root (`search_best_move`) level.
+/// Returns `Some(result)` for Standard (caller should return immediately),
+/// or `None` for Misère (caller should `continue` searching).
+fn handle_root_connection(
+    goal: Goal,
+    terminal_score: i32,
+    move_idx: usize,
+    best_score: &mut i32,
+    best_move: &mut usize,
+) -> Option<(usize, i32)> {
+    if matches!(goal, Goal::Standard) {
+        return Some((move_idx, terminal_score));
+    }
+    if terminal_score >= *best_score {
+        *best_score = terminal_score;
+        *best_move = move_idx;
+    }
+    None
+}
+
+/// Updates the root alpha-beta window after a normal (non-terminal) move score.
+/// Returns `true` if the loop should break (beta cutoff).
+fn update_root_window(
+    score: i32,
+    move_idx: usize,
+    best_score: &mut i32,
+    best_move: &mut usize,
+    alpha: &mut i32,
+    beta: i32,
+) -> bool {
+    if score > *best_score {
+        *best_score = score;
+        *best_move = move_idx;
+    }
+    if score > *alpha {
+        *alpha = score;
+    }
+    *alpha >= beta
+}
+
+/// Outcome of handling a connection win inside the negamax loop.
+enum ConnectionOutcome {
+    Return(i32), // return this value from negamax
+    Break,       // alpha >= beta under Misère — break the search loop
+    Continue,    // continue to the next move
+}
+
+/// Handles a connection win inside the negamax search loop.
+/// Under Standard a connection is an immediate win; under Misère it is a loss.
+fn handle_negamax_connection(
+    goal: Goal,
+    terminal_score: i32,
+    move_idx: usize,
+    best_score: &mut i32,
+    best_move_found: &mut Option<usize>,
+    alpha: &mut i32,
+    beta: i32,
+) -> ConnectionOutcome {
+    if matches!(goal, Goal::Standard) {
+        return ConnectionOutcome::Return(terminal_score);
+    }
+    if terminal_score > *best_score {
+        *best_score = terminal_score;
+        *best_move_found = Some(move_idx);
+    }
+    if terminal_score > *alpha {
+        *alpha = terminal_score;
+    }
+    if *alpha >= beta {
+        ConnectionOutcome::Break
+    } else {
+        ConnectionOutcome::Continue
+    }
+}
+
 /// Determines the transposition-table bound flag from the search result.
 fn compute_tt_flag(best_score: i32, alpha_orig: i32, beta: i32) -> TtFlag {
     if best_score <= alpha_orig {
@@ -399,10 +474,11 @@ pub(super) fn search_best_move(
     let ordered = state.shortest_path_deltas(state.bot_id);
     let mut moves: Vec<usize> = ordered.into_iter().map(|(idx, _)| idx).collect();
 
-    if let Some(tt_mv) = tt.best_move(state.hash) {
-        if let Some(pos) = moves.iter().position(|&m| m == tt_mv) {
-            moves.swap(0, pos);
-        }
+    if let Some(pos) = tt
+        .best_move(state.hash)
+        .and_then(|tt_mv| moves.iter().position(|&m| m == tt_mv))
+    {
+        moves.swap(0, pos);
     }
 
     let player = state.bot_id;
@@ -417,20 +493,10 @@ pub(super) fn search_best_move(
         state.make_move(move_idx, player);
 
         if state.check_win(player) {
-            // Side-to-move just completed the connection.  Its sign depends on
-            // the goal: a win under Standard, a loss under Misere.
             state.undo_move(move_idx);
             tt.store(state.hash, depth, terminal_score, TtFlag::Exact, Some(move_idx));
-            // Under misère this is a *bad* outcome for the bot; record it but
-            // continue searching for a strictly better move.
-            if terminal_score >= best_score {
-                best_score = terminal_score;
-                best_move = move_idx;
-            }
-            // Beta cutoff is only safe when the terminal is a win; under misère
-            // we must keep searching for any non-losing move.
-            if matches!(goal, Goal::Standard) {
-                return (move_idx, terminal_score);
+            if let Some(result) = handle_root_connection(goal, terminal_score, move_idx, &mut best_score, &mut best_move) {
+                return result;
             }
             continue;
         }
@@ -446,14 +512,7 @@ pub(super) fn search_best_move(
         }
 
         searched += 1;
-        if score > best_score {
-            best_score = score;
-            best_move = move_idx;
-        }
-        if score > alpha {
-            alpha = score;
-        }
-        if alpha >= beta {
+        if update_root_window(score, move_idx, &mut best_score, &mut best_move, &mut alpha, beta) {
             break;
         }
     }
@@ -514,30 +573,15 @@ pub(super) fn negamax(
         if state.check_win(player) {
             state.undo_move(move_idx);
             killers.store(depth_idx, move_idx);
-            tt.store(
-                position_hash,
-                depth,
-                terminal_score,
-                TtFlag::Exact,
-                Some(move_idx),
-            );
-            // Under Standard a connection is a win for the side to move and we
-            // can return immediately; under Misere it is a loss, so we record
-            // the score and keep looking for a non-losing alternative.
-            if matches!(goal, Goal::Standard) {
-                return terminal_score;
+            tt.store(position_hash, depth, terminal_score, TtFlag::Exact, Some(move_idx));
+            match handle_negamax_connection(
+                goal, terminal_score, move_idx,
+                &mut best_score, &mut best_move_found, &mut alpha, beta,
+            ) {
+                ConnectionOutcome::Return(score) => return score,
+                ConnectionOutcome::Break => break,
+                ConnectionOutcome::Continue => continue,
             }
-            if terminal_score > best_score {
-                best_score = terminal_score;
-                best_move_found = Some(move_idx);
-            }
-            if terminal_score > alpha {
-                alpha = terminal_score;
-            }
-            if alpha >= beta {
-                break;
-            }
-            continue;
         }
 
         let score = pvs_child_score(

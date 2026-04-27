@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next'
+import { useTranslation, type TFunction } from 'react-i18next'
 import type { GameState, ChatMessage, PlayerColor, TimerState } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { TimerPanel } from './TimerPanel'
@@ -17,6 +17,22 @@ interface GameSidebarProps {
   onPlayAgain: () => void
   isBotThinking?: boolean
   isMobile?: boolean
+}
+
+function getTurnLabel(game: GameState, effectiveCurrentTurn: PlayerColor, t: TFunction): string {
+  if (game.status === 'finished') {
+    if (game.winner) {
+      const winnerName = game.winner === 'player1'
+        ? game.players.player1.name
+        : game.players.player2.name
+      return t('game.wins', { name: winnerName })
+    }
+    return t('game.gameOver')
+  }
+  const currentPlayer = effectiveCurrentTurn === 'player1'
+    ? game.players.player1
+    : game.players.player2
+  return t('game.turn', { name: currentPlayer.name })
 }
 
 export function GameSidebar({
@@ -48,26 +64,6 @@ export function GameSidebar({
   const effectiveCurrentTurn: PlayerColor =
     isBotThinking && botColor ? botColor : game.currentTurn
 
-  const getTurnLabel = (): string => {
-    if (game.status === 'finished') {
-      if (game.winner) {
-        const winnerName =
-          game.winner === 'player1'
-            ? game.players.player1.name
-            : game.players.player2.name
-        return t('game.wins', { name: winnerName })
-      }
-      return t('game.gameOver')
-    }
-
-    const currentPlayer =
-      effectiveCurrentTurn === 'player1'
-        ? game.players.player1
-        : game.players.player2
-
-    return t('game.turn', { name: currentPlayer.name })
-  }
-
   return (
     <div className={`h-full flex flex-col ${isMobile ? 'gap-2 p-2' : 'gap-4 p-4 overflow-y-auto'}`}>
 
@@ -95,7 +91,7 @@ export function GameSidebar({
         {game.status === 'finished' && game.winner && (
           <Trophy className="w-6 h-6 mx-auto mb-1 text-primary" />
         )}
-        <p className="font-medium">{getTurnLabel()}</p>
+        <p className="font-medium">{getTurnLabel(game, effectiveCurrentTurn, t)}</p>
         {game.status === 'playing' && (
           <div className={cn(
             'w-3 h-3 rounded-full mx-auto mt-2',

@@ -28,7 +28,7 @@ function sortRecords(
       case 'gameMode':
         return ((a.gameMode ?? '').localeCompare(b.gameMode ?? '')) * dir
       case 'gameVariant':
-        return (((a.gameVariant ?? '') as string).localeCompare((b.gameVariant ?? '') as string)) * dir
+        return ((a.gameVariant ?? '').localeCompare(b.gameVariant ?? '')) * dir
       default:
         return 0
     }

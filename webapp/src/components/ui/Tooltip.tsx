@@ -9,7 +9,7 @@ export function TooltipContent({
   className,
   sideOffset = 6,
   ...props
-}: React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>) {
+}: Readonly<React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>>) {
   return (
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Content

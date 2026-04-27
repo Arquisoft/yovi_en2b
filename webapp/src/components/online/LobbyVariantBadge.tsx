@@ -4,7 +4,7 @@ interface LobbyVariantBadgeProps {
   variant: string
 }
 
-export function LobbyVariantBadge({ variant }: LobbyVariantBadgeProps) {
+export function LobbyVariantBadge({ variant }: Readonly<LobbyVariantBadgeProps>) {
   const { t } = useTranslation()
   const name = t(`variants.${variant}.name`, { defaultValue: variant })
   return (

@@ -129,7 +129,7 @@ export function useGameConfigController() {
         botLevel: mode === 'pve' ? botLevel : undefined,
         playerColor: mode === 'pve' ? playerColor : undefined,
         pieRule: pieRule || undefined,
-        variant: variant as GameVariant,
+        variant,
       }
 
       const guestId = isGuest ? user?.id : undefined

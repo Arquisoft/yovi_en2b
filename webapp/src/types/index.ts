@@ -214,7 +214,7 @@ export interface MatchRecord {
   /** Optional: game mode slug, e.g. 'pve-easy', 'pve-medium', 'pve-hard', 'pvp-local' */
   gameMode?: string | null
   /** Optional: game variant slug, e.g. 'y', 'why-not'. Older records may be null. */
-  gameVariant?: GameVariant | string | null
+  gameVariant?: string | null
 }
 
 export interface WinrateStat {
