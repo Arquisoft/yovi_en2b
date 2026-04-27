@@ -8,6 +8,7 @@ interface ModeCardProps {
   mode: GameMode
   onSelect: () => void
   disabled?: boolean
+  loginRequired?: boolean
 }
 
 const modeIcons: Record<GameMode, typeof Users> = {
@@ -31,7 +32,7 @@ const modeTranslationKeys: Record<GameMode, { title: string; description: string
   },
 }
 
-export function ModeCard({ mode, onSelect, disabled }: ModeCardProps) {
+export function ModeCard({ mode, onSelect, disabled, loginRequired }: ModeCardProps) {
   const { t } = useTranslation()
   const Icon = modeIcons[mode]
   const keys = modeTranslationKeys[mode]
@@ -63,7 +64,9 @@ export function ModeCard({ mode, onSelect, disabled }: ModeCardProps) {
         <CardTitle className="flex items-center justify-between">
           {t(keys.title)}
           {disabled
-            ? <span className="text-xs font-normal text-muted-foreground">{t('gameModes.soon')}</span>
+            ? <span className="text-xs font-normal text-muted-foreground">
+                {loginRequired ? t('gameModes.loginRequired') : t('gameModes.soon')}
+              </span>
             : <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
           }
         </CardTitle>

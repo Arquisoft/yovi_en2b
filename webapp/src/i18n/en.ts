@@ -57,6 +57,7 @@ const en = {
     pvpOnline: { title: 'Online Match', description: 'Challenge players from around the world in real-time matches.' },
     pve: { title: 'vs Computer', description: 'Practice your skills against an AI opponent at various difficulty levels.' },
     soon: 'Soon',
+    loginRequired: 'Sign in',
   },
   gameConfig: {
     localMatch: 'Local Match', vsComputer: 'vs Computer', gameSetup: 'Game Setup',

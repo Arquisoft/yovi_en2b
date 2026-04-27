@@ -4,19 +4,16 @@ import { useGameModeController } from '@/controllers/useGameModeController'
 import { Button } from '@/components/ui/Button'
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/contexts/AuthContext'
 import type { GameMode } from '@/types'
 
-// pvp-online ahora está habilitado para permitir el juego multijugador
-const modes: { mode: GameMode; disabled?: boolean }[] = [
-  { mode: 'pvp-local' },
-  { mode: 'pve' },
-  { mode: 'pvp-online' },
-]
+const BASE_MODES: GameMode[] = ['pvp-local', 'pve', 'pvp-online']
 
 export function GameModePage() {
   const { t } = useTranslation()
   const { handleSelectMode } = useGameModeController()
   const navigate = useNavigate()
+  const { isGuest } = useAuth()
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -32,14 +29,18 @@ export function GameModePage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {modes.map(({ mode, disabled }) => (
-            <ModeCard
-              key={mode}
-              mode={mode}
-              disabled={disabled}
-              onSelect={() => !disabled && handleSelectMode(mode)}
-            />
-          ))}
+          {BASE_MODES.map((mode) => {
+            const guestBlocked = isGuest && mode === 'pvp-online'
+            return (
+              <ModeCard
+                key={mode}
+                mode={mode}
+                disabled={guestBlocked}
+                loginRequired={guestBlocked}
+                onSelect={() => !guestBlocked && handleSelectMode(mode)}
+              />
+            )
+          })}
         </div>
       </div>
     </div>
