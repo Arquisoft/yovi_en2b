@@ -58,7 +58,7 @@ export function ChatPanel({
   }
 
   return (
-    <div className="flex flex-col border border-border rounded-lg bg-card overflow-hidden">
+    <div className={`flex flex-col border border-border rounded-lg bg-card overflow-hidden${isCollapsible ? ' h-full' : ''}`}>
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-border">
         <div className="flex items-center gap-2">
