@@ -28,9 +28,12 @@ Browser
 Nginx (reverse proxy)
    ├── /          → webapp      (React SPA,       port 80)
    ├── /users/    → users       (Node.js/Express,  port 3000)
-   └── /game/     → game        (Node.js/Express,  port 5000)
-                                      │
-                                      └──► gamey  (Rust/Axum, port 4000 — internal only)
+   ├── /game/     → game        (Node.js/Express,  port 5000)
+   │                                  │
+   │                                  └──► gamey  (Rust/Axum, port 4000 — internal only)
+   └── /interop/  → interop     (Node.js/Express,  port 3001)
+                                       │
+                                       └──► gamey  (Rust/Axum, port 4000 — internal only)
 ```
 
 ### Services
@@ -41,11 +44,13 @@ Nginx (reverse proxy)
 | `users` | TypeScript / Node.js 22 | 3000 | Auth, user profiles, stats, ranking |
 | `game` | TypeScript / Node.js 22 | 5000 | Game sessions, move validation, bot orchestration |
 | `gamey` | Rust (Axum) | 4000 | Bot AI engine — internal only, not browser-accessible |
+| `interop` | TypeScript / Node.js 22 | 3001 | External bot interoperability API (professor-required) |
 
 **Key architectural constraints:**
 - The browser never calls `gamey` directly. All bot requests go through the `game` service.
 - Match records are written server-side by the `game` service when a game ends.
 - `game` and `users` share the same MariaDB instance (`users_db`) and JWT secret.
+- `interop` is the public-facing API for external bots; it is separate from the internal bot calls the `game` service makes.
 
 ---
 
@@ -57,6 +62,7 @@ yovi_en2b/
 ├── users/           # Users microservice (Express, TypeORM, MariaDB)
 ├── game/            # Game microservice (Express, TypeORM, MariaDB)
 ├── gamey/           # Rust bot engine (Axum, minimax AI)
+├── interop/         # External bot interoperability API (Express, port 3001)
 └── docs/            # Arc42 architecture documentation
 ```
 
