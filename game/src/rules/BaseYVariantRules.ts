@@ -1,4 +1,4 @@
-import type { BoardCell, BoardSize, BotLevel, PieDecision, PlayerColor } from '../types/game';
+import type { BoardCell, BoardSize, BotLevel, GameVariant, PieDecision, PlayerColor } from '../types/game';
 import {
   createEmptyBoard,
   getNeighbors as getYNeighbors,
@@ -9,7 +9,7 @@ import { boardToYEN, coordsToRowCol } from '../utils/yen';
 import type { GameRules } from './GameRules';
 
 export abstract class BaseYVariantRules implements GameRules {
-  abstract readonly variant: string;
+  abstract readonly variant: GameVariant;
   readonly supportsPieRule = true;
 
   createBoard(size: number): BoardCell[][] {
