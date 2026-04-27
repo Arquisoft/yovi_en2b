@@ -23,6 +23,7 @@ export type ClientMessage =
   | { type: 'move'; gameId: string; row: number; col: number }
   | { type: 'pie_decision'; gameId: string; decision: PieDecision }
   | { type: 'surrender'; gameId: string }
+  | { type: 'chat_message'; gameId: string; content: string }
   | { type: 'ping' }
 
 // ── Messages SERVER → CLIENT ──────────────────────────────────────────────────
@@ -36,6 +37,7 @@ export type ServerMessage =
   | { type: 'game_update'; game: unknown }
   | { type: 'opponent_disconnected'; gracePeriodMs: number }
   | { type: 'opponent_reconnected' }
+  | { type: 'chat_message'; gameId: string; senderId: string; senderName: string; content: string; timestamp: string }
   | { type: 'error'; code: string; message: string }
   | { type: 'pong' }
 

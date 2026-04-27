@@ -114,6 +114,18 @@ export function useGameYController() {
       }
     })
 
+    const unsubChat = wsService.on('chat_message', (data: any) => {
+      const message: ChatMessage = {
+        id: `${data.senderId}-${data.timestamp}`,
+        gameId: data.gameId,
+        senderId: data.senderId,
+        senderName: data.senderName,
+        content: data.content,
+        timestamp: data.timestamp,
+      }
+      setChatMessages(prev => [...prev, message])
+    })
+
     // When the WS auto-reconnects (e.g. after a brief drop), re-join the game room
     const unsubWsReconnect = wsService.on('reconnected', () => {
       if (gameIdRef.current) {
@@ -126,6 +138,7 @@ export function useGameYController() {
       unsubDisconnected()
       unsubReconnected()
       unsubError()
+      unsubChat()
       unsubWsReconnect()
     }
   }, [game?.id, game?.config?.mode])
@@ -332,13 +345,31 @@ export function useGameYController() {
 
   const handleSendMessage = useCallback(async (content: string) => {
     if (!gameId || !user) return
+    const trimmed = content.trim()
+    if (!trimmed) return
+
+    if (game?.config.mode === 'pvp-online') {
+      // Optimistically add own message; opponent receives it via WS broadcast
+      const msg: ChatMessage = {
+        id: `${user.id}-${Date.now()}`,
+        gameId,
+        senderId: String(user.id),
+        senderName: user.username,
+        content: trimmed,
+        timestamp: new Date().toISOString(),
+      }
+      setChatMessages(prev => [...prev, msg])
+      wsService.send({ type: 'chat_message', gameId, content: trimmed })
+      return
+    }
+
     try {
       await gameService.sendChatMessage(gameId, user.id, user.username, content)
       setChatMessages(await gameService.getChatMessages(gameId))
     } catch (err) {
       console.error('Failed to send message:', err)
     }
-  }, [gameId, user])
+  }, [game?.config.mode, gameId, user])
 
   const handlePieDecision = useCallback(async (decision: PieDecision) => {
     if (!game || !gameId) return

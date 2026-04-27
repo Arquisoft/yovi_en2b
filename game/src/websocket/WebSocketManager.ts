@@ -171,6 +171,10 @@ export class WebSocketManager {
         await this.handleSurrender(client, message.gameId)
         break
 
+      case 'chat_message':
+        this.handleChatMessage(client, message.gameId, message.content)
+        break
+
       default:
         this.sendTo(client.ws, { type: 'error', code: 'UNKNOWN_MESSAGE', message: 'Unknown message type' })
     }
@@ -334,6 +338,30 @@ export class WebSocketManager {
     } catch (err: any) {
       this.sendTo(client.ws, { type: 'error', code: 'PIE_FAILED', message: err.message ?? 'Pie decision failed' })
     }
+  }
+
+  // ── Chat ──────────────────────────────────────────────────────────────────
+
+  private handleChatMessage(client: ConnectedClient, gameId: string, content: string): void {
+    if (client.currentGameId !== gameId) {
+      this.sendTo(client.ws, { type: 'error', code: 'WRONG_GAME', message: 'Not your current game' })
+      return
+    }
+
+    const trimmed = content?.trim()
+    if (!trimmed) return
+
+    const msg: ServerMessage = {
+      type: 'chat_message',
+      gameId,
+      senderId: String(client.userId),
+      senderName: client.username,
+      content: trimmed,
+      timestamp: new Date().toISOString(),
+    }
+
+    // Only deliver to the opponent; sender adds the message optimistically on the client
+    this.broadcastToOpponent(client.userId, msg)
   }
 
   // ── Private rooms ─────────────────────────────────────────────────────────
