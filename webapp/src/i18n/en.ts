@@ -12,6 +12,9 @@ const en = {
     signOutConfirmDescription: 'Are you sure you want to sign out of your account?',
     history: 'Game History',
     profile: 'My profile',
+    openMenu: 'Open menu',
+    closeMenu: 'Close menu',
+    language: 'Language',
   },
   profile: {
   title: 'My Profile',

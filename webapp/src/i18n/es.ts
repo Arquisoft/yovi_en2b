@@ -12,6 +12,9 @@ const es = {
     signOutConfirmTitle: 'Cerrar sesión',
     signOutConfirmDescription: '¿Seguro que quieres cerrar sesión?',
     profile: 'Mi perfil',
+    openMenu: 'Abrir menú',
+    closeMenu: 'Cerrar menú',
+    language: 'Idioma',
   },
   profile: {
   title: 'Mi perfil',
