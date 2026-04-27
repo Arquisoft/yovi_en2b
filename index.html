@@ -2812,7 +2812,17 @@ print {
 <li><a href="#_technical_debt">11.2. Technical Debt</a></li>
 </ul>
 </li>
-<li><a href="#section-glossary">12. Glossary</a></li>
+<li><a href="#section-testing">12. Test Report</a>
+<ul class="sectlevel2">
+<li><a href="#_overview">12.1. Overview</a></li>
+<li><a href="#_unit_tests">12.2. Unit Tests</a></li>
+<li><a href="#_acceptance_tests_end_to_end">12.3. Acceptance Tests (End-to-End)</a></li>
+<li><a href="#_load_tests">12.4. Load Tests</a></li>
+<li><a href="#_code_coverage">12.5. Code Coverage</a></li>
+<li><a href="#_ci_integration">12.6. CI Integration</a></li>
+</ul>
+</li>
+<li><a href="#section-glossary">13. Glossary</a></li>
 </ul>
 </div>
 </div>
@@ -3610,7 +3620,7 @@ Thus it contains the white box description of selected building blocks of level 
 <h3 id="_whitebox_overall_system">5.1. Whitebox Overall System</h3>
 <div class="imageblock">
 <div class="content">
-<img src="./images/overview-diagram.svg" alt="overview diagram" width="1113" height="219">
+<img src="./images/overview-diagram.svg" alt="overview diagram" width="1201" height="246">
 </div>
 </div>
 <div class="sidebarblock arc42help">
@@ -3707,7 +3717,7 @@ In the best case you will get away with examples or simple signatures.</p>
 <h3 id="_level_2">5.2. Level 2</h3>
 <div class="imageblock">
 <div class="content">
-<img src="./images/level2-diagram.svg" alt="level2 diagram" width="1104" height="161">
+<img src="./images/level2-diagram.svg" alt="level2 diagram" width="1232" height="211">
 </div>
 </div>
 <div class="sidebarblock arc42help">
@@ -5500,7 +5510,621 @@ Scenarios make quality requirements precise by stating stimulus, response, and m
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-glossary">12. Glossary</h2>
+<h2 id="section-testing">12. Test Report</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This chapter documents the testing strategy applied across the YOVI system, covering all layers of the application: the Rust game engine, the backend services, the frontend, and the system as a whole.
+The goal is to provide traceability between quality goals (see section 1.2 <a href="#_quality_goals">Quality Goals</a>) and the concrete tests that validate them, and to give a transparent account of coverage and load results.</p>
+</div>
+<div class="sect2">
+<h3 id="_overview">12.1. Overview</h3>
+<div class="paragraph">
+<p>The project follows a layered testing approach that mirrors the system&#8217;s architecture.
+Each service owns its own test suite, run in isolation with coverage reporting.
+End-to-end acceptance tests drive the full stack through a real browser.
+Separate load tests ensure that the application will behave correctly under normal load.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Layer</th>
+<th class="tableblock halign-left valign-top">Scope</th>
+<th class="tableblock halign-left valign-top">Tool</th>
+<th class="tableblock halign-left valign-top">Execution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Unit tests</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Individual functions, services, and components in isolation</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vitest (TypeScript) · Rust <code><mark>[test]</code> / <code></mark>[tokio::test]</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Every push to <code>master</code> and every pull request (GitHub Actions)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Integration tests</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP routes against a real database (MariaDB)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vitest with a containerised database</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Every push to <code>master</code> and every pull request (GitHub Actions)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Acceptance / E2E tests</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Critical user journeys through a real browser</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Playwright + Cucumber (BDD)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">On demand; also runnable in CI via <code>test:e2e:ci</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Load tests</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Throughput and latency of the interoperability API under concurrent traffic, and end-to-end user-perceived performance of the full stack under a stepped closed-workload profile</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gatling (Java DSL)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Run manually against the production deployment; results are reported in section <a href="#_load_tests">Load Tests</a></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>All TypeScript/React test suites use <strong>Vitest</strong> and produce LCOV coverage reports that are aggregated in <strong>SonarCloud</strong> (<code>arquisoft/yovi_en2b</code>) for a unified quality gate.
+The Rust crate uses <strong>cargo-llvm-cov</strong> to produce a compatible LCOV report.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_unit_tests">12.2. Unit Tests</h3>
+<div class="sect3">
+<h4 id="_gamey_rust_game_engine">12.2.1. gamey — Rust Game Engine</h4>
+<div class="paragraph">
+<p>The <code>gamey</code> crate contains the core game logic and the HTTP bot server.
+Tests are written using Rust&#8217;s built-in test framework and <code>tokio::test</code> for async handlers.
+The test suite is split across three files:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 16.6666%;">
+<col style="width: 50.0001%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">File</th>
+<th class="tableblock halign-left valign-top">Tests</th>
+<th class="tableblock halign-left valign-top">Coverage area</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>tests/core_tests.rs</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">43</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game initialisation, move sequencing, win detection, illegal-move rejection, resign/swap rules, YEN round-trip serialisation, file save/load, coordinate arithmetic, board rendering.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>tests/cli_tests.rs</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">54</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CLI command parsing (<code>place</code>, <code>resign</code>, <code>save</code>, <code>load</code>, <code>help</code>, <code>exit</code>, display toggles), index validation, game mode display, and save/load round-trips.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>tests/bot_server_tests.rs</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">38 async</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP bot server: <code>/status</code> health endpoint, <code>/v1/ybot/choose/{bot_id}</code> with valid and invalid YEN payloads, unknown bot-id rejection, pie-rule endpoints, and error-response structure.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="ulist">
+<div class="title">Notable test groups in <code>core_tests.rs</code>:</div>
+<ul>
+<li>
+<p><strong>Initialisation</strong> — verifies board size, total cells (triangular formula: <code>n*(n+1)/2</code>), initial player, and cell availability.</p>
+</li>
+<li>
+<p><strong>Win detection</strong> — three-side connectivity for both players on size 2, 3, and 5 boards, plus single-cell instant-win edge case.</p>
+</li>
+<li>
+<p><strong>YEN serialisation</strong> — full round-trip (encode then decode) for empty and partially filled boards; invalid layout strings are rejected with a clear error.</p>
+</li>
+<li>
+<p><strong>Coordinate arithmetic</strong> — <code>index ↔ coordinates</code> round-trips, side-touching predicates, and corner cells that touch two sides.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_users_service">12.2.2. users Service</h4>
+<div class="paragraph">
+<p>The <code>users</code> service is tested against a real MariaDB instance (started via <code>docker-compose.test.yml</code> in CI and locally).
+Tests are run with <code>vitest run</code> in Node.js environment.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">File</th>
+<th class="tableblock halign-left valign-top">Coverage area</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>auth.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Registration (happy path, duplicate username/email), login (valid credentials, wrong password, non-existent user), JWT token validation, protected route rejection for unauthenticated requests.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>stats.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fetching and aggregating per-user match statistics; response shape and edge cases (no games played).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>RankingService.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Leaderboard computation: correct ordering, tie-breaking, and empty-ranking edge case.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>RankingController.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP handler layer: correct HTTP status codes and response bodies for ranking endpoints.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>SnakeCaseNamingStrategy.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TypeORM naming-strategy utility that converts camelCase property names to snake_case column names.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>errorHandler.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Express error-handling middleware: correct HTTP status codes mapped from domain error types.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_game_service">12.2.3. game Service</h4>
+<div class="paragraph">
+<p>The <code>game</code> service owns all session state and validates every move server-side.
+Its test suite covers the HTTP routes, the game logic layer, and the WebSocket manager responsible for real-time online play.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">File</th>
+<th class="tableblock halign-left valign-top">Coverage area</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>game.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP game routes: creating a PvE and PvP session, submitting a move (valid and invalid), fetching game state, ending a game and persisting the result to the <code>users</code> service.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>GameService.additional.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Edge cases for game service: concurrent move submissions, timer expiry handling, bot-move delegation to <code>gamey</code>, and invalid board-size rejection.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>webSocketManager.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">WebSocket manager: connection lifecycle (connect, disconnect, reconnect), message routing, and error handling for malformed messages.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>webSocketManager.rooms.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Room management: creating and joining rooms, broadcasting events to all participants, handling disconnection mid-game.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>WebSocketManager.lifecycle.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Full WebSocket session lifecycle: pairing two players, starting the game, completing a game, and cleaning up room state.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>matchmakingService.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Matchmaking queue: enqueuing players, pairing, removing players who disconnect before a match is found.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_interop_service">12.2.4. interop Service</h4>
+<div class="paragraph">
+<p>The <code>interop</code> service bridges external bot clients with the internal <code>gamey</code> engine.
+It has both pure unit tests and an integration test that calls the real engine.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">File</th>
+<th class="tableblock halign-left valign-top">Coverage area</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>yenService.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">YEN utility functions: <code>applyMove</code> (places a token at the correct index in the layout string), <code>emptyYEN</code> (constructs a blank board of any size), <code>isValidYEN</code> (structural validation of an incoming position object). All tests include board-boundary and mutation-isolation assertions.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gameService.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game service wrapper: routing the board state to the correct <code>gamey</code> bot, parsing the move response, and propagating engine errors.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gameRoutes.integration.test.ts</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Integration: full HTTP round-trip through <code>GET /play</code> against a live <code>gamey</code> instance, verifying that the response contains a valid move for the submitted YEN position.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_webapp_react_frontend">12.2.5. webapp — React Frontend</h4>
+<div class="paragraph">
+<p>The frontend test suite is the largest in the project, covering pages, components, controllers, services, contexts, hooks, and utilities.
+Tests run in a <code>jsdom</code> environment using Vitest and React Testing Library.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 40%;">
+<col style="width: 60%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Area</th>
+<th class="tableblock halign-left valign-top">Test files and focus</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Pages</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>LoginPage</code>, <code>RegisterPage</code>, <code>GameSelectionPage</code>, <code>GameModePage</code>, <code>GameConfigPage</code>, <code>GameYPage</code>, <code>GameHistoryPage</code>, <code>GameReplyPage</code>, <code>ProfilePage</code>, <code>StatsPage</code>, <code>RankingPage</code>, <code>OnlineLobbyPage</code>, <code>OnlineRoomPage</code>, <code>NotFoundPage</code> — render, user interaction, and navigation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Components</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>GameYBoard</code>, <code>GameYCell</code>, <code>GameOverlay</code>, <code>ChatPanel</code>, <code>TimerPanel</code>, <code>AppNavbar</code>, <code>GameCard</code>, <code>ProtectedRoute</code>, <code>RankingTable</code>, <code>MatchHistoryTable</code>, <code>WinrateChart</code>, <code>Message</code> — rendering with different prop combinations and interaction events.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Controllers</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>useGameYController</code>, <code>useLoginController</code>, <code>useRegisterController</code>, <code>useProfileController</code>, <code>useGameModeController</code>, <code>useGameConfigController</code>, <code>useGameSelectionController</code>, <code>useOnlineRoomController</code>, <code>useOnlineHostLobbyController</code>, <code>useOnlineLobbyController</code>, <code>useStatsController</code>, <code>UseRankingController</code>, <code>UseGameHistoryController</code>, <code>UseGameReplayController</code> — business logic, state transitions, and API call orchestration.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Services</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>authService</code>, <code>gameyService</code>, <code>rankingService</code>, <code>statsService</code>, <code>websocketService</code> — HTTP and WebSocket client wrappers tested against mocked backends.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Contexts</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>AuthContext</code>, <code>ThemeContext</code>, <code>LanguageContext</code> — context provider behaviour and consumer updates.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Hooks &amp; utilities</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>useMediaQuery</code>, <code>gameY</code> (game-logic utilities), <code>replayUtils</code>, <code>onlineConfig</code>, <code>index</code> utilities, <code>i18n</code> translations.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>The webapp suite contains approximately <strong>1,060 test cases</strong> distributed across 40+ files.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_acceptance_tests_end_to_end">12.3. Acceptance Tests (End-to-End)</h3>
+<div class="paragraph">
+<p>Acceptance tests validate the most critical user journeys against the full running system: frontend, backend services, and database.
+They are written in Gherkin (BDD style) using <strong>Cucumber</strong> (<code>@cucumber/cucumber</code>) and driven by a real Chromium browser via <strong>Playwright</strong>.</p>
+</div>
+<div class="paragraph">
+<p>Three feature files are implemented:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Feature</th>
+<th class="tableblock halign-left valign-top">Scenario</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>register.feature</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Successful registration</strong> — a new visitor fills in the registration form with valid data, submits it, and sees the account-created confirmation message.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>login.feature</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Successful login</strong> — a registered user fills in the login form with valid credentials, submits it, and lands on the games page.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>create-game.feature</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Create a PvE game</strong> — a logged-in user clicks "Play Now" on Game Y, selects "vs Computer" mode, clicks "Start Game", and sees the game board rendered correctly.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Step definitions are located in <code>webapp/test/e2e/steps/</code> (<code>auth.steps.mjs</code>, <code>game.steps.mjs</code>).
+The test environment starts the React dev server (port 3000), the <code>users</code> service (port 3001), and the <code>game</code> service (port 5000) in parallel before the Cucumber runner executes.</p>
+</div>
+<div class="listingblock">
+<div class="title">Running E2E tests locally:</div>
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash"># Install Playwright browsers (once)
+npm --prefix webapp run test:e2e:install-browsers
+
+# Start services and run all feature files
+npm --prefix webapp run test:e2e</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_load_tests">12.4. Load Tests</h3>
+<div class="paragraph">
+<p>Two Gatling simulations were executed against the production deployment to evaluate the system&#8217;s behaviour under concurrent load.
+<code>InteropSimulation</code> stresses the external bot API (<code>POST /interop/games/play</code>) with four classes of concurrent callers, each exercising a different bot strategy and compute cost.
+<code>RecordedSimulation</code> replays a realistic end-user flow (login → create game → play move → fetch stats) captured from a real browser session, injected under a stepped closed-workload profile (10 → 20 → 30 concurrent users).
+Both are implemented with <strong>Gatling</strong> (Java DSL) in <code>loadtest/gatling/simulations/</code>.</p>
+</div>
+<div class="sect3">
+<h4 id="_simulation_design">12.4.1. Simulation Design</h4>
+<div class="sect4">
+<h5 id="_interopsimulation">InteropSimulation</h5>
+<div class="paragraph">
+<p>Targets <code>GET /play</code> directly.
+The simulation runs for a maximum of <strong>3 minutes</strong> and injects virtual users (VUs) in a ramp to reach the following peak concurrency:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 14.2857%;">
+<col style="width: 28.5714%;">
+<col style="width: 28.5714%;">
+<col style="width: 28.5715%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Scenario</th>
+<th class="tableblock halign-left valign-top">Bot strategy</th>
+<th class="tableblock halign-left valign-top">Peak VUs</th>
+<th class="tableblock halign-left valign-top">Board sizes tested</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A · RandomBot</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>random_bot</code> (no minimax)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">size 4 (empty and mid-game)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">B · FastBot</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>fast_bot</code> (500 ms minimax budget)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">sizes 5 and 6</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C · SmartBot</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>smart_bot</code> (3 000 ms minimax budget)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">sizes 4, 6, and 9 (absolute worst-case)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">D · DefaultFallback</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No <code>bot_id</code> sent</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">sizes 4 and 9</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">E · HealthProbe</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>GET /interop/health</code> every 2 s</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><strong>Peak total: 14 concurrent virtual users.</strong></p>
+</div>
+<div class="paragraph">
+<p>The simulation labels each Gatling group with the HTTP status of the previous iteration (e.g. <code>SmartBot_200</code>, <code>SmartBot_503</code>), making it possible to read the p95 latency of real engine computations separately from fast rejection responses.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_recordedsimulation">RecordedSimulation</h5>
+<div class="paragraph">
+<p>Targets the full vertical stack: Nginx → webapp → users service → game service → Rust engine.
+The scenario was captured with Gatling Recorder from a real browser session on the production deployment and trimmed to the critical business path:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>login  →  static assets  →  create game  →  play move 1  →  fetch stats</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>A closed-workload injection profile (10 → 20 → 30 concurrent users, 60 s each) is used so that the server&#8217;s own throughput dictates the request rate, making the capacity curve readable without queue inflation.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 40%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Plateau</th>
+<th class="tableblock halign-left valign-top">Concurrent users</th>
+<th class="tableblock halign-left valign-top">Duration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60 s</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">20</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60 s</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">30</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">60 s</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><strong>Peak total: 30 concurrent virtual users.</strong></p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_acceptance_criteria">12.4.2. Acceptance Criteria</h4>
+<div class="paragraph">
+<p>For <code>InteropSimulation</code>, the health-probe scenario (<code>GET /interop/health</code>) must have <strong>0% failed requests</strong>.
+Play requests accept <code>200</code> or <code>503</code>; the distribution between them is the key finding — a high <code>503</code> rate indicates engine saturation.</p>
+</div>
+<div class="paragraph">
+<p>For <code>RecordedSimulation</code>, every request across the full login → move → stats flow must return the expected 2xx/201 status.
+Any non-success response on a business endpoint is counted as a KO.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_findings">12.4.3. Findings</h4>
+<div class="sect4">
+<h5 id="_interopsimulation_2">InteropSimulation</h5>
+<div class="paragraph">
+<p>Over the 3-minute soak at 14 VUs peak, 2 463 requests were issued with <strong>0 KOs</strong>.
+The health probe never failed (always <code>200</code> in &lt; 20 ms).
+Steady-state throughput settled at ≈ 13–15 req/s with a typical per-second p50 of <strong>254 ms</strong> and p95 of <strong>622 ms</strong>.</p>
+</div>
+<div class="paragraph">
+<p>The bottleneck is specifically the <code>SmartBot / C4</code> scenario: <code>smart_bot</code> on an empty size-9 board (45 cells, full 3 000 ms minimax budget).
+While a C4 request occupies a gamey worker, all other concurrent requests wait and eventually time out at the interop side — the classic head-of-line blocking pattern.
+This produced a <strong>33.9% rate</strong> of seconds where the worst-second p95 reached ≈ 2 070–2 077 ms.
+Simpler requests (<code>random_bot</code>, small boards) completed well within their compute budget when the engine was not blocked by C4.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_recordedsimulation_2">RecordedSimulation</h5>
+<div class="paragraph">
+<p>Over the 3 m 13 s run at up to 30 VUs, 4 480 requests were issued with <strong>0 KOs</strong> (zero auth errors, zero move failures, zero 5xx responses).
+Throughput scaled nearly perfectly linearly with concurrency: 11.8 req/s at 10 users → 23.4 req/s at 20 users → 35.4 req/s at 30 users (scaling efficiency 1.00).
+The median response time remained <strong>flat at ≈ 200 ms</strong> across all three plateaus.
+p95 grew only modestly from <strong>588 ms to 633 ms</strong> as concurrency tripled — a 7% increase.
+The 2 s per-second p95 barrier was first breached at t = 131 s (11 s into the 30-user plateau), and p95 never reached 3 000 ms.
+No saturation point was found within the tested range.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_combined_findings">Combined findings</h5>
+<div class="paragraph">
+<p>The two simulations together show that the system&#8217;s practical capacity is gated by the Rust engine, not by the TypeScript services or the database:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>For standard user-facing traffic</strong> the system is comfortable well beyond 30 concurrent users. Linear throughput scaling and a flat median latency confirm that no queue builds up anywhere in the chain at the tested load.</p>
+</li>
+<li>
+<p><strong>For automated bot traffic</strong> via the public interop API the ceiling is lower: 14 VUs generating interleaved <code>smart_bot</code> + size-9 requests is enough to trigger 503s on 33.9% of active seconds.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This asymmetry is expected: during normal gameplay each client sends one move at a time and waits, so users never collide on the same expensive engine call.
+A bot client, by contrast, can flood the endpoint with adversarially large boards that saturate the single-instance Rust engine almost immediately.</p>
+</div>
+<div class="paragraph">
+<p>Full per-scenario percentile results and the Gatling HTML reports are available in <code>loadtest/loadtests-results/</code>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_code_coverage">12.5. Code Coverage</h3>
+<div class="paragraph">
+<p>Every TypeScript/React service generates a <strong>LCOV</strong> coverage report during the CI run.
+The Rust crate generates a compatible LCOV report via <strong>cargo-llvm-cov</strong>.
+All reports are uploaded to <strong>SonarCloud</strong> (<code><a href="https://sonarcloud.io" class="bare">https://sonarcloud.io</a></code>, project key <code>Arquisoft_yovi_en2b</code>) for aggregation and quality-gate enforcement.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Service</th>
+<th class="tableblock halign-left valign-top">Coverage tool</th>
+<th class="tableblock halign-left valign-top">Report location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>webapp</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vitest <code>v8</code> provider</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>webapp/coverage/lcov.info</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>users</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vitest <code>v8</code> provider</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>users/coverage/lcov.info</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>game</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vitest <code>v8</code> provider</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>game/coverage/lcov.info</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>interop</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vitest <code>v8</code> provider</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>interop/coverage/lcov.info</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gamey</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">cargo-llvm-cov</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>gamey/lcov.info</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Coverage is collected on every CI run triggered by a push to <code>master</code> or a pull request, ensuring that the quality gate is enforced continuously.
+Test helper files (<code>testDatabase.ts</code>, <code>setup.ts</code>) are excluded from the coverage measurement to avoid inflating the figures.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_ci_integration">12.6. CI Integration</h3>
+<div class="paragraph">
+<p>All unit and integration test suites run automatically in <strong>GitHub Actions</strong> on every push to <code>master</code> and on every opened or updated pull request.
+The workflow (<code>.github/workflows/build.yml</code>) performs the following steps:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Install Node.js 22 and the Rust stable toolchain.</p>
+</li>
+<li>
+<p>Install dependencies for all four TypeScript packages (<code>webapp</code>, <code>users</code>, <code>game</code>, <code>interop</code>).</p>
+</li>
+<li>
+<p>Spin up a <strong>MariaDB 11.4</strong> service container (used by <code>users</code> and <code>game</code> integration tests).</p>
+</li>
+<li>
+<p>Run <code>vitest run --coverage</code> for each TypeScript package.</p>
+</li>
+<li>
+<p>Install <code>cargo-llvm-cov</code> and generate the Rust coverage report.</p>
+</li>
+<li>
+<p>Normalise LCOV paths and upload all reports to <strong>SonarCloud</strong> for analysis.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>A failed test in any service fails the workflow, blocking the merge of the pull request.</p>
+</div>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-glossary">13. Glossary</h2>
 <div class="sectionbody">
 <div class="sidebarblock arc42help">
 <div class="content">
@@ -5659,7 +6283,7 @@ Scenarios make quality requirements precise by stating stimulus, response, and m
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-02-08 14:01:30 +0100
+Last updated 2026-04-27 21:37:38 UTC
 </div>
 </div>
 </body>
