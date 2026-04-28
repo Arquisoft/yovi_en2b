@@ -4,9 +4,10 @@ import { GameYBoard } from '@/components/game-y/GameYBoard'
 import { GameSidebar } from '@/components/game-y/GameSidebar'
 import { GameOverlay } from '@/components/game-y/GameOverlay'
 import { PieRuleDecisionPanel } from '@/components/game-y/PieRuleDecisionPanel'
+import { MobileGameDrawer } from '@/components/game-y/MobileGameDrawer'
 import { AlertCircle, ChevronLeft, ChevronRight, XCircle, WifiOff } from 'lucide-react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
-import { useState, useRef, useCallback } from 'react'
+import { useState } from 'react'
 
 export function GameYPage() {
   const { t } = useTranslation()
@@ -20,34 +21,6 @@ export function GameYPage() {
 
   const isMobile = useMediaQuery('(max-width: 768px)')
   const [sidebarOpen, setSidebarOpen] = useState(true)
-
-  const SIDEBAR_HEIGHT = 320
-  const dragStartY = useRef<number | null>(null)
-  const dragStartHeight = useRef<number>(SIDEBAR_HEIGHT)
-  const [mobileHeight, setMobileHeight] = useState(SIDEBAR_HEIGHT)
-
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    dragStartY.current = e.touches[0].clientY
-    dragStartHeight.current = mobileHeight
-  }, [mobileHeight])
-
-  const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if (dragStartY.current === null) return
-    const delta = dragStartY.current - e.touches[0].clientY
-    setMobileHeight(Math.max(48, Math.min(520, dragStartHeight.current + delta)))
-    setSidebarOpen(mobileHeight > 64)
-  }, [mobileHeight])
-
-  const onTouchEnd = useCallback(() => {
-    dragStartY.current = null
-    if (mobileHeight < 100) { setMobileHeight(48); setSidebarOpen(false) }
-    else if (mobileHeight < 200) { setMobileHeight(SIDEBAR_HEIGHT); setSidebarOpen(true) }
-  }, [mobileHeight])
-
-  const toggleMobileSidebar = useCallback(() => {
-    if (sidebarOpen) { setMobileHeight(48); setSidebarOpen(false) }
-    else { setMobileHeight(SIDEBAR_HEIGHT); setSidebarOpen(true) }
-  }, [sidebarOpen])
 
   if (isLoading) {
     return (
@@ -108,19 +81,11 @@ export function GameYPage() {
               onDecide={handlePieDecision} isLoading={isPieDecisionLoading} />
           )}
         </div>
-        <div className="flex-shrink-0 border-t border-border bg-card overflow-hidden transition-[height] duration-150"
-          style={{ height: mobileHeight }}>
-          <button type="button" className="flex items-center justify-center w-full h-8 cursor-ns-resize touch-none select-none bg-transparent border-0 p-0"
-            onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} onClick={toggleMobileSidebar}>
-            <div className="w-10 h-1 rounded-full bg-muted-foreground/40" />
-          </button>
-          <div className={`overflow-y-auto transition-opacity duration-150 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-            style={{ height: mobileHeight - 32 }}>
-            <GameSidebar game={game} liveTimer={liveTimer} currentUserId={currentUserId} chatMessages={chatMessages}
-              onSendMessage={handleSendMessage} onSurrender={handleSurrender} onPlayAgain={handlePlayAgain}
-              isBotThinking={isBotThinking} isMobile />
-          </div>
-        </div>
+        <MobileGameDrawer>
+          <GameSidebar game={game} liveTimer={liveTimer} currentUserId={currentUserId} chatMessages={chatMessages}
+            onSendMessage={handleSendMessage} onSurrender={handleSurrender} onPlayAgain={handlePlayAgain}
+            isBotThinking={isBotThinking} isMobile />
+        </MobileGameDrawer>
         <GameOverlay game={game} currentUserId={currentUserId} onPlayAgain={handlePlayAgain} onGoHome={handleGoHome} />
       </div>
     )

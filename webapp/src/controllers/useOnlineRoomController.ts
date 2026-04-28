@@ -1,17 +1,21 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { wsService } from '@/services/websocketService'
+import type { GameVariant } from '@/types'
 
 export type RoomJoinStatus = 'idle' | 'connecting' | 'waiting' | 'matched' | 'error'
 
 export function useOnlineRoomController() {
   const { token, isGuest } = useAuth()
   const navigate = useNavigate()
+  const { variant = 'y' } = useParams<{ variant: GameVariant }>()
 
   const [codeInput, setCodeInput] = useState('')
   const [joinStatus, setJoinStatus] = useState<RoomJoinStatus>('idle')
   const [error, setError] = useState<string | null>(null)
+  const [hostName, setHostName] = useState<string | null>(null)
+  const [matchedVariant, setMatchedVariant] = useState<GameVariant | null>(null)
 
   const mounted = useRef(true)
   const hasJoined = useRef(false)
@@ -21,9 +25,13 @@ export function useOnlineRoomController() {
 
     const unsubMatched = wsService.on('matched', (data: any) => {
       if (!mounted.current) return
+      setHostName(data.opponentName as string)
+      // The joiner doesn't pick a variant — adopt whatever the host's room used.
+      const serverVariant = (data.variant as GameVariant) ?? variant
+      setMatchedVariant(serverVariant)
       setJoinStatus('matched')
       setTimeout(() => {
-        if (mounted.current) navigate(`/games/y/play/${data.gameId}`)
+        if (mounted.current) navigate(`/games/${serverVariant}/play/${data.gameId}`)
       }, 1200)
     })
 
@@ -40,7 +48,7 @@ export function useOnlineRoomController() {
       unsubError()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigate])
+  }, [navigate, variant])
 
   const handleJoin = useCallback(async () => {
     const code = codeInput.trim().toUpperCase()
@@ -55,6 +63,7 @@ export function useOnlineRoomController() {
         await wsService.connect(token)
       }
       if (!mounted.current) return
+      // Joiner doesn't pick the variant — the host's room config does.
       wsService.send({ type: 'join_room', code })
       setJoinStatus('waiting')
     } catch (err) {
@@ -65,12 +74,12 @@ export function useOnlineRoomController() {
   }, [codeInput, token, isGuest])
 
   const handleCreateRoom = useCallback(() => {
-    navigate('/games/y/config/pvp-online')
-  }, [navigate])
+    navigate(`/games/${variant}/config/pvp-online`)
+  }, [navigate, variant])
 
   const handleCancel = useCallback(() => {
-    navigate('/games/y')
-  }, [navigate])
+    navigate(`/games/${variant}`)
+  }, [navigate, variant])
 
   const handleRetry = useCallback(() => {
     setJoinStatus('idle')
@@ -82,6 +91,9 @@ export function useOnlineRoomController() {
     setCodeInput,
     joinStatus,
     error,
+    hostName,
+    /** Variant the joiner ended up matched into (server-supplied; falls back to URL variant). */
+    matchedVariant: matchedVariant ?? variant,
     handleCreateRoom,
     handleJoin,
     handleCancel,

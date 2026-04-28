@@ -6,7 +6,10 @@ import { useGameConfigController } from '@/controllers/useGameConfigController'
 vi.mock('@/controllers/useGameConfigController', () => ({ useGameConfigController: vi.fn() }))
 
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', () => ({ useNavigate: () => mockNavigate }))
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+  useParams: () => ({ variant: 'y', mode: 'pve' }),
+}))
 
 function makeController(overrides: Record<string, unknown> = {}) {
   return {

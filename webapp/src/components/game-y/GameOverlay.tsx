@@ -274,7 +274,7 @@ export function GameOverlay({ game, currentUserId, onPlayAgain, onGoHome }: Game
 
         <div
           className="go-card"
-          style={{ position: 'relative', width: '100%', maxWidth: 400, margin: '0 16px', background: '#0e1220', borderRadius: 16, border: `1.5px solid ${accentColor}`, padding: '36px 28px 28px', textAlign: 'center' }}
+          style={{ position: 'relative', width: '100%', maxWidth: 400, margin: '0 16px', background: '#0e1220', borderRadius: 16, border: `1.5px solid ${accentColor}`, padding: '28px 20px 20px', textAlign: 'center', overflowY: 'auto', maxHeight: 'calc(100% - 2rem)' }}
         >
           <div style={{ position: 'absolute', inset: 0, borderRadius: 16, pointerEvents: 'none', backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,.018) 2px,rgba(255,255,255,.018) 4px)' }} />
 
@@ -287,7 +287,7 @@ export function GameOverlay({ game, currentUserId, onPlayAgain, onGoHome }: Game
           </div>
 
           <div
-            style={{ fontSize: 56, fontWeight: 900, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 16 }}
+            style={{ fontSize: 'clamp(36px, 10vw, 56px)', fontWeight: 900, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 12 }}
             className={titleClassName}          >
             {t(resultI18nKey)}
           </div>

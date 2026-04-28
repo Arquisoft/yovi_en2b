@@ -1,23 +1,29 @@
 import { useTranslation } from 'react-i18next'
 import { useOnlineLobbyController } from '@/controllers/useOnlineLobbyController'
 import { Button } from '@/components/ui/Button'
+import { LobbyVariantBadge } from '@/components/online/LobbyVariantBadge'
 import { Wifi, WifiOff, UserCheck, AlertCircle } from 'lucide-react'
 
 export function OnlineLobbyPage() {
   const { t } = useTranslation()
-  const { 
-    status, 
-    opponentName, 
-    error, 
-    queueSize, 
-    leaveQueue, 
-    retry 
+  const {
+    status,
+    opponentName,
+    error,
+    queueSize,
+    variant,
+    leaveQueue,
+    retry,
   } = useOnlineLobbyController()
+
+  const showVariantBadge = status === 'connecting' || status === 'queuing' || status === 'matched'
 
   return (
     <div className="flex items-center justify-center h-full p-4">
       <div className="text-center space-y-6 max-w-sm w-full">
-        
+
+        {showVariantBadge && <LobbyVariantBadge variant={variant} />}
+
         {/* --- ESTADO: CONNECTING --- */}
         {status === 'connecting' && (
           <div className="space-y-4">

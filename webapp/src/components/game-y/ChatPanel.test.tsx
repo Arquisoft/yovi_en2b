@@ -112,11 +112,11 @@ describe('ChatPanel — message sending', () => {
 })
 
 describe('ChatPanel — collapsible mode', () => {
-  it('shows collapse button when isCollapsible is true', () => {
+  it('shows collapse button when isCollapsible is true (starts expanded)', () => {
     render(<ChatPanel {...defaultProps} isCollapsible={true} />)
-    // collapse button exists (ChevronDown)
-    const buttons = screen.getAllByRole('button')
-    expect(buttons.length).toBeGreaterThan(1) // collapse button + send button
+    // Collapse button (header chevron) + send button should both be present
+    expect(screen.getAllByRole('button').length).toBeGreaterThan(1)
+    expect(screen.getByText('Chat')).toBeDefined()
   })
 
   it('does NOT show collapse button when isCollapsible is false', () => {
@@ -126,14 +126,14 @@ describe('ChatPanel — collapsible mode', () => {
     expect(buttons.length).toBe(1)
   })
 
-  it('collapses to a button when the chevron is clicked', () => {
+  it('collapses to a toggle button when the chevron is clicked', () => {
     render(<ChatPanel {...defaultProps} isCollapsible={true} />)
-    // Click the collapse button (first one with SVG but not submit)
-    // The header collapse button is the one without disabled state
-    const allButtons = screen.getAllByRole('button')
-    const headerBtn = allButtons.find((b) => !b.hasAttribute('type'))
-    if (headerBtn) fireEvent.click(headerBtn)
-    // After collapse, should show a single "Chat" toggle button
+    // Click the header collapse button (no type attribute, unlike the send button)
+    const headerBtn = screen.getAllByRole('button').find((b) => !b.hasAttribute('type'))
+    expect(headerBtn).toBeDefined()
+    fireEvent.click(headerBtn!)
+    // Collapsed — only the single expand toggle remains
+    expect(screen.getAllByRole('button').length).toBe(1)
     expect(screen.getByText('Chat')).toBeDefined()
   })
 
@@ -145,22 +145,28 @@ describe('ChatPanel — collapsible mode', () => {
         messages={[makeMessage(), makeMessage({ id: 'msg-2' })]}
       />
     )
-    // Collapse first
-    const allButtons = screen.getAllByRole('button')
-    const headerBtn = allButtons.find((b) => !b.hasAttribute('type'))
-    if (headerBtn) fireEvent.click(headerBtn)
+    // Collapse first via the header chevron
+    const headerBtn = screen.getAllByRole('button').find((b) => !b.hasAttribute('type'))
+    expect(headerBtn).toBeDefined()
+    fireEvent.click(headerBtn!)
     // Badge with count should appear
     expect(screen.getByText('2')).toBeDefined()
   })
 
-  it('expands back when the collapsed button is clicked', () => {
+  it('expands back when the collapsed toggle is clicked', () => {
     render(<ChatPanel {...defaultProps} isCollapsible={true} />)
-    const allButtons = screen.getAllByRole('button')
-    const headerBtn = allButtons.find((b) => !b.hasAttribute('type'))
-    if (headerBtn) fireEvent.click(headerBtn) // collapse
-    // Now click the single button to expand
+    // Collapse first
+    const headerBtn = screen.getAllByRole('button').find((b) => !b.hasAttribute('type'))
+    expect(headerBtn).toBeDefined()
+    fireEvent.click(headerBtn!)
+    // Now click the single expand toggle
     fireEvent.click(screen.getByRole('button'))
     // Input should be visible again
+    expect(screen.getByPlaceholderText('Type a message...')).toBeDefined()
+  })
+
+  it('input is visible in the initial expanded state', () => {
+    render(<ChatPanel {...defaultProps} isCollapsible={true} />)
     expect(screen.getByPlaceholderText('Type a message...')).toBeDefined()
   })
 })

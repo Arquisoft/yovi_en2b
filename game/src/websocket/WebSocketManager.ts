@@ -4,13 +4,19 @@ import type { IncomingMessage, Server } from 'node:http'
 import jwt from 'jsonwebtoken'
 import { MatchmakingService } from './MatchmakingService'
 import type { ClientMessage, ConnectedClient, OnlineGameConfig, ServerMessage } from './types'
+import { DEFAULT_VARIANT } from './types'
 import { GameService } from '../services/GameService'
+import type { GameVariant } from '../types/game'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'please_dont_tell_anyone'
 const USERS_PUBLIC_URL = process.env.USERS_PUBLIC_URL || 'http://localhost:3000'
 
 /** Grace period after disconnect before the game is abandoned (ms) */
 const DISCONNECT_GRACE_MS = 30_000
+/** How often to send WS-level pings to detect zombie sockets (ms) */
+const HEARTBEAT_INTERVAL_MS = 25_000
+/** How long to wait for a pong before terminating a zombie socket (ms) */
+const HEARTBEAT_TIMEOUT_MS = 10_000
 
 /**
  * WebSocketManager is the central hub for all real-time online multiplayer
@@ -48,6 +54,34 @@ export class WebSocketManager {
   private handleConnection(ws: WebSocket, _req: IncomingMessage): void {
     let authenticatedUserId: number | null = null
 
+    // ── Heartbeat — detect zombie sockets (e.g. silent 4G drops) ─────────────
+    // The browser responds to WS-level pings automatically; no client code needed.
+    let isAlive = true
+    let pongTimer: ReturnType<typeof setTimeout> | null = null
+
+    const pingInterval = setInterval(() => {
+      if (!isAlive) {
+        ws.terminate()
+        return
+      }
+      isAlive = false
+      ws.ping()
+      pongTimer = setTimeout(() => {
+        if (!isAlive) ws.terminate()
+      }, HEARTBEAT_TIMEOUT_MS)
+    }, HEARTBEAT_INTERVAL_MS)
+
+    ws.on('pong', () => {
+      isAlive = true
+      if (pongTimer !== null) { clearTimeout(pongTimer); pongTimer = null }
+    })
+
+    const cleanupHeartbeat = () => {
+      clearInterval(pingInterval)
+      if (pongTimer !== null) { clearTimeout(pongTimer); pongTimer = null }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     ws.on('message', async (raw: Buffer) => {
       try {
         const message: ClientMessage = JSON.parse(raw.toString())
@@ -69,12 +103,14 @@ export class WebSocketManager {
     })
 
     ws.on('close', () => {
+      cleanupHeartbeat()
       if (authenticatedUserId !== null) {
         this.handleDisconnect(authenticatedUserId)
       }
     })
 
     ws.on('error', () => {
+      cleanupHeartbeat()
       if (authenticatedUserId !== null) {
         this.handleDisconnect(authenticatedUserId)
       }
@@ -87,18 +123,29 @@ export class WebSocketManager {
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as { id: number; username: string; role: string }
 
-      // If the player is reconnecting during a grace period, restore the client
       const existing = this.clients.get(decoded.id)
-      if (existing?.disconnectedAt !== undefined) {
-        existing.ws = ws
-        existing.disconnectedAt = undefined
-        existing.token = token
+      if (existing) {
+        if (existing.disconnectedAt !== undefined) {
+          // Grace-period reconnect — restore the connection in place.
+          existing.ws = ws
+          existing.disconnectedAt = undefined
+          existing.token = token
+          if (existing.currentGameId) {
+            this.broadcastToOpponent(decoded.id, { type: 'opponent_reconnected' })
+          }
+          this.sendTo(ws, { type: 'authenticated', userId: decoded.id, username: decoded.username })
+          return decoded.id
+        }
 
-        // Notify the opponent that the player is back
+        // Active duplicate connection (second tab / fresh reload while still connected).
+        // Notify the old socket and transfer state to the new one cleanly.
+        this.sendTo(existing.ws, { type: 'session_replaced' })
+        existing.ws.close()
+        existing.ws = ws
+        existing.token = token
         if (existing.currentGameId) {
           this.broadcastToOpponent(decoded.id, { type: 'opponent_reconnected' })
         }
-
         this.sendTo(ws, { type: 'authenticated', userId: decoded.id, username: decoded.username })
         return decoded.id
       }
@@ -155,6 +202,10 @@ export class WebSocketManager {
         this.handleCreateRoom(client, message.config)
         break
 
+      case 'cancel_room':
+        this.handleCancelRoom(client)
+        break
+
       case 'join_room':
         await this.handleJoinRoom(client, message.code)
         break
@@ -189,7 +240,8 @@ export class WebSocketManager {
       return
     }
 
-    this.matchmaking.join({
+    const variant = config?.variant ?? DEFAULT_VARIANT
+    this.matchmaking.join(variant, {
       userId: client.userId,
       username: client.username,
       token: client.token,
@@ -198,10 +250,14 @@ export class WebSocketManager {
     })
     client.inQueue = true
 
-    this.sendTo(client.ws, { type: 'queue_joined', queueSize: this.matchmaking.size() })
+    this.sendTo(client.ws, {
+      type: 'queue_joined',
+      queueSize: this.matchmaking.sizeOf(variant),
+      variant,
+    })
 
-    // Try to pair this player with another waiter
-    await this.tryMatch()
+    // Try to pair this player with another waiter for the same variant.
+    await this.tryMatch(variant)
   }
 
   private handleLeaveQueue(client: ConnectedClient): void {
@@ -211,8 +267,8 @@ export class WebSocketManager {
     this.sendTo(client.ws, { type: 'queue_left' })
   }
 
-  private async tryMatch(): Promise<void> {
-    const pair = this.matchmaking.tryMatch()
+  private async tryMatch(variant: GameVariant): Promise<void> {
+    const pair = this.matchmaking.tryMatch(variant)
     if (!pair) return
 
     const [entry1, entry2] = pair
@@ -221,8 +277,9 @@ export class WebSocketManager {
 
     if (!client1 || !client2) {
       // One player disconnected before matching — re-queue the surviving one
-      if (client1) this.matchmaking.join(entry1)
-      if (client2) this.matchmaking.join(entry2)
+      // back into the same variant queue they were in.
+      if (client1) this.matchmaking.join(variant, entry1)
+      if (client2) this.matchmaking.join(variant, entry2)
       return
     }
 
@@ -233,6 +290,7 @@ export class WebSocketManager {
       const cfg = entry1.config
       const config = {
         mode: 'pvp-online' as const,
+        variant,
         boardSize: cfg?.boardSize ?? 11,
         timerEnabled: cfg?.timerEnabled ?? true,
         timerSeconds: (cfg?.timerEnabled ?? true) ? (cfg?.timerSeconds ?? 600) : undefined,
@@ -257,6 +315,7 @@ export class WebSocketManager {
         opponentName: entry2.username,
         playerColor: 'player1',
         opponentId: entry2.userId,
+        variant,
       })
       this.sendTo(client2.ws, {
         type: 'matched',
@@ -264,12 +323,13 @@ export class WebSocketManager {
         opponentName: entry1.username,
         playerColor: 'player2',
         opponentId: entry1.userId,
+        variant,
       })
     } catch (err) {
       console.error('Failed to create online game:', err)
-      // Return both players to the queue
-      this.matchmaking.join(entry1)
-      this.matchmaking.join(entry2)
+      // Return both players to the queue they came from
+      this.matchmaking.join(variant, entry1)
+      this.matchmaking.join(variant, entry2)
       if (client1) this.sendTo(client1.ws, { type: 'error', code: 'MATCH_FAILED', message: 'Could not create game, retrying' })
       if (client2) this.sendTo(client2.ws, { type: 'error', code: 'MATCH_FAILED', message: 'Could not create game, retrying' })
     }
@@ -404,6 +464,15 @@ export class WebSocketManager {
     this.sendTo(client.ws, { type: 'room_created', code })
   }
 
+  private handleCancelRoom(client: ConnectedClient): void {
+    for (const [code, room] of this.rooms) {
+      if (room.hostId === client.userId) {
+        this.rooms.delete(code)
+        break
+      }
+    }
+  }
+
   private async handleJoinRoom(client: ConnectedClient, code: string): Promise<void> {
     if (client.currentGameId) {
       this.sendTo(client.ws, { type: 'error', code: 'IN_GAME', message: 'Finish your current game first' })
@@ -434,6 +503,7 @@ export class WebSocketManager {
       const cfg = room.config
       const gameConfig = {
         mode: 'pvp-online' as const,
+        variant: cfg?.variant ?? DEFAULT_VARIANT,
         boardSize: cfg?.boardSize ?? 11,
         timerEnabled: cfg?.timerEnabled ?? true,
         timerSeconds: (cfg?.timerEnabled ?? true) ? (cfg?.timerSeconds ?? 600) : undefined,
@@ -464,6 +534,7 @@ export class WebSocketManager {
         opponentName: client.username,
         playerColor: hostColor,
         opponentId: client.userId,
+        variant: gameConfig.variant,
       })
       this.sendTo(client.ws, {
         type: 'matched',
@@ -471,6 +542,7 @@ export class WebSocketManager {
         opponentName: room.hostUsername,
         playerColor: joinerColor,
         opponentId: room.hostId,
+        variant: gameConfig.variant,
       })
     } catch (err: any) {
       this.sendTo(client.ws, { type: 'error', code: 'ROOM_FAILED', message: err.message ?? 'Failed to create game' })

@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import i18n from 'i18next'
 import { GameSelectionPage } from '@/pages/GameSelectionPage'
 import { AVAILABLE_GAMES } from '@/mocks/mockData'
+
+// `name` and `description` in mockData are i18n keys; resolve them for assertions.
+const tr = (key: string) => i18n.t(key)
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
@@ -94,7 +98,7 @@ describe('GameSelectionPage', () => {
         setupController()
         render(<GameSelectionPage />)
         AVAILABLE_GAMES.forEach(game => {
-            expect(screen.getAllByText(game.name).length).toBeGreaterThan(0)
+            expect(screen.getAllByText(tr(game.name)).length).toBeGreaterThan(0)
         })
     })
     
@@ -140,7 +144,7 @@ describe('GameSelectionPage', () => {
       setupController()
       render(<GameSelectionPage />)
       await waitFor(() => {
-        expect(screen.getByText(AVAILABLE_GAMES[0].description)).toBeInTheDocument()
+        expect(screen.getByText(tr(AVAILABLE_GAMES[0].description))).toBeInTheDocument()
       })
     })
 
@@ -164,11 +168,11 @@ describe('GameSelectionPage', () => {
       render(<GameSelectionPage />)
 
       const secondGame = AVAILABLE_GAMES[1]
-      const btn = screen.getByRole('button', { name: new RegExp(secondGame.name, 'i') })
+      const btn = screen.getByRole('button', { name: new RegExp(tr(secondGame.name), 'i') })
       fireEvent.click(btn)
 
       await waitFor(() => {
-        expect(screen.getByText(secondGame.description)).toBeInTheDocument()
+        expect(screen.getByText(tr(secondGame.description))).toBeInTheDocument()
       })
     })
 
@@ -177,7 +181,7 @@ describe('GameSelectionPage', () => {
       render(<GameSelectionPage />)
 
       const secondGame = AVAILABLE_GAMES[1]
-      const btn = screen.getByRole('button', { name: new RegExp(secondGame.name, 'i') })
+      const btn = screen.getByRole('button', { name: new RegExp(tr(secondGame.name), 'i') })
       fireEvent.click(btn)
 
       await waitFor(() => {
@@ -266,12 +270,12 @@ describe('GameSelectionPage', () => {
       render(<GameSelectionPage />)
 
       await waitFor(() => {
-        const img = document.querySelector(`img[alt="${GAME_AVAILABLE.name}"]`) as HTMLImageElement
+        const img = document.querySelector(`img[alt="${tr(GAME_AVAILABLE.name)}"]`) as HTMLImageElement
         if (img) fireEvent.error(img)
       })
 
       await waitFor(() => {
-        const img = document.querySelector(`img[alt="${GAME_AVAILABLE.name}"]`)
+        const img = document.querySelector(`img[alt="${tr(GAME_AVAILABLE.name)}"]`)
         expect(img).toBeNull()
       })
     })
@@ -286,7 +290,7 @@ describe('GameSelectionPage', () => {
       render(<GameSelectionPage />)
 
       await waitFor(() => {
-        const img = document.querySelector(`img[alt="${GAME_AVAILABLE.name}"]`) as HTMLImageElement
+        const img = document.querySelector(`img[alt="${tr(GAME_AVAILABLE.name)}"]`) as HTMLImageElement
         expect(img?.src).toContain('-dark.png')
       })
     })
@@ -297,7 +301,7 @@ describe('GameSelectionPage', () => {
       render(<GameSelectionPage />)
 
       await waitFor(() => {
-        const img = document.querySelector(`img[alt="${GAME_AVAILABLE.name}"]`) as HTMLImageElement
+        const img = document.querySelector(`img[alt="${tr(GAME_AVAILABLE.name)}"]`) as HTMLImageElement
         expect(img?.src).toContain('-light.png')
       })
     })

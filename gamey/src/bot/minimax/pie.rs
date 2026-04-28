@@ -3,6 +3,7 @@
 use crate::{Coordinates, GameY, Movement, PlayerId, YEN, game};
 use smallvec::SmallVec;
 
+use super::Goal;
 use super::eval::evaluate_state;
 use super::search::iterative_deepening_search;
 use super::state::MinimaxState;
@@ -48,12 +49,12 @@ fn make_swapped_game(game: &GameY) -> GameY {
 /// The `game` must contain exactly one stone placed by the opponent with the
 /// bot as the side-to-move (the one deciding). The function runs two short
 /// searches — one for each scenario — and picks whichever is better for the
-/// bot.
+/// bot under the given [`Goal`].
 ///
 /// * **Keep**: the position stays as-is and the bot moves next.
 /// * **Swap**: the stone changes ownership, the opponent moves next, and the
 ///   bot now owns the stone.
-pub fn decide_pie_with_minimax(game: &GameY, time_ms: u64) -> PieChoice {
+pub fn decide_pie_with_minimax(game: &GameY, time_ms: u64, goal: Goal) -> PieChoice {
     let bot_player = match game.next_player() {
         Some(p) => p,
         None => return PieChoice::Keep,
@@ -64,7 +65,7 @@ pub fn decide_pie_with_minimax(game: &GameY, time_ms: u64) -> PieChoice {
     // ── Keep scenario ──
     let keep_score = {
         let mut state = MinimaxState::new(game, bot_player);
-        let (_, score) = iterative_deepening_search(&mut state, half, half);
+        let (_, score) = iterative_deepening_search(&mut state, half, half, goal);
         score
     };
 
@@ -73,7 +74,7 @@ pub fn decide_pie_with_minimax(game: &GameY, time_ms: u64) -> PieChoice {
         let swapped = make_swapped_game(game);
         let opponent = game::other_player(bot_player);
         let mut state = MinimaxState::new(&swapped, opponent);
-        let (_, opp_score) = iterative_deepening_search(&mut state, half, half);
+        let (_, opp_score) = iterative_deepening_search(&mut state, half, half, goal);
         -opp_score
     };
 
@@ -99,7 +100,8 @@ pub fn decide_pie_with_minimax(game: &GameY, time_ms: u64) -> PieChoice {
 /// Pre-filtering with static evaluation keeps the total time budget feasible.
 const MAX_PIE_CANDIDATES: usize = 8;
 
-/// Chooses a balanced opening move under the Pie Rule using minimax search.
+/// Chooses a balanced opening move under the Pie Rule using minimax search,
+/// optimising under the given [`Goal`].
 ///
 /// The algorithm has two phases:
 ///
@@ -110,12 +112,16 @@ const MAX_PIE_CANDIDATES: usize = 8;
 /// 2. **Deep evaluation**: for each candidate, run a short minimax search for
 ///    both keep and swap scenarios. The opponent will choose whichever is
 ///    better for them; the bot picks the cell that minimises that advantage.
-pub fn choose_pie_opening_with_minimax(game: &GameY, time_ms: u64) -> Option<Coordinates> {
+pub fn choose_pie_opening_with_minimax(
+    game: &GameY,
+    time_ms: u64,
+    goal: Goal,
+) -> Option<Coordinates> {
     let bot_player = game.next_player()?;
     let size = game.board_size();
 
     // ── Phase 1: static pre-filter ──
-    let candidates = static_prefilter(game, bot_player);
+    let candidates = static_prefilter(game, bot_player, goal);
     if candidates.is_empty() {
         return None;
     }
@@ -143,10 +149,10 @@ pub fn choose_pie_opening_with_minimax(game: &GameY, time_ms: u64) -> Option<Coo
                     coords: coords.clone(),
                 })
                 .ok();
-            // Opponent searches (they move next after keep)
             let opponent = game::other_player(bot_player);
             let mut state = MinimaxState::new(&game_copy, opponent);
-            let (_, opp_score) = iterative_deepening_search(&mut state, per_search_ms, per_search_ms);
+            let (_, opp_score) =
+                iterative_deepening_search(&mut state, per_search_ms, per_search_ms, goal);
             -opp_score // negate: opponent's gain is bot's loss
         };
 
@@ -161,16 +167,13 @@ pub fn choose_pie_opening_with_minimax(game: &GameY, time_ms: u64) -> Option<Coo
                     coords: coords.clone(),
                 })
                 .ok();
-            // Bot searches (they move next after swap)
             let mut state = MinimaxState::new(&game_copy, bot_player);
-            let (_, bot_score) = iterative_deepening_search(&mut state, per_search_ms, per_search_ms);
+            let (_, bot_score) =
+                iterative_deepening_search(&mut state, per_search_ms, per_search_ms, goal);
             bot_score
         };
 
         // The opponent picks whichever is worse for the bot.
-        // keep_score = how good keeping is for the bot
-        // swap_score = how good swapping is for the bot
-        // Opponent chooses min(keep_score, swap_score) from bot's perspective.
         let guaranteed = keep_score.min(swap_score);
 
         println!(
@@ -191,8 +194,8 @@ pub fn choose_pie_opening_with_minimax(game: &GameY, time_ms: u64) -> Option<Coo
 /// Pre-filters cells by static evaluation and returns the most balanced ones.
 ///
 /// "Balanced" means the opponent's advantage from keep vs swap is smallest.
-/// Among equally balanced cells, stronger ones are preferred.
-fn static_prefilter(game: &GameY, bot_player: PlayerId) -> Vec<usize> {
+/// Among equally balanced cells, stronger ones are preferred (under `goal`).
+fn static_prefilter(game: &GameY, bot_player: PlayerId, goal: Goal) -> Vec<usize> {
     let mut state = MinimaxState::new(game, bot_player);
     let cells: SmallVec<[usize; 128]> = state.available_cells().collect();
     if cells.is_empty() {
@@ -207,12 +210,12 @@ fn static_prefilter(game: &GameY, bot_player: PlayerId) -> Vec<usize> {
         .map(|&cell_idx| {
             // Keep: bot owns the stone
             state.make_move(cell_idx, bot_id);
-            let keep_value = evaluate_state(&mut state, bot_id);
+            let keep_value = evaluate_state(&mut state, bot_id, goal);
             state.undo_move(cell_idx);
 
             // Swap: opponent takes the stone
             state.make_move(cell_idx, human_id);
-            let swap_value = evaluate_state(&mut state, human_id);
+            let swap_value = evaluate_state(&mut state, human_id, goal);
             state.undo_move(cell_idx);
 
             // Balance score: penalise imbalance, reward strength

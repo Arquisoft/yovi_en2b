@@ -41,7 +41,7 @@ export function LoginForm({ onSubmit, onGuestLogin, isLoading, error }: LoginFor
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+    <div className="min-h-dvh flex items-center justify-center p-4 bg-background">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">

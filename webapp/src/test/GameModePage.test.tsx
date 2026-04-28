@@ -9,6 +9,7 @@ const mockUseAuth = vi.fn()
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
+  useParams: () => ({ variant: 'y' }),
 }))
 vi.mock('@/controllers/useGameModeController', () => ({
   useGameModeController: () => ({ handleSelectMode: mockHandleSelectMode }),

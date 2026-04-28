@@ -14,7 +14,7 @@ let mockMode = 'pve'
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
-  useParams: () => ({ mode: mockMode }),
+  useParams: () => ({ mode: mockMode, variant: 'y' }),
 }))
 
 const mockUser = {
@@ -312,13 +312,13 @@ describe('useGameConfigController', () => {
         await result.current.handleStartGame()
       })
 
-      const stored = JSON.parse(sessionStorage.getItem('yovi_config_pve') ?? '{}')
+      const stored = JSON.parse(sessionStorage.getItem('yovi_config_y_pve') ?? '{}')
       expect(stored.boardSizeInput).toBe('7')
       expect(stored.botLevel).toBe('hard')
     })
 
     it('re-hydrates defaults from sessionStorage on mount', () => {
-      sessionStorage.setItem('yovi_config_pve', JSON.stringify({
+      sessionStorage.setItem('yovi_config_y_pve', JSON.stringify({
         boardSizeInput: '13',
         timerInput: '5',
         timerEnabled: true,

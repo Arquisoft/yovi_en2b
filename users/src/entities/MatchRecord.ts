@@ -31,6 +31,13 @@ export class MatchRecord {
   @Column({ type: 'varchar', length: 30, nullable: true, name: 'game_mode' })
   gameMode!: string | null;
 
+  /**
+   * Optional game variant slug, e.g. 'y', 'why-not'.
+   * Nullable for backwards compatibility with existing records.
+   */
+  @Column({ type: 'varchar', length: 30, nullable: true, name: 'game_variant' })
+  gameVariant!: string | null;
+
   @CreateDateColumn({ name: 'played_at' })
   playedAt!: Date;
 }

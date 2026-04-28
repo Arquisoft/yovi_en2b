@@ -29,6 +29,7 @@ vi.mock('@/utils/onlineConfig', () => ({
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
+  useParams: () => ({ variant: 'y' }),
 }))
 
 function makeAuth(overrides: Record<string, any> = {}) {
@@ -261,7 +262,8 @@ describe('useOnlineHostLobbyController — handleRetry', () => {
     await waitFor(() => expect(result.current.status).toBe('error'))
 
     vi.mocked(wsService.send).mockClear()
-    act(() => { result.current.handleRetry() })
+    // handleRetry is async — must be awaited inside act so the connect + send completes
+    await act(async () => { await result.current.handleRetry() })
 
     expect(result.current.status).toBe('connecting')
     expect(result.current.error).toBeNull()

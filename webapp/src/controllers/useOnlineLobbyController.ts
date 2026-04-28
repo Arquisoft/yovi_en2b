@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { wsService } from '@/services/websocketService'
 import { loadOnlineConfig } from '@/utils/onlineConfig'
+import type { GameVariant } from '@/types'
 
 export type LobbyStatus = 'connecting' | 'queuing' | 'matched' | 'error'
 
@@ -11,6 +12,7 @@ interface OnlineLobbyState {
   opponentName: string | null
   error: string | null
   queueSize: number
+  variant: GameVariant
 }
 
 export interface OnlineLobbyController extends OnlineLobbyState {
@@ -21,6 +23,7 @@ export interface OnlineLobbyController extends OnlineLobbyState {
 export function useOnlineLobbyController(): OnlineLobbyController {
   const { token, isGuest } = useAuth()
   const navigate = useNavigate()
+  const { variant = 'y' } = useParams<{ variant: GameVariant }>()
 
   const [status, setStatus] = useState<LobbyStatus>('connecting')
   const [opponentName, setOpponentName] = useState<string | null>(null)
@@ -45,7 +48,10 @@ export function useOnlineLobbyController(): OnlineLobbyController {
       await wsService.connect(token)
       if (!mounted.current) return
 
-      wsService.send({ type: 'join_queue', config: loadOnlineConfig() })
+      // Stamp the variant onto the config so the server queues us in the
+      // right bucket and creates the matched game with the right rules.
+      const config = { ...loadOnlineConfig(variant), variant }
+      wsService.send({ type: 'join_queue', config })
     } catch (err) {
       if (!mounted.current) return
       setStatus('error')
@@ -53,7 +59,7 @@ export function useOnlineLobbyController(): OnlineLobbyController {
     } finally {
       connectingRef.current = false
     }
-  }, [token, isGuest, navigate])
+  }, [token, isGuest, navigate, variant])
 
   useEffect(() => {
     mounted.current = true
@@ -71,10 +77,14 @@ export function useOnlineLobbyController(): OnlineLobbyController {
       setOpponentName(data.opponentName as string)
       setStatus('matched')
 
+      // Server-supplied variant is authoritative — the user's URL might say `y`
+      // even if they were queued for `why-not` (defensive against future flows).
+      const matchedVariant = (data.variant as GameVariant) ?? variant
+
       // Brief delay so the user sees who they matched with
       setTimeout(() => {
         if (mounted.current) {
-          navigate(`/games/y/play/${data.gameId}`)
+          navigate(`/games/${matchedVariant}/play/${data.gameId}`)
         }
       }, 1200)
     })
@@ -103,11 +113,10 @@ export function useOnlineLobbyController(): OnlineLobbyController {
   }, [connect])
 
   const leaveQueue = useCallback(() => {
-    matchedRef.current = false // reset so cleanup also sends leave_queue if needed
+    matchedRef.current = true // prevent the cleanup effect from double-sending leave_queue
     wsService.send({ type: 'leave_queue' })
-    wsService.disconnect()
-    navigate('/games/y')
-  }, [navigate])
+    navigate(`/games/${variant}`)
+  }, [navigate, variant])
 
   const retry = useCallback(() => {
     setStatus('connecting')
@@ -121,6 +130,7 @@ export function useOnlineLobbyController(): OnlineLobbyController {
     opponentName,
     error,
     queueSize,
+    variant,
     leaveQueue,
     retry,
   }

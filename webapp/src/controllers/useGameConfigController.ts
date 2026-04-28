@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import type { GameMode, BoardSize, BotLevel, PlayerColor, GameConfig } from '@/types'
+import type { GameMode, BoardSize, BotLevel, PlayerColor, GameConfig, GameVariant } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { gameService } from '@/services/gameyService'
 
@@ -30,32 +30,32 @@ interface SavedConfig {
   pieRule: boolean
 }
 
-function storageKey(mode: string) {
-  return `yovi_config_${mode}`
+function storageKey(variant: string, mode: string) {
+  return `yovi_config_${variant}_${mode}`
 }
 
-function loadSaved(mode: string): SavedConfig | null {
+function loadSaved(variant: string, mode: string): SavedConfig | null {
   try {
-    const raw = sessionStorage.getItem(storageKey(mode))
+    const raw = sessionStorage.getItem(storageKey(variant, mode))
     return raw ? (JSON.parse(raw) as SavedConfig) : null
   } catch {
     return null
   }
 }
 
-function saveConfig(mode: string, cfg: SavedConfig) {
+function saveConfig(variant: string, mode: string, cfg: SavedConfig) {
   try {
-    sessionStorage.setItem(storageKey(mode), JSON.stringify(cfg))
+    sessionStorage.setItem(storageKey(variant, mode), JSON.stringify(cfg))
   } catch { /* ignore */ }
 }
 
 export function useGameConfigController() {
   const navigate = useNavigate()
-  const { mode } = useParams<{ mode: GameMode }>()
+  const { variant = 'y', mode } = useParams<{ variant: GameVariant; mode: GameMode }>()
   const { user, token, isGuest } = useAuth()
   const effectiveToken = isGuest ? undefined : (token ?? undefined)
 
-  const saved = mode ? loadSaved(mode) : null
+  const saved = mode ? loadSaved(variant, mode) : null
 
   const [boardSizeInput, setBoardSizeInput] = useState(saved?.boardSizeInput ?? '9')
   const [timerInput, setTimerInput] = useState(saved?.timerInput ?? '10')
@@ -66,10 +66,10 @@ export function useGameConfigController() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Re-hydrate if mode changes (e.g. navigating between modes)
+  // Re-hydrate if mode or variant changes
   useEffect(() => {
     if (!mode) return
-    const s = loadSaved(mode)
+    const s = loadSaved(variant, mode)
     if (!s) return
     setBoardSizeInput(s.boardSizeInput)
     setTimerInput(s.timerInput)
@@ -109,10 +109,10 @@ export function useGameConfigController() {
       }
     }
 
-    saveConfig(mode, { boardSizeInput, timerInput, timerEnabled, botLevel, playerColor, pieRule })
+    saveConfig(variant, mode, { boardSizeInput, timerInput, timerEnabled, botLevel, playerColor, pieRule })
 
     if (mode === 'pvp-online') {
-      navigate('/games/y/online/host')
+      navigate(`/games/${variant}/online/host`)
       return
     }
 
@@ -129,11 +129,12 @@ export function useGameConfigController() {
         botLevel: mode === 'pve' ? botLevel : undefined,
         playerColor: mode === 'pve' ? playerColor : undefined,
         pieRule: pieRule || undefined,
+        variant,
       }
 
       const guestId = isGuest ? user?.id : undefined
       const game = await gameService.createGame(config, effectiveToken, guestId)
-      navigate(`/games/y/play/${game.id}`)
+      navigate(`/games/${variant}/play/${game.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start game')
     } finally {

@@ -5,7 +5,8 @@ import { useGameModeController } from './useGameModeController'
 const mockNavigate = vi.fn()
 
 vi.mock('react-router-dom', () => ({
-  useNavigate: () => mockNavigate
+  useNavigate: () => mockNavigate,
+  useParams: () => ({ variant: 'y' }),
 }))
 
 beforeEach(() => {

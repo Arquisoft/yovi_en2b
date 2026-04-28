@@ -37,6 +37,8 @@ export type BoardSize = 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16
 
 export type PlayerColor = 'player1' | 'player2'
 
+export type GameVariant = 'y' | 'why-not'
+
 export interface GameConfig {
   mode: GameMode
   boardSize: BoardSize
@@ -45,10 +47,12 @@ export interface GameConfig {
   botLevel?: BotLevel
   playerColor?: PlayerColor
   pieRule?: boolean
+  variant?: GameVariant
 }
 
-/** Subset of GameConfig sent to the server when joining the online queue */
+/** Subset of GameConfig sent to the server when joining the online queue. */
 export interface OnlineGameConfig {
+  variant?: GameVariant
   boardSize: BoardSize
   timerEnabled: boolean
   timerSeconds?: number
@@ -209,6 +213,8 @@ export interface MatchRecord {
   playedAt: string
   /** Optional: game mode slug, e.g. 'pve-easy', 'pve-medium', 'pve-hard', 'pvp-local' */
   gameMode?: string | null
+  /** Optional: game variant slug, e.g. 'y', 'why-not'. Older records may be null. */
+  gameVariant?: string | null
 }
 
 export interface WinrateStat {
@@ -223,12 +229,13 @@ export interface StatsData {
 
 // ==================== Stats Filtering ====================
 
-export type MatchSortField = 'date' | 'duration' | 'result' | 'opponent' | 'gameMode'
+export type MatchSortField = 'date' | 'duration' | 'result' | 'opponent' | 'gameMode' | 'gameVariant'
 export type SortDirection = 'asc' | 'desc'
 
 export interface MatchHistoryFilter {
   result?: 'win' | 'loss' | 'all'
   gameMode?: string
+  gameVariant?: string
   sortField: MatchSortField
   sortDirection: SortDirection
 }

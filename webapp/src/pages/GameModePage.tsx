@@ -3,9 +3,9 @@ import { ModeCard } from '@/components/ModeCard'
 import { useGameModeController } from '@/controllers/useGameModeController'
 import { Button } from '@/components/ui/Button'
 import { ArrowLeft } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import type { GameMode } from '@/types'
+import type { GameMode, GameVariant } from '@/types'
 
 const BASE_MODES: GameMode[] = ['pvp-local', 'pve', 'pvp-online']
 
@@ -13,6 +13,7 @@ export function GameModePage() {
   const { t } = useTranslation()
   const { handleSelectMode } = useGameModeController()
   const navigate = useNavigate()
+  const { variant = 'y' } = useParams<{ variant: GameVariant }>()
   const { isGuest } = useAuth()
 
   return (
@@ -24,7 +25,9 @@ export function GameModePage() {
         </Button>
 
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">{t('gameModes.title')}</h1>
+          <h1 className="text-3xl font-bold mb-2">
+            {t(`variants.${variant}.name`, { defaultValue: t('gameModes.title') })}
+          </h1>
           <p className="text-muted-foreground">{t('gameModes.subtitle')}</p>
         </div>
 

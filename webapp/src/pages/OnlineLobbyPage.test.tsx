@@ -34,6 +34,7 @@ function makeController(overrides: Record<string, any> = {}) {
     opponentName: null,
     error: null,
     queueSize: 0,
+    variant: 'y',
     leaveQueue: vi.fn(),
     retry: vi.fn(),
     ...overrides,

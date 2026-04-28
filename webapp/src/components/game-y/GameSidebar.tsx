@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next'
+import { useTranslation, type TFunction } from 'react-i18next'
 import type { GameState, ChatMessage, PlayerColor, TimerState } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { TimerPanel } from './TimerPanel'
@@ -19,6 +19,28 @@ interface GameSidebarProps {
   isMobile?: boolean
 }
 
+function getPlayerColor(game: GameState, userId: string): PlayerColor | null {
+  if (game.players.player1.id === userId) return 'player1'
+  if (game.players.player2.id === userId) return 'player2'
+  return null
+}
+
+function getTurnLabel(game: GameState, effectiveCurrentTurn: PlayerColor, t: TFunction): string {
+  if (game.status === 'finished') {
+    if (game.winner) {
+      const winnerName = game.winner === 'player1'
+        ? game.players.player1.name
+        : game.players.player2.name
+      return t('game.wins', { name: winnerName })
+    }
+    return t('game.gameOver')
+  }
+  const currentPlayer = effectiveCurrentTurn === 'player1'
+    ? game.players.player1
+    : game.players.player2
+  return t('game.turn', { name: currentPlayer.name })
+}
+
 export function GameSidebar({
   game,
   liveTimer,
@@ -34,12 +56,7 @@ export function GameSidebar({
   const navigate = useNavigate()
   const showChat = game.config.mode !== 'pvp-local'
 
-  const currentPlayerColor: PlayerColor | null =
-    game.players.player1.id === currentUserId
-      ? 'player1'
-      : game.players.player2.id === currentUserId
-        ? 'player2'
-        : null
+  const currentPlayerColor = getPlayerColor(game, currentUserId)
 
   const botColor: PlayerColor | null =
     game.config.mode === 'pve'
@@ -47,39 +64,24 @@ export function GameSidebar({
       : null
   const effectiveCurrentTurn: PlayerColor =
     isBotThinking && botColor ? botColor : game.currentTurn
-
-  const getTurnLabel = (): string => {
-    if (game.status === 'finished') {
-      if (game.winner) {
-        const winnerName =
-          game.winner === 'player1'
-            ? game.players.player1.name
-            : game.players.player2.name
-        return t('game.wins', { name: winnerName })
-      }
-      return t('game.gameOver')
-    }
-
-    const currentPlayer =
-      effectiveCurrentTurn === 'player1'
-        ? game.players.player1
-        : game.players.player2
-
-    return t('game.turn', { name: currentPlayer.name })
-  }
+  const showPlayerIndicators = !liveTimer && (!isMobile || !showChat)
 
   return (
-    <div className="h-full flex flex-col gap-4 p-4 overflow-y-auto">
+    <div className={`h-full flex flex-col ${isMobile ? 'gap-2 p-2' : 'gap-4 p-4 overflow-y-auto'}`}>
 
-      {/* Game info */}
-      <div className="flex-shrink-0 space-y-2">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg">{t('game.gameY')}</h2>
-          <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded">
-            {game.config.boardSize}×{game.config.boardSize}
-          </span>
+      {/* Game info — hidden on mobile (redundant with board header) */}
+      {!isMobile && (
+        <div className="flex-shrink-0 space-y-2">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-lg">
+              {t(`variants.${game.config.variant ?? 'y'}.name`, { defaultValue: t('game.gameY') })}
+            </h2>
+            <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded">
+              {game.config.boardSize}×{game.config.boardSize}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Turn indicator */}
       <div className={cn(
@@ -91,7 +93,7 @@ export function GameSidebar({
         {game.status === 'finished' && game.winner && (
           <Trophy className="w-6 h-6 mx-auto mb-1 text-primary" />
         )}
-        <p className="font-medium">{getTurnLabel()}</p>
+        <p className="font-medium">{getTurnLabel(game, effectiveCurrentTurn, t)}</p>
         {game.status === 'playing' && (
           <div className={cn(
             'w-3 h-3 rounded-full mx-auto mt-2',
@@ -118,8 +120,8 @@ export function GameSidebar({
         </div>
       )}
 
-      {/* Player indicators without timer */}
-      {!liveTimer && (
+      {/* Player indicators without timer — hidden on mobile when chat is shown (turn indicator suffices) */}
+      {showPlayerIndicators && (
         <div className="flex-shrink-0 space-y-2">
           <div className={cn(
             'flex items-center gap-2 p-3 rounded-lg border',
@@ -138,10 +140,12 @@ export function GameSidebar({
         </div>
       )}
 
-      {/* Moves counter */}
-      <p className="flex-shrink-0 text-sm text-muted-foreground text-center">
-        {t('game.moves', { count: game.moves.length })}
-      </p>
+      {/* Moves counter — hidden on mobile to save space */}
+      {!isMobile && (
+        <p className="flex-shrink-0 text-sm text-muted-foreground text-center">
+          {t('game.moves', { count: game.moves.length })}
+        </p>
+      )}
 
       {/* Chat */}
       {showChat && (

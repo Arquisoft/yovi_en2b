@@ -25,9 +25,11 @@ export class StatsController {
 
   static async saveRecord(req: AuthRequest, res: Response) {
     try {
-      const { opponentName, result, durationSeconds, gameMode } = req.body;
+      const { opponentName, result, durationSeconds, gameMode, gameVariant } = req.body;
       const record = await StatsService.saveMatchRecord({
-        userId: req.user!.id, opponentName, result, durationSeconds, gameMode: gameMode ?? null,
+        userId: req.user!.id, opponentName, result, durationSeconds,
+        gameMode: gameMode ?? null,
+        gameVariant: gameVariant ?? null,
       });
       res.status(201).json(record);
     } catch (error: any) {
@@ -41,11 +43,15 @@ export class StatsController {
       return res.status(403).json({ error: 'Forbidden' });
     }
     try {
-      const { userId, opponentName, result, durationSeconds, gameMode } = req.body;
+      const { userId, opponentName, result, durationSeconds, gameMode, gameVariant } = req.body;
       if (!userId || !opponentName || !result || durationSeconds === undefined) {
         return res.status(400).json({ error: 'userId, opponentName, result and durationSeconds are required' });
       }
-      const record = await StatsService.saveMatchRecord({ userId, opponentName, result, durationSeconds, gameMode: gameMode ?? null });
+      const record = await StatsService.saveMatchRecord({
+        userId, opponentName, result, durationSeconds,
+        gameMode: gameMode ?? null,
+        gameVariant: gameVariant ?? null,
+      });
       res.status(201).json(record);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

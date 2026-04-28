@@ -22,12 +22,12 @@ export function StatsPage() {
  
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <Button variant="ghost" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t('common.back')}
         </Button>
-        <h1 className="text-3xl font-bold">{t('stats.title')}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">{t('stats.title')}</h1>
       </div>
  
       {isGuest ? (

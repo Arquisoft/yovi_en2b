@@ -21,6 +21,7 @@ vi.mock('@/services/websocketService', () => ({
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
+  useParams: () => ({ variant: 'y' }),
 }))
 
 function makeAuth(overrides: Record<string, any> = {}) {
@@ -172,6 +173,33 @@ describe('useOnlineRoomController — matched event', () => {
 
     act(() => { emitWsEvent('matched', { gameId: 'g-1', opponentName: 'Bob' }) })
     expect(result.current.joinStatus).toBe('matched')
+  })
+
+  it('captures host name from the matched event', async () => {
+    const { result } = renderHook(() => useOnlineRoomController())
+    act(() => { result.current.setCodeInput('ABCDEF') })
+    await act(async () => { await result.current.handleJoin() })
+
+    act(() => { emitWsEvent('matched', { gameId: 'g-1', opponentName: 'Alice' }) })
+    expect(result.current.hostName).toBe('Alice')
+  })
+
+  it('navigates to the variant supplied by the server (cross-variant join)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      const { result } = renderHook(() => useOnlineRoomController())
+      act(() => { result.current.setCodeInput('ABCDEF') })
+      await act(async () => { await result.current.handleJoin() })
+
+      // URL has variant=y but the joined room is a why-not room
+      act(() => { emitWsEvent('matched', { gameId: 'g-1', opponentName: 'Alice', variant: 'why-not' }) })
+      act(() => { vi.advanceTimersByTime(1200) })
+
+      expect(mockNavigate).toHaveBeenCalledWith('/games/why-not/play/g-1')
+      expect(result.current.matchedVariant).toBe('why-not')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('navigates to game page after 1200 ms', async () => {

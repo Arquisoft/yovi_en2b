@@ -177,7 +177,7 @@ describe('GameHistoryPage — table', () => {
   it('renders table column headers', () => {
     renderPage()
     expect(screen.getByText('Date')).toBeDefined()
-    expect(screen.getByText('Mode')).toBeDefined()
+    expect(screen.getByText('Mode / Variant')).toBeDefined()
     expect(screen.getByText('Opponent')).toBeDefined()
     expect(screen.getByText('Result')).toBeDefined()
   })
@@ -555,7 +555,7 @@ describe('GameHistoryPage — sorting', () => {
         makeSummary({ id: 'g2', config: { mode: 'pvp-online', boardSize: 5, timerEnabled: false } }),
       ],
     })
-    fireEvent.click(screen.getAllByText('Mode')[0])
+    fireEvent.click(screen.getAllByText('Mode / Variant')[0])
     expect(screen.getAllByText('Replay')).toHaveLength(2)
   })
 })

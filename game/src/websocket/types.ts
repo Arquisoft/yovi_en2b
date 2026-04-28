@@ -1,8 +1,18 @@
-import type { BoardSize, PieDecision, PlayerColor } from '../types/game'
+import type { BoardSize, GameVariant, PieDecision, PlayerColor } from '../types/game'
 
 // ── Online game config (sent by client when joining queue) ────────────────────
 
+/**
+ * Subset of game configuration that the client sends when entering the online
+ * queue or creating a room. The server decides the rest (mode = 'pvp-online'),
+ * applies safe defaults for omitted fields, and validates the requested
+ * `variant` against the rules registry when the game is created.
+ *
+ * `variant` is optional purely for backwards compatibility with old clients;
+ * unset is treated as `'y'`.
+ */
 export interface OnlineGameConfig {
+  variant?: GameVariant
   boardSize: BoardSize
   timerEnabled: boolean
   timerSeconds?: number
@@ -17,6 +27,7 @@ export type ClientMessage =
   | { type: 'join_queue'; config?: OnlineGameConfig }
   | { type: 'leave_queue' }
   | { type: 'create_room'; config?: OnlineGameConfig }
+  | { type: 'cancel_room' }
   | { type: 'join_room'; code: string }
   | { type: 'join_game'; gameId: string }
   | { type: 'leave_game'; gameId: string }
@@ -30,16 +41,17 @@ export type ClientMessage =
 
 export type ServerMessage =
   | { type: 'authenticated'; userId: number; username: string }
-  | { type: 'queue_joined'; queueSize: number }
+  | { type: 'queue_joined'; queueSize: number; variant: GameVariant }
   | { type: 'queue_left' }
   | { type: 'room_created'; code: string }
-  | { type: 'matched'; gameId: string; opponentName: string; playerColor: PlayerColor; opponentId: number }
+  | { type: 'matched'; gameId: string; opponentName: string; playerColor: PlayerColor; opponentId: number; variant: GameVariant }
   | { type: 'game_update'; game: unknown }
   | { type: 'opponent_disconnected'; gracePeriodMs: number }
   | { type: 'opponent_reconnected' }
   | { type: 'chat_message'; gameId: string; senderId: string; senderName: string; content: string; timestamp: string }
   | { type: 'error'; code: string; message: string }
   | { type: 'pong' }
+  | { type: 'session_replaced' }
 
 // ── Internal client record ────────────────────────────────────────────────────
 
@@ -65,3 +77,6 @@ export interface QueueEntry {
   joinedAt: number
   config?: OnlineGameConfig
 }
+
+/** Default variant when a client omits the field (legacy clients). */
+export const DEFAULT_VARIANT: GameVariant = 'y'

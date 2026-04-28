@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { loadOnlineConfig, DEFAULT_ONLINE_CONFIG } from './onlineConfig'
 
-const KEY = 'yovi_config_pvp-online'
+// Storage key matches the one written by useGameConfigController:
+// `yovi_config_${variant}_pvp-online`. Tests cover the default ('y') variant.
+const KEY = 'yovi_config_y_pvp-online'
 
 function store(value: object) {
   sessionStorage.setItem(KEY, JSON.stringify(value))
@@ -11,13 +13,25 @@ beforeEach(() => sessionStorage.clear())
 afterEach(() => sessionStorage.clear())
 
 describe('loadOnlineConfig', () => {
-  it('returns DEFAULT_ONLINE_CONFIG when sessionStorage is empty', () => {
-    expect(loadOnlineConfig()).toEqual(DEFAULT_ONLINE_CONFIG)
+  it('returns defaults stamped with the requested variant when sessionStorage is empty', () => {
+    expect(loadOnlineConfig()).toEqual({ ...DEFAULT_ONLINE_CONFIG, variant: 'y' })
   })
 
-  it('returns DEFAULT_ONLINE_CONFIG when stored JSON is invalid', () => {
+  it('returns defaults stamped with the variant when stored JSON is invalid', () => {
     sessionStorage.setItem(KEY, 'not-json')
-    expect(loadOnlineConfig()).toEqual(DEFAULT_ONLINE_CONFIG)
+    expect(loadOnlineConfig()).toEqual({ ...DEFAULT_ONLINE_CONFIG, variant: 'y' })
+  })
+
+  it('reads variant-specific config — different variants are isolated', () => {
+    sessionStorage.setItem(
+      'yovi_config_why-not_pvp-online',
+      JSON.stringify({ boardSizeInput: '7', timerInput: '5', timerEnabled: true }),
+    )
+    const cfg = loadOnlineConfig('why-not')
+    expect(cfg.variant).toBe('why-not')
+    expect(cfg.boardSize).toBe(7)
+    // The y-variant queue stays on its own defaults
+    expect(loadOnlineConfig('y').boardSize).toBe(11)
   })
 
   it('parses boardSize from boardSizeInput', () => {

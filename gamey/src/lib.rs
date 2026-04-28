@@ -1,12 +1,13 @@
-//! GameY - A Rust implementation of the Game of Y.
+//! GameY - A Rust implementation of the Game of Y and WhY Not?.
 //!
 //! Y is a connection game played on a triangular board where two players
 //! compete to connect all three sides of the triangle with their pieces.
+//! WhY Not? uses the same board but connecting all three sides is a loss.
 //!
 //! # Modules
 //!
 //! - [`core`]: Core game types including board, coordinates, and game logic
-//! - [`bot`]: Bot implementations for computer opponents
+//! - [`bot`]: Bot implementations for computer opponents (Y and WhY Not?)
 //! - [`bot_server`]: HTTP server for bot API
 //! - [`cli`]: Command-line interface for interactive play
 //! - [`notation`]: Game notation formats (YEN)

@@ -1,23 +1,26 @@
-//! Bot module for the Game of Y.
+//! Bot module for the Game of Y and WhY Not?.
 //!
-//! This module provides the infrastructure for creating and managing AI bots
-//! that can play the Game of Y. It includes:
+//! This module provides the infrastructure for creating and managing AI bots.
+//! It includes:
 //!
-//! - [`YBot`] - A trait that defines the interface for all bots
-//! - [`YBotRegistry`] - A registry for managing multiple bot implementations
-//! - [`RandomBot`] - A simple bot that makes random valid moves
-//! - [`FastBot`] - Minimax bot with a 500 ms time budget (MEDIUM difficulty)
-//! - [`SmartBot`] - Minimax bot with a 1 000–3 000 ms time budget (HARD difficulty)
+//! - [`YBot`] — the trait that defines the bot interface.
+//! - [`YBotRegistry`] — name-keyed registry consumed by the HTTP server.
+//! - [`RandomBot`] — random move selection (EASY for both variants).
+//! - [`MinimaxBot`] — single configurable bot wrapping the minimax engine,
+//!   with built-in factories for the four difficulty/variant combinations.
+//!
+//! Adding a new variant or difficulty only requires extending [`minimax::Goal`]
+//! (if needed) and adding a factory on `MinimaxBot` — the trait, registry, and
+//! HTTP plumbing remain untouched.
 
-pub mod fast_bot;
 pub mod minimax;
+pub mod minimax_bot;
 pub mod random;
-pub mod smart_bot;
 pub mod ybot;
 pub mod ybot_registry;
-pub use fast_bot::*;
-pub use minimax::{choose_move_with_minimax, choose_pie_opening_with_minimax, decide_pie_with_minimax};
+
+pub use minimax::Goal;
+pub use minimax_bot::*;
 pub use random::*;
-pub use smart_bot::*;
 pub use ybot::*;
 pub use ybot_registry::*;

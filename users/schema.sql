@@ -20,7 +20,11 @@ CREATE TABLE IF NOT EXISTS match_records (
   result ENUM('win', 'loss') NOT NULL,
   duration_seconds INT UNSIGNED NOT NULL,
   game_mode VARCHAR(30) NULL,
+  game_variant VARCHAR(30) NULL,
   played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- Migration: add game_variant to existing databases that lack it
+ALTER TABLE match_records ADD COLUMN IF NOT EXISTS game_variant VARCHAR(30) NULL AFTER game_mode;

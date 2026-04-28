@@ -400,31 +400,32 @@ describe('FilterBar', () => {
   const baseFilter: MatchHistoryFilter = {
     result: 'all',
     gameMode: 'all',
+    gameVariant: 'all',
     sortField: 'date',
     sortDirection: 'desc',
   }
 
   it('renders result filter group', () => {
-    render(<FilterBar filter={baseFilter} availableModes={[]} onChange={() => {}} />)
+    render(<FilterBar filter={baseFilter} availableModes={[]} availableVariants={[]} onChange={() => {}} />)
     expect(screen.getByRole('group', { name: /filter options/i })).toBeDefined()
   })
 
   it('calls onChange with updated result when Win is clicked', () => {
     const onChange = vi.fn()
-    render(<FilterBar filter={baseFilter} availableModes={[]} onChange={onChange} />)
+    render(<FilterBar filter={baseFilter} availableModes={[]} availableVariants={[]} onChange={onChange} />)
     fireEvent.click(screen.getByRole('button', { name: /^win$/i }))
     expect(onChange).toHaveBeenCalledWith({ ...baseFilter, result: 'win' })
   })
 
   it('calls onChange with updated result when Loss is clicked', () => {
     const onChange = vi.fn()
-    render(<FilterBar filter={baseFilter} availableModes={[]} onChange={onChange} />)
+    render(<FilterBar filter={baseFilter} availableModes={[]} availableVariants={[]} onChange={onChange} />)
     fireEvent.click(screen.getByRole('button', { name: /^loss$/i }))
     expect(onChange).toHaveBeenCalledWith({ ...baseFilter, result: 'loss' })
   })
 
   it('does not render mode select when availableModes is empty', () => {
-    render(<FilterBar filter={baseFilter} availableModes={[]} onChange={() => {}} />)
+    render(<FilterBar filter={baseFilter} availableModes={[]} availableVariants={[]} onChange={() => {}} />)
     expect(screen.queryByRole('combobox')).toBeNull()
   })
 
@@ -433,28 +434,57 @@ describe('FilterBar', () => {
       <FilterBar
         filter={baseFilter}
         availableModes={['pve-easy', 'pve-medium']}
+        availableVariants={[]}
         onChange={() => {}}
       />
     )
-    expect(screen.getByRole('combobox')).toBeDefined()
+    expect(screen.getByRole('combobox', { name: /filter by game mode/i })).toBeDefined()
   })
 
-  it('calls onChange with updated gameMode when select changes', () => {
+  it('renders variant select when multiple variants given', () => {
+    render(
+      <FilterBar
+        filter={baseFilter}
+        availableModes={[]}
+        availableVariants={['y', 'why-not']}
+        onChange={() => {}}
+      />
+    )
+    expect(screen.getByRole('combobox', { name: /filter by game variant/i })).toBeDefined()
+  })
+
+  it('calls onChange with updated gameMode when mode select changes', () => {
     const onChange = vi.fn()
     render(
       <FilterBar
         filter={baseFilter}
         availableModes={['pve-easy', 'pve-hard']}
+        availableVariants={[]}
         onChange={onChange}
       />
     )
-    const select = screen.getByRole('combobox') as HTMLSelectElement
+    const select = screen.getByRole('combobox', { name: /filter by game mode/i }) as HTMLSelectElement
     fireEvent.change(select, { target: { value: 'pve-hard' } })
     expect(onChange).toHaveBeenCalledWith({ ...baseFilter, gameMode: 'pve-hard' })
   })
 
+  it('calls onChange with updated gameVariant when variant select changes', () => {
+    const onChange = vi.fn()
+    render(
+      <FilterBar
+        filter={baseFilter}
+        availableModes={[]}
+        availableVariants={['y', 'why-not']}
+        onChange={onChange}
+      />
+    )
+    const select = screen.getByRole('combobox', { name: /filter by game variant/i }) as HTMLSelectElement
+    fireEvent.change(select, { target: { value: 'why-not' } })
+    expect(onChange).toHaveBeenCalledWith({ ...baseFilter, gameVariant: 'why-not' })
+  })
+
   it('All button is aria-pressed true by default', () => {
-    render(<FilterBar filter={baseFilter} availableModes={[]} onChange={() => {}} />)
+    render(<FilterBar filter={baseFilter} availableModes={[]} availableVariants={[]} onChange={() => {}} />)
     expect(
       screen.getByRole('button', { name: /^all$/i }).getAttribute('aria-pressed')
     ).toBe('true')
@@ -465,6 +495,7 @@ describe('FilterBar', () => {
       <FilterBar
         filter={{ ...baseFilter, result: 'win' }}
         availableModes={[]}
+        availableVariants={[]}
         onChange={() => {}}
       />
     )

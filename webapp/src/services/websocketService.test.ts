@@ -478,7 +478,9 @@ describe('WebSocketService — auto-reconnect', () => {
     newMockWs.onopen?.(new Event('open'))
     serverSend(newMockWs, { type: 'authenticated', userId: 1, username: 'Alice' })
 
-    await vi.runAllTimersAsync()
+    // Flush microtasks so the async reconnect callback can reach dispatch().
+    // Avoid vi.runAllTimersAsync() — it loops infinitely through the ping setInterval.
+    for (let i = 0; i < 5; i++) await Promise.resolve()
 
     expect(reconnectedHandler).toHaveBeenCalled()
     vi.useRealTimers()

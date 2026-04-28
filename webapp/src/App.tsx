@@ -45,17 +45,21 @@ function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Navigate to="/games" replace />} />
           <Route path="/games" element={<GameSelectionPage />} />
-          <Route path="/games/y" element={<GameModePage />} />
-          <Route path="/games/y/config/:mode" element={<GameConfigPage />} />
-          <Route path="/games/y/online" element={<OnlineRoomPage />} />
-          <Route path="/games/y/online/host" element={<OnlineHostLobbyPage />} />
-          <Route path="/games/y/online/queue" element={<OnlineLobbyPage />} />
-          <Route path="/games/y/play/:gameId" element={<GameYPage />} />
+          {/* Online routes — parameterised by :variant so any registered
+              variant gets matchmaking, room hosting, and queue UI for free.
+              These literals rank above the generic /games/:variant catch-all
+              because each segment is more specific. */}
+          <Route path="/games/:variant/online" element={<OnlineRoomPage />} />
+          <Route path="/games/:variant/online/host" element={<OnlineHostLobbyPage />} />
+          <Route path="/games/:variant/online/queue" element={<OnlineLobbyPage />} />
+          {/* Generic variant routes */}
+          <Route path="/games/:variant" element={<GameModePage />} />
+          <Route path="/games/:variant/config/:mode" element={<GameConfigPage />} />
+          <Route path="/games/:variant/play/:gameId" element={<GameYPage />} />
+          <Route path="/games/:variant/replay/:gameId" element={<GameReplayPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/ranking" element={<RankingPage />} />
-          {/* Game history & step-through replay */}
           <Route path="/history" element={<GameHistoryPage />} />
-          <Route path="/games/y/replay/:gameId" element={<GameReplayPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Route>

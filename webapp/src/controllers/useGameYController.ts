@@ -133,6 +133,11 @@ export function useGameYController() {
       }
     })
 
+    // Another tab took over this user's session — show the connection-lost banner.
+    const unsubSessionReplaced = wsService.on('session_replaced', () => {
+      setWsConnectionFailed(true)
+    })
+
     return () => {
       unsubUpdate()
       unsubDisconnected()
@@ -140,6 +145,7 @@ export function useGameYController() {
       unsubError()
       unsubChat()
       unsubWsReconnect()
+      unsubSessionReplaced()
     }
   }, [game?.id, game?.config?.mode])
 
@@ -407,13 +413,14 @@ export function useGameYController() {
 
   const handlePlayAgain = useCallback(() => {
     if (!game || !gameId) return
+    const variant = game.config.variant ?? 'y'
     if (game.config.mode === 'pvp-online') {
       // Explicitly leave the game room before disconnecting
       wsService.send({ type: 'leave_game', gameId })
       wsService.disconnect()
-      navigate('/games/y/online')
+      navigate(`/games/${variant}/online`)
     } else {
-      navigate(`/games/y/config/${game.config.mode}`)
+      navigate(`/games/${variant}/config/${game.config.mode}`)
     }
   }, [game, gameId, navigate])
 

@@ -28,6 +28,8 @@ function createMockWs(readyState = 1) {
   return {
     send: vi.fn(),
     close: vi.fn(),
+    ping: vi.fn(),
+    terminate: vi.fn(),
     readyState,
     on: vi.fn(),
   }
@@ -318,7 +320,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const { manager } = getManager()
       const client = makeClient(1, { inQueue: true })
       manager._injectClient(client)
-      ;(manager as any).matchmaking.join({ userId: 1, username: 'player1', token: 'tok', joinedAt: Date.now() })
+      ;(manager as any).matchmaking.join('y', { userId: 1, username: 'player1', token: 'tok', joinedAt: Date.now() })
 
       expect(manager.getQueueSize()).toBe(1)
       ;(manager as any).handleDisconnect(1)
@@ -329,7 +331,7 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const { manager } = getManager()
       const client = makeClient(1, { inQueue: true })
       manager._injectClient(client)
-      ;(manager as any).matchmaking.join({ userId: 1, username: 'player1', token: 'tok', joinedAt: Date.now() })
+      ;(manager as any).matchmaking.join('y', { userId: 1, username: 'player1', token: 'tok', joinedAt: Date.now() })
 
       ;(manager as any).handleDisconnect(1)
       // client still in map only if it had a game; here it doesn't → deleted
@@ -383,6 +385,199 @@ describe('WebSocketManager – Connection lifecycle & Authentication', () => {
       const restored = manager.getClient(1)!
       expect(restored.ws).toBe(freshWs)
       expect(restored.disconnectedAt).toBeUndefined()
+    })
+  })
+
+  // ── Heartbeat ──────────────────────────────────────────────────────────────
+
+  describe('Heartbeat', () => {
+    beforeEach(() => { vi.useFakeTimers() })
+    afterEach(() => { vi.useRealTimers() })
+
+    it('registers pong and close listeners for heartbeat cleanup', () => {
+      const { manager } = getManager()
+      const handler = getConnectionHandler(manager)!
+      const ws = createMockWs()
+      handler(ws, {} as any)
+
+      const events = ws.on.mock.calls.map(([e]: any[]) => e)
+      expect(events).toContain('pong')
+    })
+
+    it('calls ws.ping() after 25 s', () => {
+      const { manager } = getManager()
+      const handler = getConnectionHandler(manager)!
+      const ws = createMockWs()
+      handler(ws, {} as any)
+
+      vi.advanceTimersByTime(25_000)
+      expect(ws.ping).toHaveBeenCalledTimes(1)
+    })
+
+    it('calls ws.terminate() if no pong arrives within 10 s of ping', () => {
+      const { manager } = getManager()
+      const handler = getConnectionHandler(manager)!
+      const ws = createMockWs()
+      handler(ws, {} as any)
+
+      vi.advanceTimersByTime(25_000 + 10_000)
+      expect(ws.terminate).toHaveBeenCalled()
+    })
+
+    it('does NOT terminate if pong arrives in time', () => {
+      const { manager } = getManager()
+      const handler = getConnectionHandler(manager)!
+      const ws = createMockWs()
+      handler(ws, {} as any)
+
+      vi.advanceTimersByTime(25_000)
+      expect(ws.ping).toHaveBeenCalled()
+
+      // Simulate browser auto-pong
+      const [[, onPong]] = ws.on.mock.calls.filter(([e]: any[]) => e === 'pong')
+      onPong()
+
+      vi.advanceTimersByTime(10_000)
+      expect(ws.terminate).not.toHaveBeenCalled()
+    })
+
+    it('stops pinging after socket close', () => {
+      const { manager } = getManager()
+      const handler = getConnectionHandler(manager)!
+      const ws = createMockWs()
+      handler(ws, {} as any)
+
+      const [[, onClose]] = ws.on.mock.calls.filter(([e]: any[]) => e === 'close')
+      onClose()
+
+      vi.advanceTimersByTime(25_000)
+      expect(ws.ping).not.toHaveBeenCalled()
+    })
+  })
+
+  // ── Duplicate connection (same userId) ─────────────────────────────────────
+
+  describe('Duplicate connection (same userId, active session)', () => {
+    it('sends session_replaced to the old socket and closes it', async () => {
+      const { manager } = getManager()
+      const handler = getConnectionHandler(manager)!
+
+      // First connection
+      const ws1 = createMockWs()
+      handler(ws1, {} as any)
+      const [[, onMsg1]] = ws1.on.mock.calls.filter(([e]: any[]) => e === 'message')
+      await onMsg1(Buffer.from(JSON.stringify({ type: 'auth', token: 'tok' })))
+
+      // Second connection — same userId
+      const ws2 = createMockWs()
+      handler(ws2, {} as any)
+      const [[, onMsg2]] = ws2.on.mock.calls.filter(([e]: any[]) => e === 'message')
+      await onMsg2(Buffer.from(JSON.stringify({ type: 'auth', token: 'tok' })))
+
+      const ws1Msgs = ws1.send.mock.calls.map((c: any) => JSON.parse(c[0]))
+      expect(ws1Msgs.some((m: any) => m.type === 'session_replaced')).toBe(true)
+      expect(ws1.close).toHaveBeenCalled()
+    })
+
+    it('sends authenticated to the new socket and still counts as 1 client', async () => {
+      const { manager } = getManager()
+      const handler = getConnectionHandler(manager)!
+
+      const ws1 = createMockWs()
+      handler(ws1, {} as any)
+      const [[, onMsg1]] = ws1.on.mock.calls.filter(([e]: any[]) => e === 'message')
+      await onMsg1(Buffer.from(JSON.stringify({ type: 'auth', token: 'tok' })))
+
+      const ws2 = createMockWs()
+      handler(ws2, {} as any)
+      const [[, onMsg2]] = ws2.on.mock.calls.filter(([e]: any[]) => e === 'message')
+      await onMsg2(Buffer.from(JSON.stringify({ type: 'auth', token: 'tok' })))
+
+      const ws2Msgs = ws2.send.mock.calls.map((c: any) => JSON.parse(c[0]))
+      expect(ws2Msgs.some((m: any) => m.type === 'authenticated')).toBe(true)
+      expect(manager.getConnectedCount()).toBe(1)
+      expect(manager.getClient(1)?.ws).toBe(ws2)
+    })
+
+    it('preserves game state (currentGameId) when session is transferred', async () => {
+      const { manager } = getManager()
+
+      // Pre-inject client already in a game
+      const ws1 = createMockWs() as any
+      manager._injectClient({ ws: ws1, userId: 1, username: 'player1', token: 'tok', inQueue: false, currentGameId: 'game-xyz' })
+
+      const handler = getConnectionHandler(manager)!
+      const ws2 = createMockWs()
+      handler(ws2, {} as any)
+      const [[, onMsg2]] = ws2.on.mock.calls.filter(([e]: any[]) => e === 'message')
+      await onMsg2(Buffer.from(JSON.stringify({ type: 'auth', token: 'tok' })))
+
+      expect(manager.getClient(1)?.currentGameId).toBe('game-xyz')
+    })
+  })
+
+  // ── cancel_room ────────────────────────────────────────────────────────────
+
+  describe('cancel_room', () => {
+    it('removes the room so subsequent join_room gets ROOM_NOT_FOUND', async () => {
+      const { manager } = getManager()
+      const host = makeClient(1)
+      const guest = makeClient(2)
+      manager._injectClient(host)
+      manager._injectClient(guest)
+
+      // Host creates room
+      await manager.handleMessage(1, { type: 'create_room', config: undefined })
+      const hostMsgs = (host.ws.send as any).mock.calls.map((c: any) => JSON.parse(c[0]))
+      const created = hostMsgs.find((m: any) => m.type === 'room_created')
+      expect(created).toBeDefined()
+
+      // Host cancels room
+      await manager.handleMessage(1, { type: 'cancel_room' })
+
+      // Guest tries to join
+      await manager.handleMessage(2, { type: 'join_room', code: created.code })
+      const guestMsgs = (guest.ws.send as any).mock.calls.map((c: any) => JSON.parse(c[0]))
+      const err = guestMsgs.find((m: any) => m.type === 'error')
+      expect(err?.code).toBe('ROOM_NOT_FOUND')
+    })
+
+    it('is a no-op if the client has no hosted room', async () => {
+      const { manager } = getManager()
+      const client = makeClient(1)
+      manager._injectClient(client)
+
+      await expect(manager.handleMessage(1, { type: 'cancel_room' })).resolves.not.toThrow()
+    })
+
+    it('only removes the room belonging to the calling client', async () => {
+      const { manager } = getManager()
+      const host1 = makeClient(1)
+      const host2 = makeClient(2)
+      manager._injectClient(host1)
+      manager._injectClient(host2)
+
+      await manager.handleMessage(1, { type: 'create_room', config: undefined })
+      await manager.handleMessage(2, { type: 'create_room', config: undefined })
+
+      // host1 cancels — host2's room should still exist
+      await manager.handleMessage(1, { type: 'cancel_room' })
+
+      const host2Msgs = (host2.ws.send as any).mock.calls.map((c: any) => JSON.parse(c[0]))
+      const host2Code = host2Msgs.find((m: any) => m.type === 'room_created')?.code
+
+      // guest tries to join host2's room — should succeed (room still there)
+      const guest = makeClient(3)
+      manager._injectClient(guest)
+
+      // We can't easily create the game in test (gameService.createGame would need mocking),
+      // but we can verify no ROOM_NOT_FOUND error is returned — the room exists.
+      // We mock createGame to throw so the flow stops after room lookup.
+      ;(manager as any).gameService.createGame = vi.fn().mockRejectedValue(new Error('test-stop'))
+      await manager.handleMessage(3, { type: 'join_room', code: host2Code })
+
+      const guestMsgs = (guest.ws.send as any).mock.calls.map((c: any) => JSON.parse(c[0]))
+      expect(guestMsgs.some((m: any) => m.code === 'ROOM_NOT_FOUND')).toBe(false)
     })
   })
 })

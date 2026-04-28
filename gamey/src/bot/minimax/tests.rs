@@ -7,7 +7,7 @@ use super::search::{
 };
 use super::state::MinimaxState;
 use super::tables::{HistoryTable, KillerTable, TranspositionTable};
-use super::{ABORTED, INFINITY, LOSE_SCORE, WIN_SCORE};
+use super::{ABORTED, Goal, INFINITY, LOSE_SCORE, WIN_SCORE};
 use crate::{GameY, PlayerId};
 use smallvec::SmallVec;
 use std::time::{Duration, Instant};
@@ -279,8 +279,9 @@ fn test_negamax_depth_zero_matches_evaluate() {
         &mut hist,
         start,
         limit,
+        Goal::Standard,
     );
-    assert_eq!(score, evaluate_state(&mut state, bot));
+    assert_eq!(score, evaluate_state(&mut state, bot, Goal::Standard));
 }
 
 #[test]
@@ -303,6 +304,7 @@ fn test_negamax_score_in_valid_range() {
         &mut hist,
         start,
         limit,
+        Goal::Standard,
     );
 
     assert!(score >= LOSE_SCORE && score <= WIN_SCORE);
@@ -329,6 +331,7 @@ fn test_negamax_aborts_when_time_exceeded() {
         &mut hist,
         start,
         limit,
+        Goal::Standard,
     );
 
     assert_eq!(score, ABORTED);
@@ -352,6 +355,7 @@ fn test_negamax_with_tt_returns_same_result_twice() {
         &mut hist,
         start,
         limit,
+        Goal::Standard,
     );
 
     let score2 = negamax(
@@ -365,6 +369,7 @@ fn test_negamax_with_tt_returns_same_result_twice() {
         &mut hist,
         start,
         limit,
+        Goal::Standard,
     );
 
     assert_eq!(score1, score2);
@@ -399,6 +404,7 @@ fn test_search_best_move_returns_valid_index() {
         &mut hist,
         start,
         limit,
+        Goal::Standard,
     );
 
     assert!(best_move < state.board.len());
@@ -409,7 +415,7 @@ fn test_search_best_move_returns_valid_index() {
 #[test]
 fn test_iterative_deepening_returns_valid_move() {
     let mut state = create_empty_state(3);
-    let (best_move, _score) = iterative_deepening_search(&mut state, 50, 200);
+    let (best_move, _score) = iterative_deepening_search(&mut state, 50, 200, Goal::Standard);
     assert!(best_move < state.board.len());
 }
 
@@ -417,7 +423,7 @@ fn test_iterative_deepening_returns_valid_move() {
 fn test_choose_move_with_minimax_returns_valid_coords() {
     use super::search::choose_move_with_minimax;
     let game = GameY::new(3);
-    let coords = choose_move_with_minimax(&game, 50, 200);
+    let coords = choose_move_with_minimax(&game, 50, 200, Goal::Standard);
 
     assert!(coords.is_some());
     assert!(coords.unwrap().is_valid(3));
@@ -439,7 +445,7 @@ fn test_complete_flow_make_evaluate_undo() {
     let bot = state.bot_id;
 
     state.make_move(idx, state.bot_id);
-    assert_ne!(evaluate_state(&mut state, bot), 0);
+    assert_ne!(evaluate_state(&mut state, bot, Goal::Standard), 0);
     state.undo_move(idx);
 
     assert_eq!(state.available_cells().count(), initial_available);
@@ -460,7 +466,7 @@ fn test_alternating_moves_and_undo_restores_board() {
     state.make_move(moves[3], state.human_id);
 
     let hash_mid = state.hash;
-    assert!(evaluate_state(&mut state, bot).abs() < WIN_SCORE);
+    assert!(evaluate_state(&mut state, bot, Goal::Standard).abs() < WIN_SCORE);
 
     for &m in moves.iter().rev() {
         state.undo_move(m);
@@ -514,6 +520,7 @@ fn test_aspiration_search_same_as_full_window() {
         &mut hist,
         start,
         limit,
+        Goal::Standard,
     );
 
     tt = TranspositionTable::new();
@@ -529,6 +536,7 @@ fn test_aspiration_search_same_as_full_window() {
         &mut hist,
         start,
         limit,
+        Goal::Standard,
     );
 
     assert_eq!(

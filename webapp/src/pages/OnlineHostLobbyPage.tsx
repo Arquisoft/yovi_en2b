@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useOnlineHostLobbyController } from '@/controllers/useOnlineHostLobbyController'
 import { Button } from '@/components/ui/Button'
+import { LobbyVariantBadge } from '@/components/online/LobbyVariantBadge'
 import { Copy, Check, Wifi, WifiOff, UserCheck, AlertCircle } from 'lucide-react'
 
 export function OnlineHostLobbyPage() {
@@ -11,6 +12,7 @@ export function OnlineHostLobbyPage() {
     opponentName,
     error,
     copied,
+    variant,
     handleCancel,
     handleCopy,
     handleRetry,
@@ -19,6 +21,8 @@ export function OnlineHostLobbyPage() {
   return (
     <div className="flex items-center justify-center h-full p-4">
       <div className="text-center space-y-6 max-w-sm w-full">
+
+        {status !== 'error' && <LobbyVariantBadge variant={variant} />}
 
         {/* ── CONNECTING ────────────────────────────────────────────────── */}
         {status === 'connecting' && (
@@ -48,7 +52,7 @@ export function OnlineHostLobbyPage() {
               <p className="text-xs uppercase tracking-widest text-muted-foreground font-medium">
                 {t('online.roomCode')}
               </p>
-              <p className="text-4xl font-mono font-bold tracking-[0.25em] text-primary select-all">
+              <p className="text-3xl sm:text-4xl font-mono font-bold tracking-[0.25em] text-primary select-all">
                 {roomCode}
               </p>
               <Button

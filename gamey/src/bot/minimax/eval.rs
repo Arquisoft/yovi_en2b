@@ -1,18 +1,23 @@
 //! Heuristic evaluation function.
 
 use super::BLOCKED;
+use super::Goal;
 use super::LOSE_SCORE;
 use super::WIN_SCORE;
 use super::state::MinimaxState;
 
-/// Heuristic evaluation from `player`'s perspective.
+/// Heuristic evaluation from `player`'s perspective, interpreted under `goal`.
 ///
 /// Primary component: BFS-based connection cost difference.
-///     opponent_cost - own_cost  (positive = good for player)
+///     opponent_cost - own_cost  (positive = good for player under standard Y)
 ///
 /// Secondary component: incremental score (well-connected pieces, edge touches,
 /// centrality) as a tiebreaker.
-pub(super) fn evaluate_state(state: &mut MinimaxState, player: u8) -> i32 {
+///
+/// Under [`Goal::Misere`] the entire result is negated: in WhY Not?, being
+/// close to a three-side connection is *bad* for the player, so the same
+/// underlying heuristic with the opposite sign yields the correct ordering.
+pub(super) fn evaluate_state(state: &mut MinimaxState, player: u8, goal: Goal) -> i32 {
     let opponent = state.opponent_of(player);
 
     let own_cost = state.connection_cost(player);
@@ -31,5 +36,5 @@ pub(super) fn evaluate_state(state: &mut MinimaxState, player: u8) -> i32 {
     let incr =
         state.scores[p_idx].evaluate(game_progress) - state.scores[o_idx].evaluate(game_progress);
 
-    bfs_score + incr
+    (bfs_score + incr) * goal.heuristic_sign()
 }

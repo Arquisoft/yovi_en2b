@@ -7,8 +7,8 @@
 //! - Server: Run as an HTTP server for bot API
 
 use crate::{
-    Coordinates, FastBot, GameAction, Movement, RandomBot, RenderOptions, SmartBot, YBot,
-    YBotRegistry, game,
+    Coordinates, GameAction, MinimaxBot, Movement, RandomBot, RenderOptions, YBot, YBotRegistry,
+    game,
 };
 use crate::{GameStatus, GameY, PlayerId};
 use anyhow::Result;
@@ -76,8 +76,10 @@ pub fn run_cli_game() -> Result<()> {
     let mut rl = DefaultEditor::new()?;
     let bots_registry = YBotRegistry::new()
         .with_bot(Arc::new(RandomBot))
-        .with_bot(Arc::new(FastBot))
-        .with_bot(Arc::new(SmartBot));
+        .with_bot(Arc::new(MinimaxBot::fast_y()))
+        .with_bot(Arc::new(MinimaxBot::smart_y()))
+        .with_bot(Arc::new(MinimaxBot::fast_whynot()))
+        .with_bot(Arc::new(MinimaxBot::smart_whynot()));
     let bot: Arc<dyn YBot> = match bots_registry.find(&args.bot) {
         Some(b) => b,
         None => {

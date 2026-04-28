@@ -63,6 +63,7 @@ export class StatsService {
     result: 'win' | 'loss'
     durationSeconds: number
     gameMode?: string | null
+    gameVariant?: string | null
   }) {
     const record = repo().create(data)
     return repo().save(record)
