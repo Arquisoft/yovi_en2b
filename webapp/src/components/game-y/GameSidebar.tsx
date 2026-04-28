@@ -1,4 +1,5 @@
-import { useTranslation, type TFunction } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import type { GameState, ChatMessage, PlayerColor, TimerState } from '@/types'
 import { Button } from '@/components/ui/Button'
 import { TimerPanel } from './TimerPanel'
